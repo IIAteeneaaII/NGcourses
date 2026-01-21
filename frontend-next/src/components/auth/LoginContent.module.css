@@ -1,0 +1,370 @@
+/* Variables locales del login */
+.container {
+  min-height: 100vh;
+  background:
+    radial-gradient(1100px 700px at 12% 18%, rgba(164,211,234,.65) 0%, rgba(242,242,242,0) 60%),
+    radial-gradient(900px 650px at 86% 22%, rgba(110,201,227,.45) 0%, rgba(242,242,242,0) 58%),
+    linear-gradient(180deg, #ffffff 0%, #F2F2F2 100%);
+  display: grid;
+  place-items: center;
+  padding: 28px 16px 70px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Patrón de puntos decorativos */
+.dots {
+  position: absolute;
+  top: -120px;
+  right: -120px;
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle at 12px 12px, rgba(2,75,137,.10) 2px, transparent 3px) 0 0 / 28px 28px;
+  filter: blur(0.2px);
+  opacity: 0.55;
+  transform: rotate(8deg);
+  pointer-events: none;
+}
+
+/* Barra inferior */
+.bottomBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  background: linear-gradient(90deg, #A4D3EA 0%, #6EC9E3 45%, #3981B6 75%, #024B89 100%);
+  opacity: 0.95;
+}
+
+/* Contenedor principal */
+.content {
+  width: min(1400px, 92%);
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 40px;
+  align-items: stretch;
+}
+
+/* Panel izquierdo - Brand */
+.leftPanel {
+  border-radius: 20px;
+  padding: 40px;
+  background: linear-gradient(135deg, rgba(2,75,137,.95) 0%, rgba(57,129,182,.92) 45%, rgba(110,201,227,.88) 100%);
+  color: white;
+  box-shadow: 0 18px 55px rgba(2,75,137,.18);
+  position: relative;
+  overflow: hidden;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.leftPanel::after {
+  content: "";
+  position: absolute;
+  bottom: -60px;
+  right: -60px;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle, rgba(255,255,255,.25) 0%, rgba(255,255,255,0) 62%);
+  transform: rotate(12deg);
+}
+
+/* Logo */
+.brandContainer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.brandIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  background: rgba(255,255,255,.16);
+  border: 1px solid rgba(255,255,255,.22);
+  display: grid;
+  place-items: center;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 10px 25px rgba(0,0,0,.12);
+  font-weight: 800;
+  font-size: 1.25rem;
+  letter-spacing: 0.5px;
+}
+
+.brandText {
+  opacity: 0.85;
+  font-size: 12.5px;
+}
+
+/* Título */
+.title {
+  margin: 10px 0 6px;
+  font-size: clamp(28px, 3.2vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.6px;
+  font-weight: 700;
+}
+
+/* Descripción */
+.description {
+  margin: 0;
+  opacity: 0.92;
+  max-width: 52ch;
+  line-height: 1.55;
+  font-size: 15.5px;
+}
+
+/* Chips/Tags */
+.features {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.featureTag {
+  font-size: 12.5px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.14);
+  border: 1px solid rgba(255,255,255,.18);
+  backdrop-filter: blur(10px);
+  white-space: nowrap;
+}
+
+/* Panel derecho - Card de login */
+.rightPanel {
+  display: flex;
+  align-items: stretch;
+}
+
+.loginCard {
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(2,75,137,.10);
+  border-radius: 20px;
+  box-shadow: 0 18px 55px rgba(11,27,43,.12);
+  padding: 36px;
+  backdrop-filter: blur(10px);
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  width: 100%;
+}
+
+.loginTitle {
+  margin: 0 0 8px;
+  font-size: 24px;
+  letter-spacing: -0.2px;
+  font-weight: 700;
+  color: #0B1B2B;
+}
+
+.loginSubtitle {
+  margin: 0 0 24px;
+  color: rgba(11,27,43,.65);
+  font-size: 15px;
+}
+
+/* Formulario */
+.form {
+  display: flex;
+  flex-direction: column;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.inputLabel {
+  font-size: 14px;
+  color: rgba(11,27,43,.78);
+}
+
+.inputWrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 14px;
+  background: white;
+  border: 1px solid rgba(2,75,137,.14);
+  padding: 14px 16px;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.inputWrapper:focus-within {
+  border-color: rgba(110,201,227,.85);
+  box-shadow: 0 0 0 6px rgba(110,201,227,.35);
+}
+
+.inputIcon {
+  opacity: 0.7;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  color: #0B1B2B;
+}
+
+.input {
+  border: 0;
+  outline: 0;
+  width: 100%;
+  font-size: 15px;
+  background: transparent;
+  color: #0B1B2B;
+}
+
+.input::placeholder {
+  color: rgba(11,27,43,.45);
+}
+
+.togglePassword {
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s;
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  color: #0B1B2B;
+}
+
+.togglePassword:hover {
+  opacity: 1;
+}
+
+/* Fila de opciones */
+.optionsRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin: 12px 0 20px;
+  flex-wrap: wrap;
+}
+
+.checkboxLabel {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-size: 13px;
+  color: rgba(11,27,43,.65);
+  user-select: none;
+  cursor: pointer;
+}
+
+.checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #3981B6;
+  cursor: pointer;
+}
+
+.forgotPassword {
+  color: #024B89;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.forgotPassword:hover {
+  text-decoration: underline;
+}
+
+/* Botón de submit - Usamos naranja para 60-30-10 */
+.submitButton {
+  border: 0;
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  color: white;
+  background-color: var(--color-accent-10);
+  box-shadow: 0 14px 30px rgba(249,115,22,.22);
+  cursor: pointer;
+  transition: transform 0.12s ease, filter 0.2s ease;
+  font-size: 1.0625rem;
+}
+
+.submitButton:hover {
+  filter: brightness(1.03);
+}
+
+.submitButton:active {
+  transform: translateY(1px);
+}
+
+/* Texto de registro */
+.registerText {
+  margin-top: 14px;
+  text-align: center;
+  font-size: 12.5px;
+  color: rgba(11,27,43,.65);
+}
+
+.registerLink {
+  color: #024B89;
+  text-decoration: none;
+  font-weight: 600;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12.5px;
+}
+
+.registerLink:hover {
+  text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 860px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .leftPanel {
+    min-height: auto;
+  }
+
+  .loginCard {
+    min-height: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  .container {
+    padding: 16px 12px 60px;
+  }
+
+  .leftPanel {
+    padding: 20px;
+  }
+
+  .loginCard {
+    padding: 18px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .optionsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+}

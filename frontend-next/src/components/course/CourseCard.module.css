@@ -1,0 +1,95 @@
+.card {
+  background-color: var(--color-primary-60-alt);
+  border-radius: 0.75rem;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  display: block;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+}
+
+.imageContainer {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16/10;
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.content {
+  padding: 1rem;
+}
+
+.title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 0.5rem;
+  line-height: 1.3;
+}
+
+.tag {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.tagNuevo {
+  background-color: var(--color-accent-10);
+  color: var(--color-text-white);
+}
+
+.tagPopular {
+  background-color: var(--color-secondary-30-light);
+  color: var(--color-text-white);
+}
+
+.tagDestacado {
+  background-color: var(--color-accent-10);
+  color: var(--color-text-white);
+}
+
+.instructor {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.level {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.levelLabel {
+  color: var(--color-text-primary);
+}
+
+.rating {
+  display: flex;
+  gap: 0.125rem;
+}
+
+.star {
+  color: var(--color-warning);
+  font-size: 1rem;
+}
+
+.starEmpty {
+  color: var(--color-border);
+  font-size: 1rem;
+}
