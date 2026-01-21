@@ -1,0 +1,88 @@
+.container {
+  min-height: 100vh;
+  background-color: var(--color-primary-60);
+}
+
+.header {
+  background-color: var(--color-primary-60-alt);
+  box-shadow: var(--shadow-md);
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+}
+
+.headerContent {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: var(--color-secondary-30);
+}
+
+.navTitle {
+  font-size: 1.125rem;
+  color: var(--color-text-primary);
+}
+
+.main {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 1.25rem;
+}
+
+.pageTitle {
+  font-size: 1.875rem;
+  margin-bottom: 1rem;
+  color: var(--color-secondary-30);
+}
+
+.backButtonContainer {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  background-color: var(--color-accent-10);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 9999px;
+  font-size: 1rem;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease;
+}
+
+.backButton:hover {
+  background-color: var(--color-accent-10-hover);
+}
+
+.contentGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+@media (min-width: 1024px) {
+  .contentGrid {
+    grid-template-columns: 2fr 1fr;
+  }
+}
+
+.videoSection {
+  background-color: var(--color-primary-60-alt);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-lg);
+}

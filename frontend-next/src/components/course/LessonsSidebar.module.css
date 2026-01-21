@@ -1,0 +1,121 @@
+.container {
+  background-color: var(--color-primary-60-alt);
+  border-radius: 1rem;
+  padding: 1.25rem;
+  box-shadow: var(--shadow-lg);
+  max-height: 800px;
+  overflow-y: auto;
+}
+
+.tabs {
+  display: flex;
+  gap: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 2px solid var(--color-border);
+}
+
+.tab {
+  padding-bottom: 0.75rem;
+  padding-left: 0;
+  padding-right: 0;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  flex: 1;
+  text-align: center;
+  transition: color 0.2s ease;
+  color: var(--color-text-secondary);
+}
+
+.tabActive {
+  color: var(--color-secondary-30);
+  border-bottom: 4px solid var(--color-secondary-30);
+  font-weight: bold;
+}
+
+.lessonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lessonItem {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  background-color: var(--color-primary-60);
+}
+
+.lessonItem:hover {
+  background-color: var(--color-secondary-30-lighter);
+}
+
+.lessonItemCompleted {
+  background-color: var(--color-success-light);
+}
+
+.lessonItemActive {
+  background-color: var(--color-accent-10-light);
+  border-left: 4px solid var(--color-accent-10);
+  font-weight: bold;
+}
+
+.lessonName {
+  flex: 1;
+  color: var(--color-text-primary);
+}
+
+.lessonIcon {
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkIcon {
+  color: var(--color-success);
+  font-size: 1.25rem;
+}
+
+.arrowIcon {
+  color: var(--color-text-light);
+  font-size: 1rem;
+}
+
+.moduleTitle {
+  font-weight: bold;
+  color: var(--color-secondary-30);
+  margin-bottom: 0.5rem;
+}
+
+.moduleContainer {
+  margin-bottom: 1rem;
+}
+
+.moduleLessonList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.moduleLessonItem {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-size: 0.875rem;
+  background-color: var(--color-primary-60);
+}
+
+.moduleLessonItem:hover {
+  background-color: var(--color-secondary-30-lighter);
+}

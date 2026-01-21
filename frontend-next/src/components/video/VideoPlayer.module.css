@@ -1,0 +1,25 @@
+.container {
+  position: relative;
+  width: 100%;
+}
+
+.loadingOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #1f2937;
+  border-radius: 0.5rem;
+}
+
+.loadingText {
+  color: var(--color-text-white);
+  font-size: 1.125rem;
+}
+
+.iframe {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 0.5rem;
+}

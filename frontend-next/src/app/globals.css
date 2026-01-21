@@ -1,0 +1,50 @@
+@import "tailwindcss";
+
+:root {
+  /* Regla 60-30-10 */
+
+  /* 60% - Color Dominante (fondos, áreas grandes) */
+  --color-primary-60: #F5F7FA;        /* Gris muy claro */
+  --color-primary-60-alt: #FFFFFF;    /* Blanco para cards */
+
+  /* 30% - Color Secundario (headers, sidebars, textos) */
+  --color-secondary-30: #004777;      /* Azul oscuro principal */
+  --color-secondary-30-light: #3B7EA1; /* Azul medio */
+  --color-secondary-30-lighter: #87CEEB; /* Azul claro */
+
+  /* 10% - Color de Acento (botones, CTAs, highlights) */
+  --color-accent-10: #F97316;         /* Naranja vibrante */
+  --color-accent-10-hover: #EA580C;   /* Naranja hover */
+  --color-accent-10-light: #FFEDD5;   /* Naranja muy claro para backgrounds */
+
+  /* Colores de Estado */
+  --color-success: #22C55E;           /* Verde para completados */
+  --color-success-light: #DCFCE7;     /* Verde claro background */
+  --color-error: #EF4444;             /* Rojo para errores */
+  --color-warning: #F59E0B;           /* Amarillo para warnings */
+
+  /* Textos */
+  --color-text-primary: #1A1A1A;      /* Texto principal */
+  --color-text-secondary: #666666;    /* Texto secundario */
+  --color-text-light: #9CA3AF;        /* Texto terciario */
+  --color-text-white: #FFFFFF;        /* Texto blanco */
+
+  /* Bordes y sombras */
+  --color-border: #E5E7EB;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+}
+
+@theme inline {
+  --color-background: var(--color-primary-60);
+  --color-foreground: var(--color-text-primary);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--color-primary-60);
+  color: var(--color-text-primary);
+  font-family: Arial, Helvetica, sans-serif;
+}
