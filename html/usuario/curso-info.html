@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Info del Curso</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            color: var(--color-text-dark);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background-color: #666;
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+
+        .course-info-container {
+            background-color: var(--color-white);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+        }
+
+        .course-hero {
+            display: flex;
+            gap: 25px;
+            margin-bottom: 30px;
+            align-items: center;
+        }
+
+        .course-hero-image {
+            width: 400px;
+            height: 280px;
+            border-radius: 15px;
+            object-fit: cover;
+        }
+
+        .course-hero-details {
+            flex: 1;
+        }
+
+        .course-hero-details h2 {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+
+        .course-meta {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font-size: 16px;
+        }
+
+        .course-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-sections {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-box {
+            background-color: #B8B8B8;
+            padding: 20px;
+            border-radius: 15px;
+        }
+
+        .info-box h3 {
+            font-size: 18px;
+            margin-bottom: 12px;
+        }
+
+        .info-box p, .info-box ul {
+            line-height: 1.8;
+        }
+
+        .info-box ul {
+            list-style-position: inside;
+            padding-left: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .primary-button {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+            display: block;
+        }
+
+        .primary-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .secondary-button {
+            width: 100%;
+            padding: 15px;
+            background-color: transparent;
+            color: var(--color-text-dark);
+            border: 2px solid var(--color-text-dark);
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .secondary-button:hover {
+            background-color: var(--color-light-blue);
+            border-color: var(--color-accent);
+        }
+
+        @media (max-width: 768px) {
+            .course-hero {
+                flex-direction: column;
+            }
+            
+            .course-hero-image {
+                width: 100%;
+            }
+            
+            .info-sections {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <div class="nav-title">Cursos</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="index.html" class="back-button">← Volver</a>
+
+        <div class="course-info-container">
+            <h1 class="page-title">Título del curso</h1>
+
+            <div class="course-hero">
+                <img src="" alt="Imagen del curso" class="course-hero-image" id="courseImage">
+
+                <div class="course-hero-details">
+                    <h2>Información del curso</h2>
+
+                    <div class="course-meta">
+                        <div class="course-meta-item">
+                            <span><strong>Instructor:</strong> <span id="instructorName">Instructor</span> | <span id="rating">4.8/5</span></span>
+                        </div>
+                        <div class="course-meta-item">
+                            <span><strong>Nivel:</strong> <span id="level">Básico</span></span>
+                        </div>
+                        <div class="course-meta-item">
+                            <span><strong>Duración:</strong> <span id="duration">5 semanas</span></span>
+                        </div>
+                        <div class="course-meta-item">
+                            <span><strong>Lecciones:</strong> <span id="lessons">12</span></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-sections">
+                <div class="info-box">
+                    <h3>Descripción</h3>
+                    <p>Tos pojetos un pomidad de cudlsitas, intéecios de la producitad y unlitimpablie.</p>
+                </div>
+
+                <div class="info-box">
+                    <h3>Lo que aprenderás</h3>
+                    <ul>
+                        <li>To que que entrauenal</li>
+                        <li>Callecios lizado</li>
+                        <li>Publiesp</li>
+                        <li>Decinibidos lessonos</li>
+                    </ul>
+                </div>
+
+                <div class="info-box">
+                    <h3>Requisitos</h3>
+                    <p>Los que ss comectos del aprender os Prsen, fe, dufafaidos, buebliestr on y bablindo heriplacios y movófirros nuejes.</p>
+                </div>
+
+                <div class="info-box">
+                    <h3>Temario</h3>
+                    <ul>
+                        <li>› Modulo</li>
+                        <li>› Modulo</li>
+                        <li>› Modulo</li>
+                        <li>› Temario</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <a href="curso-videos.html" class="primary-button">Iniciar curso</a>
+                <button class="secondary-button">Guardar / Favoritos</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id') || '1';
+        
+        const courses = {
+            '1': {
+                title: 'Facturación Electrónica',
+                instructor: 'Lic. María González',
+                rating: '5.0/5',
+                level: 'Básico-Intermedio',
+                duration: '4 semanas',
+                lessons: 16,
+                image: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=500&h=300&fit=crop',
+                description: 'Aprende todo sobre facturación electrónica, desde los conceptos básicos hasta la implementación práctica. Domina el proceso de emisión, recepción y gestión de comprobantes fiscales digitales.',
+                learnings: ['Normativas de facturación electrónica', 'Emisión de CFDI y comprobantes digitales', 'Timbrado y validación de facturas', 'Cancelación y gestión de documentos'],
+                requirements: 'Conocimientos básicos de computación. No se requiere experiencia previa en contabilidad.',
+                modules: ['› Introducción a la facturación electrónica', '› Marco legal y normativo', '› Proceso de emisión de facturas', '› Gestión y control de comprobantes']
+            },
+            '2': {
+                title: 'Solicitud de Créditos Empresariales',
+                instructor: 'Lic. Carlos Méndez',
+                rating: '5.0/5',
+                level: 'Intermedio',
+                duration: '5 semanas',
+                lessons: 20,
+                image: 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=500&h=300&fit=crop',
+                description: 'Domina el proceso completo de solicitud de créditos para empresas. Aprende a preparar documentación, evaluar opciones de financiamiento y presentar propuestas exitosas.',
+                learnings: ['Tipos de crédito empresarial', 'Documentación requerida', 'Análisis de capacidad de pago', 'Negociación con instituciones financieras'],
+                requirements: 'Conocimientos básicos de finanzas empresariales y administración.',
+                modules: ['› Tipos de financiamiento empresarial', '› Preparación de documentos', '› Evaluación crediticia', '› Proceso de solicitud y seguimiento']
+            },
+            '3': {
+                title: 'Gestión Contable para PyMEs',
+                instructor: 'CPA Ana Rodríguez',
+                rating: '5.0/5',
+                level: 'Básico',
+                duration: '6 semanas',
+                lessons: 24,
+                image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=300&fit=crop',
+                description: 'Aprende los fundamentos de la contabilidad empresarial aplicados a pequeñas y medianas empresas. Gestiona registros contables, estados financieros y cumplimiento fiscal.',
+                learnings: ['Principios de contabilidad', 'Registro de operaciones', 'Estados financieros básicos', 'Control de gastos e ingresos'],
+                requirements: 'No se requieren conocimientos previos. Ideal para emprendedores y dueños de negocios.',
+                modules: ['› Conceptos fundamentales de contabilidad', '› Catálogo de cuentas', '› Registro de operaciones diarias', '› Reportes financieros básicos']
+            },
+            '4': {
+                title: 'Gestión de Recursos Humanos',
+                instructor: 'Lic. Roberto Jiménez',
+                rating: '4.5/5',
+                level: 'Intermedio',
+                duration: '5 semanas',
+                lessons: 18,
+                image: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&h=300&fit=crop',
+                description: 'Desarrolla habilidades para gestionar el capital humano de tu empresa. Aprende procesos de reclutamiento, nómina, prestaciones y desarrollo del personal.',
+                learnings: ['Reclutamiento y selección', 'Administración de nómina', 'Prestaciones y beneficios', 'Desarrollo organizacional'],
+                requirements: 'Conocimientos básicos de administración de empresas.',
+                modules: ['› Planeación de recursos humanos', '› Proceso de reclutamiento', '› Administración de compensaciones', '› Desarrollo y capacitación']
+            },
+            '5': {
+                title: 'Marketing Digital para Empresas',
+                instructor: 'Lic. Laura Fernández',
+                rating: '5.0/5',
+                level: 'Básico-Intermedio',
+                duration: '6 semanas',
+                lessons: 22,
+                image: 'https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=300&fit=crop',
+                description: 'Impulsa tu negocio con estrategias de marketing digital. Aprende sobre redes sociales, publicidad en línea, SEO y métricas para aumentar la visibilidad de tu empresa.',
+                learnings: ['Estrategias de redes sociales', 'Publicidad digital (Google Ads, Facebook Ads)', 'SEO y posicionamiento web', 'Análisis de métricas y ROI'],
+                requirements: 'Conocimientos básicos de internet y redes sociales. No se requiere experiencia en marketing.',
+                modules: ['› Fundamentos de marketing digital', '› Gestión de redes sociales', '› Publicidad en línea', '› Análisis y optimización']
+            },
+            '6': {
+                title: 'Cumplimiento Fiscal y Obligaciones',
+                instructor: 'CPA Jorge Martínez',
+                rating: '5.0/5',
+                level: 'Intermedio-Avanzado',
+                duration: '7 semanas',
+                lessons: 28,
+                image: 'https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=500&h=300&fit=crop',
+                description: 'Mantén tu empresa en cumplimiento con todas las obligaciones fiscales. Aprende sobre declaraciones, impuestos, retenciones y estrategias de planeación fiscal.',
+                learnings: ['Obligaciones fiscales de personas morales', 'Cálculo y presentación de impuestos', 'Retenciones y pagos provisionales', 'Planeación fiscal estratégica'],
+                requirements: 'Conocimientos intermedios de contabilidad y finanzas empresariales.',
+                modules: ['› Marco fiscal mexicano', '› Impuestos federales (ISR, IVA)', '› Declaraciones y pagos', '› Auditorías y cumplimiento']
+            }
+        };
+        
+        const course = courses[courseId];
+        if (course) {
+            document.querySelector('.page-title').textContent = course.title;
+            document.getElementById('courseImage').src = course.image;
+            document.getElementById('instructorName').textContent = course.instructor;
+            document.getElementById('rating').textContent = course.rating;
+            document.getElementById('level').textContent = course.level;
+            document.getElementById('duration').textContent = course.duration;
+            document.getElementById('lessons').textContent = course.lessons;
+            
+            document.querySelector('.info-box:nth-child(1) p').textContent = course.description;
+            
+            const learningsList = document.querySelector('.info-box:nth-child(2) ul');
+            learningsList.innerHTML = course.learnings.map(item => `<li>${item}</li>`).join('');
+            
+            document.querySelector('.info-box:nth-child(3) p').textContent = course.requirements;
+            
+            const modulesList = document.querySelector('.info-box:nth-child(4) ul');
+            modulesList.innerHTML = course.modules.map(item => `<li>${item}</li>`).join('');
+            
+            document.querySelector('.primary-button').href = `curso-videos.html?id=${courseId}`;
+        }
+        
+        document.querySelector('.secondary-button').addEventListener('click', function() {
+            if (this.textContent.includes('Guardar')) {
+                this.textContent = '❤️ Guardado en Favoritos';
+                this.style.backgroundColor = '#4CAF50';
+                this.style.color = 'white';
+                this.style.borderColor = '#4CAF50';
+            } else {
+                this.textContent = 'Guardar / Favoritos';
+                this.style.backgroundColor = 'transparent';
+                this.style.color = '';
+                this.style.borderColor = '';
+            }
+        });
+    </script>
+</body>
+</html>

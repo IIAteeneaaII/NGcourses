@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Opciones - Cursos Online</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 15px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            color: var(--color-text-dark);
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background-color: transparent;
+            border: 2px solid var(--color-primary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-button:hover {
+            background-color: var(--color-background);
+        }
+
+        .profile-avatar {
+            width: 35px;
+            height: 35px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .profile-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--color-text-dark);
+        }
+
+        .dropdown-arrow {
+            font-size: 10px;
+            color: var(--color-text-light);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background-color: var(--color-white);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            text-decoration: none;
+            color: var(--color-text-dark);
+            transition: background-color 0.2s ease;
+            font-size: 14px;
+        }
+
+        .dropdown-item:first-child {
+            border-radius: 10px 10px 0 0;
+        }
+
+        .dropdown-item:last-child {
+            border-radius: 0 0 10px 10px;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--color-background);
+        }
+
+        .page-title {
+            font-size: 36px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .welcome-section {
+            margin-bottom: 30px;
+        }
+
+        .welcome-text {
+            font-size: 16px;
+            color: var(--color-text-light);
+            line-height: 1.6;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 35px;
+        }
+
+        .option-card {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .option-icon {
+            width: 90px;
+            height: 90px;
+            margin: 0 auto 20px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 71, 119, 0.3);
+        }
+
+        .option-icon::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
+            transform: rotate(45deg);
+        }
+
+        .option-icon.light {
+            background: linear-gradient(135deg, var(--color-accent), var(--color-light-blue));
+            box-shadow: 0 8px 20px rgba(79, 195, 224, 0.3);
+        }
+
+        .option-title {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .option-description {
+            font-size: 14px;
+            color: var(--color-text-light);
+            margin-bottom: 20px;
+        }
+
+        .option-button {
+            width: 100%;
+            padding: 15px 40px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .option-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .history-section {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .history-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .view-all-link {
+            color: var(--color-primary);
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 10px;
+        }
+
+        .history-item-content {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .history-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+            color: var(--color-white);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            box-shadow: 0 4px 10px rgba(0, 71, 119, 0.2);
+        }
+
+        .history-icon.red {
+            background: linear-gradient(135deg, #E74C3C, #C0392B);
+        }
+
+        .history-icon.black {
+            background: linear-gradient(135deg, #2C3E50, #34495E);
+        }
+
+        .history-item-title {
+            font-size: 15px;
+            font-weight: 600;
+        }
+
+        .view-details-button {
+            padding: 8px 20px;
+            background-color: #A8E6A3;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <div class="profile-dropdown">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar">S</div>
+                    <span class="profile-name">Supervisor</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="perfil.html" class="dropdown-item">Mi perfil</a>
+                    <a href="../login.html" class="dropdown-item">Cerrar sesión</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">Opciones</h1>
+
+        <div class="welcome-section">
+            <p class="welcome-text">Gestiona y crea contenido educativo para tu equipo. Selecciona una opción para comenzar.</p>
+        </div>
+
+        <div class="options-grid">
+            <!-- Crear curso -->
+            <div class="option-card">
+                <div class="option-icon">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M12 5V19M5 12H19" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="option-title">Crear curso</h2>
+                <p class="option-description">Crea y gestiona tus propios cursos de capacitación</p>
+                <a href="crear-curso.html" class="option-button">Empezar</a>
+            </div>
+
+            <!-- Solicitar curso -->
+            <div class="option-card">
+                <div class="option-icon light">
+                    <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <h2 class="option-title">Solicitar curso</h2>
+                <p class="option-description">Solicita cursos personalizados para tu equipo</p>
+                <a href="solicitar-curso.html" class="option-button">Enviar solicitud</a>
+            </div>
+        </div>
+
+        <!-- Historial -->
+        <div class="history-section">
+            <div class="history-header">
+                <h3 class="history-title">Mis solicitudes / Mis cursos creados</h3>
+                <a href="#" class="view-all-link">Ver todo</a>
+            </div>
+
+            <div class="history-list">
+                <div class="history-item">
+                    <div class="history-item-content">
+                        <div class="history-icon red">CR</div>
+                        <span class="history-item-title">Facturación Electrónica Avanzada</span>
+                    </div>
+                    <button class="view-details-button">Ver detalles</button>
+                </div>
+
+                <div class="history-item">
+                    <div class="history-item-content">
+                        <div class="history-icon black">SO</div>
+                        <span class="history-item-title">Gestión de Recursos Humanos</span>
+                    </div>
+                    <button class="view-details-button">Ver detalles</button>
+                </div>
+
+                <div class="history-item">
+                    <div class="history-item-content">
+                        <div class="history-icon">EN</div>
+                        <span class="history-item-title">Marketing Digital Corporativo</span>
+                    </div>
+                    <button class="view-details-button">Ver detalles</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funcionalidad del dropdown de perfil
+        const profileButton = document.getElementById('profileButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+
+        profileButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!profileButton.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        // Funcionalidad para los botones "Ver detalles"
+        document.querySelectorAll('.view-details-button').forEach(button => {
+            button.addEventListener('click', function() {
+                const title = this.parentElement.querySelector('.history-item-title').textContent;
+                alert('Ver detalles de: ' + title);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Cursos Online</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background-color: #666;
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .profile-container {
+            background-color: var(--color-white);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            margin-bottom: 40px;
+            padding-bottom: 30px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 48px;
+        }
+
+        .profile-header-info {
+            flex: 1;
+        }
+
+        .profile-header-info h2 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            color: var(--color-text-dark);
+        }
+
+        .profile-header-info p {
+            font-size: 16px;
+            color: var(--color-text-light);
+            margin-bottom: 15px;
+        }
+
+        .edit-profile-button {
+            padding: 10px 25px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-profile-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .profile-sections {
+            display: grid;
+            gap: 30px;
+        }
+
+        .profile-section {
+            background-color: #f8f8f8;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--color-text-dark);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .info-label {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--color-text-light);
+        }
+
+        .info-value {
+            font-size: 16px;
+            color: var(--color-text-dark);
+            padding: 10px;
+            background-color: var(--color-white);
+            border-radius: 8px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--color-white);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-light);
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .course-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background-color: var(--color-white);
+            border-radius: 10px;
+        }
+
+        .course-item-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .course-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--color-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--color-white);
+        }
+
+        .course-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-dark);
+        }
+
+        .course-progress {
+            font-size: 14px;
+            color: var(--color-text-light);
+        }
+
+        .progress-bar {
+            width: 150px;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+            border-radius: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <a href="index.html" class="back-button">← Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">Mi Perfil</h1>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar-large">JP</div>
+                <div class="profile-header-info">
+                    <h2>Juan Pérez</h2>
+                    <p>juan.perez@empresa.com</p>
+                    <button class="edit-profile-button">Editar Perfil</button>
+                </div>
+            </div>
+
+            <div class="profile-sections">
+                <!-- Estadísticas -->
+                <div class="profile-section">
+                    <h3 class="section-title">Estadísticas</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">6</div>
+                            <div class="stat-label">Cursos Inscritos</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">3</div>
+                            <div class="stat-label">Cursos Completados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">45h</div>
+                            <div class="stat-label">Tiempo Total</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Personal -->
+                <div class="profile-section">
+                    <h3 class="section-title">Información Personal</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Nombre Completo</span>
+                            <div class="info-value">Juan Pérez</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Correo Electrónico</span>
+                            <div class="info-value">juan.perez@empresa.com</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Teléfono</span>
+                            <div class="info-value">+52 55 1234 5678</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Departamento</span>
+                            <div class="info-value">Recursos Humanos</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Puesto</span>
+                            <div class="info-value">Gerente de Capacitación</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Registro</span>
+                            <div class="info-value">15 de Enero, 2024</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cursos en Progreso -->
+                <div class="profile-section">
+                    <h3 class="section-title">Cursos en Progreso</h3>
+                    <div class="course-list">
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">01</div>
+                                <div>
+                                    <div class="course-item-title">Facturación Electrónica</div>
+                                    <div class="course-progress">25% completado</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 25%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">02</div>
+                                <div>
+                                    <div class="course-item-title">Solicitud de Créditos</div>
+                                    <div class="course-progress">60% completado</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%;"></div>
+                            </div>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">03</div>
+                                <div>
+                                    <div class="course-item-title">Gestión Contable para PyMEs</div>
+                                    <div class="course-progress">40% completado</div>
+                                </div>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.edit-profile-button').addEventListener('click', function() {
+            alert('Funcionalidad de editar perfil - Próximamente');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - Supervisor</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            color: var(--color-text-dark);
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 20px;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .profile-container {
+            background-color: var(--color-white);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            padding-bottom: 25px;
+            border-bottom: 2px solid var(--color-background);
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar-large {
+            width: 120px;
+            height: 120px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-info h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .profile-info p {
+            color: var(--color-text-light);
+            font-size: 16px;
+            margin-bottom: 15px;
+        }
+
+        .edit-profile-button {
+            padding: 10px 25px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .edit-profile-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .profile-sections {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .profile-section {
+            background-color: var(--color-white);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--color-text-dark);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .info-label {
+            font-size: 13px;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-dark);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .stat-card {
+            background-color: var(--color-background);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 2px solid var(--color-primary);
+        }
+
+        .stat-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-light);
+        }
+
+        .course-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .course-item {
+            padding: 15px;
+            background-color: var(--color-background);
+            border-radius: 10px;
+        }
+
+        .course-item-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
+        .course-icon {
+            width: 50px;
+            height: 50px;
+            background-color: var(--color-primary);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--color-white);
+        }
+
+        .course-item-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-dark);
+        }
+
+        .course-status {
+            font-size: 13px;
+            color: var(--color-text-light);
+        }
+
+        @media (max-width: 768px) {
+            .profile-header {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <div class="nav-title">Mi Perfil</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <a href="opciones.html" class="back-button">← Volver al Dashboard</a>
+
+        <div class="profile-container">
+            <div class="profile-header">
+                <div class="profile-avatar-large">S</div>
+                <div class="profile-info">
+                    <h1>Supervisor</h1>
+                    <p>supervisor@pascual.com</p>
+                    <button class="edit-profile-button">Editar Perfil</button>
+                </div>
+            </div>
+
+            <div class="profile-sections">
+                <!-- Estadísticas -->
+                <div class="profile-section">
+                    <h3 class="section-title">Estadísticas</h3>
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">12</div>
+                            <div class="stat-label">Cursos Creados</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">8</div>
+                            <div class="stat-label">Solicitudes Aprobadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">150</div>
+                            <div class="stat-label">Estudiantes Activos</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información Personal -->
+                <div class="profile-section">
+                    <h3 class="section-title">Información Personal</h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">Nombre Completo</span>
+                            <div class="info-value">Supervisor Pascual</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Correo Electrónico</span>
+                            <div class="info-value">supervisor@pascual.com</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Rol</span>
+                            <div class="info-value">Supervisor de Cursos</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Departamento</span>
+                            <div class="info-value">Capacitación Empresarial</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Teléfono</span>
+                            <div class="info-value">+52 55 1234 5678</div>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">Fecha de Registro</span>
+                            <div class="info-value">10 de Enero, 2024</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cursos Recientes -->
+                <div class="profile-section">
+                    <h3 class="section-title">Cursos Creados Recientemente</h3>
+                    <div class="course-list">
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">01</div>
+                                <div>
+                                    <div class="course-item-title">Facturación Electrónica Avanzada</div>
+                                    <div class="course-status">Publicado - 45 estudiantes inscritos</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">02</div>
+                                <div>
+                                    <div class="course-item-title">Gestión de Recursos Humanos</div>
+                                    <div class="course-status">Publicado - 38 estudiantes inscritos</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="course-item">
+                            <div class="course-item-info">
+                                <div class="course-icon">03</div>
+                                <div>
+                                    <div class="course-item-title">Marketing Digital Corporativo</div>
+                                    <div class="course-status">En revisión - Borrador</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.edit-profile-button').addEventListener('click', function() {
+            alert('Funcionalidad de edición de perfil en desarrollo');
+        });
+    </script>
+</body>
+</html>

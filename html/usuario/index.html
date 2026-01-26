@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Cursos Online</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            color: var(--color-text-dark);
+        }
+
+        .profile-dropdown {
+            position: relative;
+        }
+
+        .profile-button {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 15px;
+            background-color: var(--color-white);
+            border: 2px solid var(--color-primary);
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-button:hover {
+            background-color: var(--color-light-blue);
+        }
+
+        .profile-avatar {
+            width: 35px;
+            height: 35px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .profile-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--color-text-dark);
+        }
+
+        .dropdown-arrow {
+            font-size: 12px;
+            color: var(--color-text-dark);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            margin-top: 10px;
+            background-color: var(--color-white);
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .dropdown-menu.show {
+            display: block;
+        }
+
+        .dropdown-item {
+            padding: 14px 20px;
+            display: block;
+            text-decoration: none;
+            color: var(--color-text-dark);
+            transition: all 0.3s ease;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 15px;
+        }
+
+        .dropdown-item:first-child {
+            border-radius: 15px 15px 0 0;
+        }
+
+        .dropdown-item:last-child {
+            border-radius: 0 0 15px 15px;
+            border-bottom: none;
+        }
+
+        .dropdown-item:hover {
+            background-color: var(--color-light-blue);
+            padding-left: 25px;
+        }
+
+        .page-title {
+            text-align: left;
+            margin-bottom: 10px;
+            font-size: 32px;
+            color: var(--color-text-dark);
+        }
+
+        .section-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--color-text-dark);
+        }
+
+        .search-container {
+            margin-bottom: 15px;
+        }
+
+        .search-box {
+            width: 100%;
+            padding: 12px 20px;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            background-color: var(--color-white);
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        .tab-nav {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .tab-button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #E0E0E0;
+            color: var(--color-text-dark);
+        }
+
+        .tab-button.active {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .tab-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .filter-container {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-bottom: 20px;
+        }
+
+        .filter-button {
+            padding: 10px 20px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            background-color: var(--color-white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-button:hover {
+            background-color: var(--color-light-blue);
+            border-color: var(--color-accent);
+        }
+
+        .courses-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .course-card {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+
+        .course-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        .course-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        .course-content {
+            padding: 20px;
+        }
+
+        .course-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .course-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--color-text-dark);
+            margin-bottom: 5px;
+        }
+
+        .course-badge {
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .course-instructor {
+            color: var(--color-text-light);
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .course-level {
+            color: var(--color-text-light);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .course-rating {
+            color: #FFB800;
+            margin-bottom: 15px;
+        }
+
+        .course-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .course-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .courses-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <div class="profile-dropdown">
+                <button class="profile-button" id="profileButton">
+                    <div class="profile-avatar">JD</div>
+                    <span class="profile-name">Juan Pérez</span>
+                    <span class="dropdown-arrow">▼</span>
+                </button>
+                <div class="dropdown-menu" id="dropdownMenu">
+                    <a href="perfil.html" class="dropdown-item">
+                        <span>Mi Perfil</span>
+                    </a>
+                    <a href="mis-cursos.html" class="dropdown-item">
+                        <span>Mis Cursos</span>
+                    </a>
+                    <a href="login.html" class="dropdown-item">
+                        <span>Cerrar Sesión</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        
+        
+        <h2 class="section-title">Buscar cursos</h2>
+        
+        <div class="search-container">
+            <input 
+                type="text" 
+                class="search-box" 
+                placeholder="🔍 Buscar por título, categoría o instructor"
+            >
+        </div>
+
+        <div class="tab-nav">
+            <button class="tab-button active">Cursos</button>
+           
+        </div>
+
+        <div class="filter-container">
+            <button class="filter-button">Categoría</button>
+            <button class="filter-button">Nivel</button>
+            <button class="filter-button">Duración</button>
+        </div>
+
+        <div class="courses-grid">
+            <a href="curso-info.html?id=1" class="course-card">
+                <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=500&h=300&fit=crop" alt="Facturación Electrónica" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Facturación Electrónica</h3>
+                            <span class="course-badge">Nuevo</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">Lic. María González</p>
+                    <p class="course-level">Nivel: Básico-Intermedio</p>
+                    <div class="course-rating">★★★★★</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=1'">Ver info</button>
+                </div>
+            </a>
+
+            <a href="curso-info.html?id=2" class="course-card">
+                <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=500&h=300&fit=crop" alt="Solicitud de Créditos" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Solicitud de Créditos Empresariales</h3>
+                            <span class="course-badge">Popular</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">Lic. Carlos Méndez</p>
+                    <p class="course-level">Nivel: Intermedio</p>
+                    <div class="course-rating">★★★★★</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=2'">Ver info</button>
+                </div>
+            </a>
+
+            <a href="curso-info.html?id=3" class="course-card">
+                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=500&h=300&fit=crop" alt="Gestión Contable" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Gestión Contable para PyMEs</h3>
+                            <span class="course-badge">Destacado</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">CPA Ana Rodríguez</p>
+                    <p class="course-level">Nivel: Básico</p>
+                    <div class="course-rating">★★★★★</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=3'">Ver info</button>
+                </div>
+            </a>
+
+            <a href="curso-info.html?id=4" class="course-card">
+                <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=500&h=300&fit=crop" alt="Recursos Humanos" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Gestión de Recursos Humanos</h3>
+                            <span class="course-badge">Nuevo</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">Lic. Roberto Jiménez</p>
+                    <p class="course-level">Nivel: Intermedio</p>
+                    <div class="course-rating">★★★★☆</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=4'">Ver info</button>
+                </div>
+            </a>
+
+            <a href="curso-info.html?id=5" class="course-card">
+                <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=500&h=300&fit=crop" alt="Marketing Digital" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Marketing Digital para Empresas</h3>
+                            <span class="course-badge">Popular</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">Lic. Laura Fernández</p>
+                    <p class="course-level">Nivel: Básico-Intermedio</p>
+                    <div class="course-rating">★★★★★</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=5'">Ver info</button>
+                </div>
+            </a>
+
+            <a href="curso-info.html?id=6" class="course-card">
+                <img src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=500&h=300&fit=crop" alt="Cumplimiento Fiscal" class="course-image">
+                <div class="course-content">
+                    <div class="course-header">
+                        <div>
+                            <h3 class="course-title">Cumplimiento Fiscal y Obligaciones</h3>
+                            <span class="course-badge">Destacado</span>
+                        </div>
+                    </div>
+                    <p class="course-instructor">CPA Jorge Martínez</p>
+                    <p class="course-level">Nivel: Intermedio-Avanzado</p>
+                    <div class="course-rating">★★★★★</div>
+                    <button class="course-button" onclick="event.preventDefault(); window.location.href='curso-info.html?id=6'">Ver info</button>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Dropdown de perfil
+        const profileButton = document.getElementById('profileButton');
+        const dropdownMenu = document.getElementById('dropdownMenu');
+
+        profileButton.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dropdownMenu.classList.toggle('show');
+        });
+
+        // Cerrar dropdown al hacer clic fuera
+        document.addEventListener('click', function(e) {
+            if (!profileButton.contains(e.target) && !dropdownMenu.contains(e.target)) {
+                dropdownMenu.classList.remove('show');
+            }
+        });
+
+        document.querySelectorAll('.filter-button').forEach(button => {
+            button.addEventListener('click', function() {
+                alert('Filtro: ' + this.textContent);
+            });
+        });
+
+        document.querySelector('.search-box').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.course-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('.course-title').textContent.toLowerCase();
+                const instructor = card.querySelector('.course-instructor').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || instructor.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelectorAll('.tab-button').forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+
+                if (this.textContent.trim() === 'Opciones') {
+                    window.location.href = 'sup/opciones.html';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

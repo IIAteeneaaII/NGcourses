@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Videos del Curso</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 15px;
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .nav-title {
+            font-size: 18px;
+            color: var(--color-text-dark);
+        }
+
+        .page-title {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 20px;
+            background-color: #6366F1;
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #5558E3;
+        }
+
+        .video-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .video-player-section {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+
+        .video-player {
+            width: 100%;
+            height: 450px;
+            background-color: #1a1a1a;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-white);
+        }
+
+        .video-controls {
+            text-align: center;
+        }
+
+        .play-button {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .control-buttons {
+            margin-top: 20px;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .control-buttons button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 24px;
+            padding: 10px;
+        }
+
+        .video-info {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .video-tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .video-tab {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--color-text-light);
+            font-size: 16px;
+            transition: color 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+
+        .video-tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+        }
+
+        .progress-section {
+            margin-top: 20px;
+        }
+
+        .progress-section p {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background-color: #e0e0e0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+        }
+
+        .mark-complete-btn {
+            width: 100%;
+            padding: 15px;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .mark-complete-btn:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .modules-sidebar {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            max-height: 800px;
+            overflow-y: auto;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .sidebar-tab {
+            padding: 10px 0;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: var(--color-text-light);
+            font-size: 14px;
+            flex: 1;
+            text-align: center;
+            border-bottom: 3px solid transparent;
+        }
+
+        .sidebar-tab.active {
+            color: var(--color-primary);
+            border-bottom-color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        .module-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .module-item {
+            padding: 15px;
+            background-color: #f8f8f8;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .module-item:hover {
+            background-color: var(--color-background);
+        }
+
+        .module-item.completed {
+            background-color: #e8f5e9;
+        }
+
+        .module-item.active {
+            background-color: var(--color-light-blue);
+            font-weight: bold;
+        }
+
+        .module-name {
+            flex: 1;
+        }
+
+        .module-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .check-icon {
+            color: #4CAF50;
+            font-size: 20px;
+        }
+
+        .dropdown-icon {
+            color: var(--color-text-light);
+            font-size: 16px;
+        }
+
+        @media (max-width: 768px) {
+            .video-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <div class="nav-title">Course Videos</div>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title" id="courseTitle">Videos del Curso</h1>
+
+        <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+            <a href="curso-info.html" class="back-button">
+                ← Volver a información del curso
+            </a>
+        </div>
+
+        <div class="video-container">
+            <div class="video-player-section">
+                <div class="video-player">
+                    <div class="video-controls">
+                        <div class="play-button">▶️</div>
+                        <p>Subtitles: 10:23</p>
+                        <p style="margin-top: 10px;">Lesson: <span id="currentLesson">33/17</span></p>
+                        <div class="control-buttons">
+                            <button>⏮️</button>
+                            <button>⏸️</button>
+                            <button>⏭️</button>
+                        </div>
+                        <div class="video-info">
+                            <span>Feent ●</span>
+                            <span>🔄</span>
+                            <span style="margin-left: 20px;">Quality 🔊</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="video-tabs">
+                    <button class="video-tab active">Resumen</button>
+                    <button class="video-tab">Recursos</button>
+                    <button class="video-tab">Notas</button>
+                    <button class="video-tab">Comentarios</button>
+                    <button class="video-tab" style="margin-left: auto;">⋮</button>
+                </div>
+
+                <div class="progress-section">
+                    <p>Progreso del Curso</p>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 25%;"></div>
+                    </div>
+                    <button class="mark-complete-btn">Marcar lección como completada</button>
+                </div>
+            </div>
+
+            <div class="modules-sidebar">
+                <div class="sidebar-tabs">
+                    <button class="sidebar-tab active">Lecciones</button>
+                    <button class="sidebar-tab">Módulos</button>
+                </div>
+
+                <div class="module-list" id="moduleList">
+                    <!-- Lecciones se cargan dinámicamente -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const courseId = urlParams.get('id') || '1';
+
+        const courseTitles = {
+            '1': 'Facturación Electrónica',
+            '2': 'Solicitud de Créditos Empresariales',
+            '3': 'Gestión Contable para PyMEs',
+            '4': 'Gestión de Recursos Humanos',
+            '5': 'Marketing Digital para Empresas',
+            '6': 'Cumplimiento Fiscal y Obligaciones'
+        };
+
+        document.getElementById('courseTitle').textContent = `Videos: ${courseTitles[courseId] || 'Curso'}`;
+
+        const courseModules = {
+            '1': [
+                { name: 'Lección 1: Introducción a la facturación electrónica', completed: true },
+                { name: 'Lección 2: Marco legal y normativo', completed: true },
+                { name: 'Lección 3: Tipos de comprobantes fiscales', completed: false },
+                { name: 'Lección 4: Proceso de emisión de CFDI', completed: false },
+                { name: 'Lección 5: Timbrado y certificados', completed: false },
+                { name: 'Lección 6: Validación de facturas', completed: false },
+                { name: 'Lección 7: Cancelación de documentos', completed: false },
+                { name: 'Lección 8: Gestión y archivo de facturas', completed: false }
+            ],
+            '2': [
+                { name: 'Lección 1: Tipos de crédito empresarial', completed: true },
+                { name: 'Lección 2: Requisitos y documentación', completed: true },
+                { name: 'Lección 3: Análisis financiero de la empresa', completed: false },
+                { name: 'Lección 4: Capacidad de pago', completed: false },
+                { name: 'Lección 5: Elaboración de propuestas', completed: false },
+                { name: 'Lección 6: Negociación con instituciones', completed: false },
+                { name: 'Lección 7: Seguimiento del proceso', completed: false }
+            ],
+            '3': [
+                { name: 'Lección 1: Principios de contabilidad', completed: true },
+                { name: 'Lección 2: Catálogo de cuentas', completed: true },
+                { name: 'Lección 3: Registro de operaciones', completed: false },
+                { name: 'Lección 4: Libro diario y mayor', completed: false },
+                { name: 'Lección 5: Estados financieros', completed: false },
+                { name: 'Lección 6: Control de gastos', completed: false }
+            ],
+            '4': [
+                { name: 'Lección 1: Planeación de recursos humanos', completed: true },
+                { name: 'Lección 2: Proceso de reclutamiento', completed: false },
+                { name: 'Lección 3: Selección de personal', completed: false },
+                { name: 'Lección 4: Administración de nómina', completed: false },
+                { name: 'Lección 5: Prestaciones laborales', completed: false }
+            ],
+            '5': [
+                { name: 'Lección 1: Fundamentos de marketing digital', completed: true },
+                { name: 'Lección 2: Redes sociales empresariales', completed: true },
+                { name: 'Lección 3: Facebook e Instagram Ads', completed: false },
+                { name: 'Lección 4: Google Ads', completed: false },
+                { name: 'Lección 5: SEO básico', completed: false },
+                { name: 'Lección 6: Análisis de métricas', completed: false }
+            ],
+            '6': [
+                { name: 'Lección 1: Marco fiscal mexicano', completed: true },
+                { name: 'Lección 2: ISR para personas morales', completed: false },
+                { name: 'Lección 3: IVA empresarial', completed: false },
+                { name: 'Lección 4: Retenciones', completed: false },
+                { name: 'Lección 5: Declaraciones mensuales', completed: false },
+                { name: 'Lección 6: Declaración anual', completed: false },
+                { name: 'Lección 7: Planeación fiscal', completed: false }
+            ]
+        };
+        
+        function renderModules() {
+            const moduleList = document.getElementById('moduleList');
+            const modules = courseModules[courseId] || courseModules['1'];
+            
+            moduleList.innerHTML = '';
+            
+            modules.forEach((module, index) => {
+                const moduleItem = document.createElement('div');
+                moduleItem.className = 'module-item';
+                if (module.completed) {
+                    moduleItem.classList.add('completed');
+                }
+                if (index === 0) {
+                    moduleItem.classList.add('active');
+                }
+                
+                moduleItem.innerHTML = `
+                    <span class="module-name">${module.name}</span>
+                    <span class="module-icon">
+                        ${module.completed ? '<span class="check-icon">✓</span>' : 
+                          '<span class="dropdown-icon">∨</span>'}
+                    </span>
+                `;
+                
+                moduleItem.addEventListener('click', function() {
+                    document.querySelectorAll('.module-item').forEach(item => {
+                        item.classList.remove('active');
+                    });
+                    this.classList.add('active');
+                    
+                    const lessonNumber = (index + 1) * 3;
+                    document.getElementById('currentLesson').textContent = `${lessonNumber}/17`;
+                });
+                
+                moduleList.appendChild(moduleItem);
+            });
+        }
+        
+        renderModules();
+        
+        document.querySelectorAll('.video-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                if (!this.textContent.includes('⋮')) {
+                    document.querySelectorAll('.video-tab').forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+        
+        document.querySelectorAll('.sidebar-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
+                
+                if (this.textContent === 'Module') {
+                    alert('Vista de módulos completos');
+                }
+            });
+        });
+        
+        document.querySelector('.mark-complete-btn').addEventListener('click', function() {
+            const progressBar = document.querySelector('.progress-fill');
+            let currentWidth = parseInt(progressBar.style.width) || 25;
+
+            if (currentWidth < 100) {
+                currentWidth += 10;
+                progressBar.style.width = currentWidth + '%';
+
+                const activeModule = document.querySelector('.module-item.active');
+                if (activeModule && !activeModule.classList.contains('completed')) {
+                    activeModule.classList.add('completed');
+                    activeModule.querySelector('.module-icon').innerHTML = '<span class="check-icon">✓</span>';
+                }
+
+                this.textContent = '✓ Lección completada!';
+                this.style.backgroundColor = '#4CAF50';
+
+                setTimeout(() => {
+                    this.textContent = 'Marcar lección como completada';
+                    this.style.backgroundColor = '';
+                }, 2000);
+            } else {
+                alert('¡Felicidades! Has completado el curso al 100%');
+            }
+        });
+        
+        document.querySelector('.back-button').href = `curso-info.html?id=${courseId}`;
+    </script>
+</body>
+</html>

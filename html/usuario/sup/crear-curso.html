@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Curso - Cursos Online</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .page-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .return-button {
+            padding: 12px 30px;
+            background-color: var(--color-primary);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--color-white);
+            transition: all 0.3s ease;
+        }
+
+        .return-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 30px;
+        }
+
+        /* Sidebar de navegación */
+        .sidebar {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 25px;
+            height: fit-content;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+            position: sticky;
+            top: 20px;
+        }
+
+        .sidebar-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--color-primary);
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-background);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .sidebar-menu li {
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+
+        .sidebar-menu li:hover {
+            background-color: var(--color-background);
+        }
+
+        .sidebar-menu li.active {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            font-weight: bold;
+        }
+
+        /* Área principal */
+        .main-content {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            padding: 35px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .section-header {
+            margin-bottom: 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--color-background);
+        }
+
+        .section-header h2 {
+            font-size: 26px;
+            color: var(--color-primary);
+            margin-bottom: 5px;
+        }
+
+        .section-header p {
+            color: var(--color-text-light);
+            font-size: 14px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text-dark);
+        }
+
+        .required {
+            color: #E74C3C;
+            margin-left: 3px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #E0E0E0;
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: var(--color-white);
+            transition: border-color 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .input-with-button {
+            display: flex;
+            gap: 10px;
+        }
+
+        .input-with-button input {
+            flex: 1;
+        }
+
+        .add-button {
+            padding: 12px 20px;
+            background-color: var(--color-accent);
+            color: var(--color-white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        /* Carga de imagen */
+        .image-upload-area {
+            border: 2px dashed #E0E0E0;
+            border-radius: 12px;
+            padding: 40px;
+            text-align: center;
+            background-color: #F8F9FA;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .image-upload-area:hover {
+            border-color: var(--color-accent);
+            background-color: var(--color-background);
+        }
+
+        .image-preview {
+            max-width: 100%;
+            height: 300px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: var(--color-text-light);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .upload-button {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        /* Módulos del curso */
+        .modules-section {
+            margin-top: 40px;
+        }
+
+        .modules-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modules-header h3 {
+            font-size: 20px;
+            color: var(--color-primary);
+        }
+
+        .add-module-button {
+            padding: 10px 20px;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+
+        .add-module-button:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .module-card {
+            background-color: #F8F9FA;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .module-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .module-number {
+            display: inline-block;
+            background-color: var(--color-primary);
+            color: var(--color-white);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .module-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .module-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .icon-btn {
+            padding: 8px 12px;
+            background-color: var(--color-white);
+            border: 1px solid #E0E0E0;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .icon-btn:hover {
+            background-color: var(--color-background);
+            border-color: var(--color-accent);
+        }
+
+        .lesson-list {
+            margin-top: 15px;
+        }
+
+        .lesson-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background-color: var(--color-white);
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #E0E0E0;
+        }
+
+        .lesson-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .lesson-checkbox {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: var(--color-primary);
+        }
+
+        .lesson-name {
+            font-size: 14px;
+        }
+
+        .lesson-toggle {
+            width: 50px;
+            height: 26px;
+            background-color: var(--color-primary);
+            border-radius: 20px;
+            position: relative;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .lesson-toggle.off {
+            background-color: #ccc;
+        }
+
+        .lesson-toggle::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: white;
+            border-radius: 50%;
+            top: 3px;
+            right: 3px;
+            transition: all 0.3s ease;
+        }
+
+        .lesson-toggle.off::after {
+            right: 27px;
+        }
+
+        /* Configuración */
+        .config-option {
+            padding: 20px;
+            background-color: #F8F9FA;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .config-label {
+            font-weight: 600;
+        }
+
+        .config-description {
+            font-size: 13px;
+            color: var(--color-text-light);
+            margin-top: 5px;
+        }
+
+        /* Resumen */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        .summary-card {
+            padding: 20px;
+            background-color: #F8F9FA;
+            border-radius: 10px;
+        }
+
+        .summary-card h4 {
+            color: var(--color-primary);
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .summary-card p {
+            color: var(--color-text-light);
+            font-size: 14px;
+        }
+
+        /* Botones de acción */
+        .action-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 40px;
+            padding-top: 25px;
+            border-top: 2px solid var(--color-background);
+        }
+
+        .action-btn {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-draft {
+            background-color: transparent;
+            border: 2px solid var(--color-primary);
+            color: var(--color-primary);
+        }
+
+        .btn-draft:hover {
+            background-color: var(--color-background);
+        }
+
+        .btn-preview {
+            background-color: #E0E0E0;
+            color: var(--color-text-dark);
+        }
+
+        .btn-preview:hover {
+            background-color: #D0D0D0;
+        }
+
+        .btn-publish {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .btn-publish:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .btn-next, .btn-prev {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .btn-next:hover, .btn-prev:hover {
+            background-color: var(--color-secondary);
+        }
+
+        /* Modal de vista previa */
+        .preview-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            overflow-y: auto;
+        }
+
+        .preview-modal.active {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .preview-content {
+            background-color: var(--color-white);
+            border-radius: 15px;
+            max-width: 900px;
+            width: 100%;
+            position: relative;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        .preview-header {
+            position: relative;
+            height: 300px;
+            border-radius: 15px 15px 0 0;
+            overflow: hidden;
+        }
+
+        .preview-cover-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background-color: var(--color-white);
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 24px;
+            line-height: 1;
+            color: var(--color-text-dark);
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .preview-close:hover {
+            background-color: var(--color-background);
+            transform: rotate(90deg);
+        }
+
+        .preview-body {
+            padding: 40px;
+        }
+
+        .preview-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 20px;
+        }
+
+        .preview-meta {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid var(--color-background);
+        }
+
+        .preview-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .preview-meta-label {
+            font-size: 12px;
+            color: var(--color-text-light);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .preview-meta-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: var(--color-text-dark);
+        }
+
+        .preview-section {
+            margin-bottom: 30px;
+        }
+
+        .preview-section-title {
+            font-size: 22px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 15px;
+        }
+
+        .preview-section-content {
+            font-size: 15px;
+            line-height: 1.8;
+            color: var(--color-text-dark);
+        }
+
+        .preview-modules {
+            margin-top: 30px;
+        }
+
+        .preview-module {
+            background-color: #F8F9FA;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid var(--color-primary);
+        }
+
+        .preview-module-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: var(--color-text-dark);
+        }
+
+        .preview-lesson {
+            padding: 8px 0;
+            padding-left: 20px;
+            font-size: 14px;
+            color: var(--color-text-light);
+            position: relative;
+        }
+
+        .preview-lesson::before {
+            content: '•';
+            position: absolute;
+            left: 5px;
+            color: var(--color-primary);
+            font-weight: bold;
+        }
+
+        @media (max-width: 1024px) {
+            .content-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .form-grid, .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: static;
+            }
+
+            .preview-content {
+                margin: 20px;
+            }
+
+            .preview-body {
+                padding: 30px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header-bar">
+            <h1 class="page-title">Crear Curso</h1>
+            <a href="opciones.html" class="return-button">Volver a Opciones</a>
+        </div>
+
+        <div class="content-layout">
+            <!-- Sidebar -->
+            <aside class="sidebar">
+                <h3 class="sidebar-title">Pasos</h3>
+                <ul class="sidebar-menu">
+                    <li class="active" data-section="info">Información Básica</li>
+                    <li data-section="portada">Portada</li>
+                    <li data-section="estructura">Estructura del Curso</li>
+                    <li data-section="config">Configuración</li>
+                    <li data-section="publicar">Publicar</li>
+                </ul>
+            </aside>
+
+            <!-- Contenido Principal -->
+            <main class="main-content">
+                <!-- Sección: Información Básica -->
+                <div class="section active" id="section-info">
+                    <div class="section-header">
+                        <h2>Información Básica</h2>
+                        <p>Completa los datos principales de tu curso</p>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label class="form-label">Título del Curso<span class="required">*</span></label>
+                            <input type="text" class="form-input" id="courseTitle" placeholder="Ej: Facturación Electrónica Avanzada" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Categoría<span class="required">*</span></label>
+                            <div class="input-with-button">
+                                <input type="text" class="form-input" placeholder="Seleccionar o crear categoría">
+                                <button type="button" class="add-button">+</button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Nivel<span class="required">*</span></label>
+                            <select class="form-select">
+                                <option>Básico</option>
+                                <option>Intermedio</option>
+                                <option>Avanzado</option>
+                                <option>Todos los niveles</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Modalidad<span class="required">*</span></label>
+                            <select class="form-select">
+                                <option>Online</option>
+                                <option>Presencial</option>
+                                <option>Híbrido</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Duración estimada</label>
+                            <input type="text" class="form-input" placeholder="Ej: 4 semanas">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Instructor</label>
+                            <input type="text" class="form-input" placeholder="Nombre del instructor">
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Descripción del Curso<span class="required">*</span></label>
+                            <textarea class="form-textarea" placeholder="Describe brevemente de qué trata el curso y qué aprenderán los estudiantes"></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Objetivos de Aprendizaje<span class="required">*</span></label>
+                            <textarea class="form-textarea" placeholder="¿Qué habilidades o conocimientos adquirirán los estudiantes al finalizar?"></textarea>
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label class="form-label">Requisitos Previos</label>
+                            <textarea class="form-textarea" placeholder="¿Qué conocimientos o experiencia necesitan los estudiantes antes de tomar este curso?"></textarea>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn btn-next" onclick="goToSection('portada')">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- Sección: Portada -->
+                <div class="section" id="section-portada">
+                    <div class="section-header">
+                        <h2>Portada del Curso</h2>
+                        <p>Selecciona una imagen atractiva para tu curso</p>
+                    </div>
+
+                    <div class="form-group full-width">
+                        <label class="form-label">Imagen de Portada<span class="required">*</span></label>
+                        <div class="image-upload-area" onclick="document.getElementById('fileInput').click()">
+                            <img src="https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&h=400&fit=crop"
+                                 alt="Portada del curso"
+                                 class="image-preview"
+                                 id="imagePreview">
+                            <p class="upload-text">Haz clic para cambiar la imagen</p>
+                            <span class="upload-button">Seleccionar archivo</span>
+                            <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                        </div>
+                        <p style="margin-top: 10px; font-size: 13px; color: var(--color-text-light);">
+                            Tamaño recomendado: 1200x600px. Formatos aceptados: JPG, PNG
+                        </p>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn btn-prev" onclick="goToSection('info')">Anterior</button>
+                        <button type="button" class="action-btn btn-next" onclick="goToSection('estructura')">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- Sección: Estructura -->
+                <div class="section" id="section-estructura">
+                    <div class="section-header">
+                        <h2>Estructura del Curso</h2>
+                        <p>Organiza tu curso en módulos y lecciones</p>
+                    </div>
+
+                    <div class="modules-section">
+                        <div class="modules-header">
+                            <h3>Módulos</h3>
+                            <button type="button" class="add-module-button">Agregar Módulo</button>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="module-card-header">
+                                <div>
+                                    <span class="module-number">Módulo 1</span>
+                                    <div class="module-title">Introducción al Curso</div>
+                                </div>
+                                <div class="module-actions">
+                                    <button type="button" class="icon-btn">Editar</button>
+                                    <button type="button" class="icon-btn">Eliminar</button>
+                                </div>
+                            </div>
+
+                            <div class="lesson-list">
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <input type="checkbox" class="lesson-checkbox" checked>
+                                        <span class="lesson-name">Lección 1: Bienvenida</span>
+                                    </div>
+                                    <div class="lesson-toggle" onclick="this.classList.toggle('off')"></div>
+                                </div>
+
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <input type="checkbox" class="lesson-checkbox">
+                                        <span class="lesson-name">Lección 2: Objetivos del curso</span>
+                                    </div>
+                                    <div class="lesson-toggle off" onclick="this.classList.toggle('off')"></div>
+                                </div>
+
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <input type="checkbox" class="lesson-checkbox">
+                                        <span class="lesson-name">Lección 3: Metodología</span>
+                                    </div>
+                                    <div class="lesson-toggle off" onclick="this.classList.toggle('off')"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="module-card">
+                            <div class="module-card-header">
+                                <div>
+                                    <span class="module-number">Módulo 2</span>
+                                    <div class="module-title">Contenido Principal</div>
+                                </div>
+                                <div class="module-actions">
+                                    <button type="button" class="icon-btn">Editar</button>
+                                    <button type="button" class="icon-btn">Eliminar</button>
+                                </div>
+                            </div>
+
+                            <div class="lesson-list">
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <input type="checkbox" class="lesson-checkbox">
+                                        <span class="lesson-name">Lección 1: Conceptos fundamentales</span>
+                                    </div>
+                                    <div class="lesson-toggle off" onclick="this.classList.toggle('off')"></div>
+                                </div>
+
+                                <div class="lesson-item">
+                                    <div class="lesson-info">
+                                        <input type="checkbox" class="lesson-checkbox">
+                                        <span class="lesson-name">Lección 2: Casos prácticos</span>
+                                    </div>
+                                    <div class="lesson-toggle off" onclick="this.classList.toggle('off')"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn btn-prev" onclick="goToSection('portada')">Anterior</button>
+                        <button type="button" class="action-btn btn-next" onclick="goToSection('config')">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- Sección: Configuración -->
+                <div class="section" id="section-config">
+                    <div class="section-header">
+                        <h2>Configuración</h2>
+                        <p>Ajusta las opciones de tu curso</p>
+                    </div>
+
+                    <div class="config-option">
+                        <div>
+                            <div class="config-label">Permitir certificado de finalización</div>
+                            <div class="config-description">Los estudiantes recibirán un certificado al completar el curso</div>
+                        </div>
+                        <input type="checkbox" checked style="width: 50px; height: 24px; cursor: pointer;">
+                    </div>
+
+                    <div class="config-option">
+                        <div>
+                            <div class="config-label">Curso público</div>
+                            <div class="config-description">Visible para todos los usuarios en el catálogo</div>
+                        </div>
+                        <input type="checkbox" checked style="width: 50px; height: 24px; cursor: pointer;">
+                    </div>
+
+                    <div class="config-option">
+                        <div>
+                            <div class="config-label">Permitir comentarios</div>
+                            <div class="config-description">Los estudiantes pueden dejar comentarios en las lecciones</div>
+                        </div>
+                        <input type="checkbox" checked style="width: 50px; height: 24px; cursor: pointer;">
+                    </div>
+
+                    <div class="config-option">
+                        <div>
+                            <div class="config-label">Habilitar foros de discusión</div>
+                            <div class="config-description">Crear un espacio para que los estudiantes interactúen</div>
+                        </div>
+                        <input type="checkbox" style="width: 50px; height: 24px; cursor: pointer;">
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn btn-prev" onclick="goToSection('estructura')">Anterior</button>
+                        <button type="button" class="action-btn btn-next" onclick="goToSection('publicar')">Siguiente</button>
+                    </div>
+                </div>
+
+                <!-- Sección: Publicar -->
+                <div class="section" id="section-publicar">
+                    <div class="section-header">
+                        <h2>Resumen y Publicación</h2>
+                        <p>Revisa la información antes de publicar</p>
+                    </div>
+
+                    <div class="summary-grid">
+                        <div class="summary-card">
+                            <h4>Información del Curso</h4>
+                            <p><strong>Título:</strong> <span id="summaryTitle">-</span></p>
+                            <p><strong>Categoría:</strong> Finanzas</p>
+                            <p><strong>Nivel:</strong> Básico</p>
+                        </div>
+
+                        <div class="summary-card">
+                            <h4>Estructura</h4>
+                            <p><strong>Módulos:</strong> 2</p>
+                            <p><strong>Lecciones:</strong> 5</p>
+                            <p><strong>Duración:</strong> 4 semanas</p>
+                        </div>
+
+                        <div class="summary-card">
+                            <h4>Configuración</h4>
+                            <p><strong>Certificado:</strong> Sí</p>
+                            <p><strong>Visibilidad:</strong> Público</p>
+                            <p><strong>Comentarios:</strong> Habilitados</p>
+                        </div>
+
+                        <div class="summary-card">
+                            <h4>Estado</h4>
+                            <p><strong>Portada:</strong> Configurada</p>
+                            <p><strong>Contenido:</strong> Completo</p>
+                            <p><strong>Listo para:</strong> Publicar</p>
+                        </div>
+                    </div>
+
+                    <div class="action-buttons">
+                        <button type="button" class="action-btn btn-draft">Guardar Borrador</button>
+                        <button type="button" class="action-btn btn-preview">Vista Previa</button>
+                        <button type="button" class="action-btn btn-publish" onclick="publishCourse()">Publicar Curso</button>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal de Vista Previa -->
+    <div class="preview-modal" id="previewModal">
+        <div class="preview-content">
+            <div class="preview-header">
+                <img src="" alt="Portada del curso" class="preview-cover-image" id="previewCoverImage">
+                <button class="preview-close" onclick="closePreview()">×</button>
+            </div>
+            <div class="preview-body">
+                <h1 class="preview-title" id="previewTitle">Título del Curso</h1>
+
+                <div class="preview-meta">
+                    <div class="preview-meta-item">
+                        <span class="preview-meta-label">Nivel</span>
+                        <span class="preview-meta-value" id="previewLevel">Básico</span>
+                    </div>
+                    <div class="preview-meta-item">
+                        <span class="preview-meta-label">Modalidad</span>
+                        <span class="preview-meta-value" id="previewModality">Online</span>
+                    </div>
+                    <div class="preview-meta-item">
+                        <span class="preview-meta-label">Duración</span>
+                        <span class="preview-meta-value" id="previewDuration">-</span>
+                    </div>
+                    <div class="preview-meta-item">
+                        <span class="preview-meta-label">Instructor</span>
+                        <span class="preview-meta-value" id="previewInstructor">-</span>
+                    </div>
+                </div>
+
+                <div class="preview-section">
+                    <h3 class="preview-section-title">Descripción del Curso</h3>
+                    <p class="preview-section-content" id="previewDescription">-</p>
+                </div>
+
+                <div class="preview-section">
+                    <h3 class="preview-section-title">Objetivos de Aprendizaje</h3>
+                    <p class="preview-section-content" id="previewObjectives">-</p>
+                </div>
+
+                <div class="preview-section">
+                    <h3 class="preview-section-title">Requisitos Previos</h3>
+                    <p class="preview-section-content" id="previewRequirements">-</p>
+                </div>
+
+                <div class="preview-modules">
+                    <h3 class="preview-section-title">Contenido del Curso</h3>
+
+                    <div class="preview-module">
+                        <div class="preview-module-title">Módulo 1: Introducción al Curso</div>
+                        <div class="preview-lesson">Lección 1: Bienvenida</div>
+                        <div class="preview-lesson">Lección 2: Objetivos del curso</div>
+                        <div class="preview-lesson">Lección 3: Metodología</div>
+                    </div>
+
+                    <div class="preview-module">
+                        <div class="preview-module-title">Módulo 2: Contenido Principal</div>
+                        <div class="preview-lesson">Lección 1: Conceptos fundamentales</div>
+                        <div class="preview-lesson">Lección 2: Casos prácticos</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Navegación entre secciones
+        function goToSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Mostrar la sección seleccionada
+            document.getElementById('section-' + sectionName).classList.add('active');
+
+            // Actualizar el menú lateral
+            document.querySelectorAll('.sidebar-menu li').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.querySelector(`[data-section="${sectionName}"]`).classList.add('active');
+
+            // Scroll al inicio
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // Menú lateral
+        document.querySelectorAll('.sidebar-menu li').forEach(item => {
+            item.addEventListener('click', function() {
+                const section = this.getAttribute('data-section');
+                goToSection(section);
+            });
+        });
+
+        // Carga de imagen
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imagePreview').src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Actualizar resumen
+        document.getElementById('courseTitle').addEventListener('input', function() {
+            document.getElementById('summaryTitle').textContent = this.value || '-';
+        });
+
+        // Guardar borrador
+        document.querySelector('.btn-draft').addEventListener('click', function() {
+            alert('Curso guardado como borrador');
+        });
+
+        // Vista previa
+        document.querySelector('.btn-preview').addEventListener('click', function() {
+            openPreview();
+        });
+
+        function openPreview() {
+            // Obtener datos del formulario
+            const title = document.getElementById('courseTitle').value || 'Sin título';
+            const level = document.querySelector('#section-info select.form-select').value;
+            const modality = document.querySelectorAll('#section-info select.form-select')[1].value;
+            const duration = document.querySelectorAll('#section-info .form-input')[2].value || 'No especificada';
+            const instructor = document.querySelectorAll('#section-info .form-input')[3].value || 'No asignado';
+            const description = document.querySelector('#section-info .form-textarea').value || 'Sin descripción';
+            const objectives = document.querySelectorAll('#section-info .form-textarea')[1].value || 'No especificados';
+            const requirements = document.querySelectorAll('#section-info .form-textarea')[2].value || 'No especificados';
+            const coverImage = document.getElementById('imagePreview').src;
+
+            // Actualizar el modal con los datos
+            document.getElementById('previewCoverImage').src = coverImage;
+            document.getElementById('previewTitle').textContent = title;
+            document.getElementById('previewLevel').textContent = level;
+            document.getElementById('previewModality').textContent = modality;
+            document.getElementById('previewDuration').textContent = duration;
+            document.getElementById('previewInstructor').textContent = instructor;
+            document.getElementById('previewDescription').textContent = description;
+            document.getElementById('previewObjectives').textContent = objectives;
+            document.getElementById('previewRequirements').textContent = requirements;
+
+            // Mostrar el modal
+            document.getElementById('previewModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closePreview() {
+            document.getElementById('previewModal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Cerrar modal al hacer clic fuera del contenido
+        document.getElementById('previewModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closePreview();
+            }
+        });
+
+        // Publicar curso
+        function publishCourse() {
+            const titulo = document.getElementById('courseTitle').value;
+
+            if (titulo) {
+                alert('¡Curso publicado exitosamente!');
+                window.location.href = 'opciones.html';
+            } else {
+                alert('Por favor, completa al menos el título del curso');
+                goToSection('info');
+            }
+        }
+
+        // Agregar módulo
+        document.querySelector('.add-module-button').addEventListener('click', function() {
+            alert('Agregar nuevo módulo');
+        });
+
+        // Botón agregar categoría
+        document.querySelector('.add-button').addEventListener('click', function() {
+            alert('Agregar nueva categoría');
+        });
+
+        // Botones de editar/eliminar módulos
+        document.querySelectorAll('.icon-btn').forEach(button => {
+            button.addEventListener('click', function() {
+                alert('Funcionalidad: ' + this.textContent);
+            });
+        });
+    </script>
+</body>
+</html>

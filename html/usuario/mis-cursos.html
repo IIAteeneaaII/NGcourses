@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Cursos - Cursos Online</title>
+    <style>
+        :root {
+            --color-primary: #004777;
+            --color-secondary: #3B7EA1;
+            --color-light-blue: #87CEEB;
+            --color-background: #E8F4F8;
+            --color-accent: #4FC3E0;
+            --color-text-dark: #1a1a1a;
+            --color-text-light: #666;
+            --color-white: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', 'Helvetica', sans-serif;
+            background-color: var(--color-background);
+            color: var(--color-text-dark);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background-color: var(--color-white);
+            padding: 10px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: var(--color-primary);
+        }
+
+        .back-button {
+            padding: 10px 20px;
+            background-color: #666;
+            color: var(--color-white);
+            border: none;
+            border-radius: 25px;
+            font-size: 16px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background-color 0.3s ease;
+        }
+
+        .back-button:hover {
+            background-color: #555;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .page-title {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-tab {
+            padding: 10px 20px;
+            background-color: var(--color-white);
+            border: 2px solid var(--color-primary);
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--color-text-dark);
+        }
+
+        .filter-tab.active {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .filter-tab:hover {
+            background-color: var(--color-light-blue);
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background-color: var(--color-white);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--color-primary);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--color-text-light);
+        }
+
+        .courses-section {
+            background-color: var(--color-white);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--color-primary);
+        }
+
+        .course-list {
+            display: grid;
+            gap: 20px;
+        }
+
+        .course-item {
+            display: grid;
+            grid-template-columns: 120px 1fr auto;
+            gap: 20px;
+            padding: 20px;
+            background-color: #f8f8f8;
+            border-radius: 12px;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .course-item:hover {
+            background-color: var(--color-light-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .course-thumbnail {
+            width: 120px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--color-text-dark);
+        }
+
+        .course-meta {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            color: var(--color-text-light);
+            margin-bottom: 10px;
+        }
+
+        .course-progress-section {
+            margin-top: 10px;
+        }
+
+        .progress-label {
+            font-size: 13px;
+            color: var(--color-text-light);
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--color-secondary), var(--color-accent));
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+
+        .course-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .action-button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background-color: var(--color-primary);
+            color: var(--color-white);
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-secondary);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--color-primary);
+            border: 2px solid var(--color-primary);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--color-light-blue);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .badge-progress {
+            background-color: #FFF3CD;
+            color: #856404;
+        }
+
+        .badge-completed {
+            background-color: #D4EDDA;
+            color: #155724;
+        }
+
+        .badge-new {
+            background-color: #CCE5FF;
+            color: #004085;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-light);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            color: var(--color-text-light);
+        }
+
+        .empty-state-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .course-item {
+                grid-template-columns: 1fr;
+            }
+
+            .course-actions {
+                flex-direction: row;
+            }
+
+            .filter-tabs {
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">Cursos Online</div>
+            <a href="index.html" class="back-button">← Volver al Dashboard</a>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="page-header">
+            <h1 class="page-title">Mis Cursos</h1>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterCourses('all')">Todos</button>
+                <button class="filter-tab" onclick="filterCourses('progress')">En Progreso</button>
+                <button class="filter-tab" onclick="filterCourses('completed')">Completados</button>
+            </div>
+        </div>
+
+        <div class="stats-bar">
+            <div class="stat-card">
+                <div class="stat-number">6</div>
+                <div class="stat-label">Total de Cursos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3</div>
+                <div class="stat-label">En Progreso</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">3</div>
+                <div class="stat-label">Completados</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">45h</div>
+                <div class="stat-label">Horas Totales</div>
+            </div>
+        </div>
+
+        <!-- Cursos en Progreso -->
+        <div class="courses-section" id="progress-section">
+            <h2 class="section-title">En Progreso</h2>
+            <div class="course-list">
+                <div class="course-item" data-status="progress">
+                    <img src="https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=200&h=150&fit=crop" alt="Facturación Electrónica" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Facturación Electrónica</div>
+                        <div class="course-meta">
+                            <span>Lic. María González</span>
+                            <span>•</span>
+                            <span>16 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-progress">En Progreso</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Progreso: 25%</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=1" class="action-button btn-primary">Continuar</a>
+                        <a href="curso-info.html?id=1" class="action-button btn-secondary">Ver Detalles</a>
+                    </div>
+                </div>
+
+                <div class="course-item" data-status="progress">
+                    <img src="https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=200&h=150&fit=crop" alt="Solicitud de Créditos" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Solicitud de Créditos Empresariales</div>
+                        <div class="course-meta">
+                            <span>Lic. Carlos Méndez</span>
+                            <span>•</span>
+                            <span>20 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-progress">En Progreso</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Progreso: 60%</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=2" class="action-button btn-primary">Continuar</a>
+                        <a href="curso-info.html?id=2" class="action-button btn-secondary">Ver Detalles</a>
+                    </div>
+                </div>
+
+                <div class="course-item" data-status="progress">
+                    <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=200&h=150&fit=crop" alt="Gestión Contable" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Gestión Contable para PyMEs</div>
+                        <div class="course-meta">
+                            <span>CPA Ana Rodríguez</span>
+                            <span>•</span>
+                            <span>24 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-progress">En Progreso</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Progreso: 40%</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=3" class="action-button btn-primary">Continuar</a>
+                        <a href="curso-info.html?id=3" class="action-button btn-secondary">Ver Detalles</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cursos Completados -->
+        <div class="courses-section" id="completed-section">
+            <h2 class="section-title">Completados</h2>
+            <div class="course-list">
+                <div class="course-item" data-status="completed">
+                    <img src="https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=200&h=150&fit=crop" alt="Recursos Humanos" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Gestión de Recursos Humanos</div>
+                        <div class="course-meta">
+                            <span>Lic. Roberto Jiménez</span>
+                            <span>•</span>
+                            <span>18 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-completed">Completado</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Completado el 20 de Diciembre, 2024</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=4" class="action-button btn-primary">Revisar</a>
+                        <a href="#" class="action-button btn-secondary" onclick="alert('Certificado descargado'); return false;">Certificado</a>
+                    </div>
+                </div>
+
+                <div class="course-item" data-status="completed">
+                    <img src="https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=200&h=150&fit=crop" alt="Marketing Digital" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Marketing Digital para Empresas</div>
+                        <div class="course-meta">
+                            <span>Lic. Laura Fernández</span>
+                            <span>•</span>
+                            <span>22 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-completed">Completado</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Completado el 15 de Diciembre, 2024</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=5" class="action-button btn-primary">Revisar</a>
+                        <a href="#" class="action-button btn-secondary" onclick="alert('Certificado descargado'); return false;">Certificado</a>
+                    </div>
+                </div>
+
+                <div class="course-item" data-status="completed">
+                    <img src="https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=200&h=150&fit=crop" alt="Cumplimiento Fiscal" class="course-thumbnail">
+                    <div class="course-info">
+                        <div class="course-title">Cumplimiento Fiscal y Obligaciones</div>
+                        <div class="course-meta">
+                            <span>CPA Jorge Martínez</span>
+                            <span>•</span>
+                            <span>28 lecciones</span>
+                            <span>•</span>
+                            <span class="status-badge badge-completed">Completado</span>
+                        </div>
+                        <div class="course-progress-section">
+                            <div class="progress-label">Completado el 10 de Diciembre, 2024</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 100%;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="course-actions">
+                        <a href="curso-videos.html?id=6" class="action-button btn-primary">Revisar</a>
+                        <a href="#" class="action-button btn-secondary" onclick="alert('Certificado descargado'); return false;">Certificado</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function filterCourses(filter) {
+            // Actualizar tabs activos
+            document.querySelectorAll('.filter-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+
+            // Filtrar cursos
+            const progressSection = document.getElementById('progress-section');
+            const completedSection = document.getElementById('completed-section');
+
+            if (filter === 'all') {
+                progressSection.style.display = 'block';
+                completedSection.style.display = 'block';
+            } else if (filter === 'progress') {
+                progressSection.style.display = 'block';
+                completedSection.style.display = 'none';
+            } else if (filter === 'completed') {
+                progressSection.style.display = 'none';
+                completedSection.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
