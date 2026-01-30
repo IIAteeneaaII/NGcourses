@@ -1,0 +1,148 @@
+/* Base Card */
+.card {
+  background-color: var(--color-text-white);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transition: all 0.2s ease-in-out;
+}
+
+/* Variants */
+.default {
+  background-color: var(--color-text-white);
+  border: none;
+}
+
+.outlined {
+  background-color: var(--color-text-white);
+  border: 1px solid #e5e7eb;
+}
+
+.elevated {
+  background-color: var(--color-text-white);
+  box-shadow: var(--shadow-md);
+}
+
+/* Padding Variants */
+.padding-none {
+  padding: 0;
+}
+
+.padding-small {
+  padding: 0.75rem;
+}
+
+.padding-medium {
+  padding: 1.25rem;
+}
+
+.padding-large {
+  padding: 1.75rem;
+}
+
+/* Hoverable */
+.hoverable {
+  cursor: pointer;
+}
+
+.hoverable:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hoverable:active {
+  transform: translateY(0);
+}
+
+/* Card Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.headerContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  line-height: 1.4;
+}
+
+.subtitle {
+  margin: 0.25rem 0 0 0;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.headerAction {
+  flex-shrink: 0;
+}
+
+/* Card Body */
+.body {
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+/* When card has no padding, body needs its own */
+.padding-none .body {
+  padding: 1.25rem;
+}
+
+/* Card Footer */
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f3f4f6;
+}
+
+.align-left {
+  justify-content: flex-start;
+}
+
+.align-center {
+  justify-content: center;
+}
+
+.align-right {
+  justify-content: flex-end;
+}
+
+.align-between {
+  justify-content: space-between;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .padding-medium {
+    padding: 1rem;
+  }
+
+  .padding-large {
+    padding: 1.25rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .headerAction {
+    width: 100%;
+  }
+
+  .title {
+    font-size: 1.125rem;
+  }
+}

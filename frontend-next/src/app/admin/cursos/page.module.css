@@ -1,0 +1,255 @@
+/* Page Container */
+.pageContainer {
+  width: 100%;
+  min-height: calc(100vh - 4rem);
+}
+
+/* Header Bar */
+.headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 71, 119, 0.3);
+}
+
+.backButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 71, 119, 0.4);
+}
+
+.createButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-accent-10);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(232, 119, 34, 0.3);
+}
+
+.createButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(232, 119, 34, 0.4);
+}
+
+/* Content Card */
+.contentCard {
+  background: var(--color-text-white);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--color-primary-60);
+}
+
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.courseCount {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  background: var(--color-primary-60);
+  padding: 0.5rem 1rem;
+  border-radius: 2rem;
+}
+
+/* Course List */
+.courseList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.courseItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.25rem 1.5rem;
+  background: var(--color-primary-60);
+  border-radius: 0.75rem;
+  transition: all 0.2s ease;
+}
+
+.courseItem:hover {
+  background: #e8f4f8;
+  transform: translateX(4px);
+}
+
+.courseInfo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex: 1;
+}
+
+.courseTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+/* Status Badges */
+.statusBadge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.statusPublished {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.statusDraft {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.statusReview {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* Course Actions */
+.courseActions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.assignedBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 1rem;
+  background: var(--color-text-white);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  min-width: 100px;
+  text-align: center;
+}
+
+.editButton {
+  padding: 0.5rem 1rem;
+  background: var(--color-secondary-30);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.editButton:hover {
+  background: var(--color-secondary-30-light);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .headerBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backButton,
+  .createButton {
+    justify-content: center;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .courseItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .courseInfo {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .courseActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+@media (max-width: 480px) {
+  .contentCard {
+    padding: 1.25rem;
+  }
+
+  .courseItem {
+    padding: 1rem;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .courseActions {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .assignedBadge,
+  .editButton {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+}

@@ -1,0 +1,308 @@
+/* Dashboard Container */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Header */
+.header {
+  margin-bottom: 1rem;
+}
+
+.title {
+  margin: 0;
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0.75rem 0 0 0;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* Options Grid */
+.optionsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.optionCard {
+  background-color: var(--color-text-white);
+  border-radius: 0.9375rem;
+  padding: 1.875rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.optionCard:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.optionIcon {
+  width: 5.625rem;
+  height: 5.625rem;
+  margin: 0 auto 1.25rem;
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  border-radius: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(0, 71, 119, 0.3);
+}
+
+.optionIcon::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
+  transform: rotate(45deg);
+}
+
+.optionIcon svg {
+  width: 3.75rem;
+  height: 3.75rem;
+  color: var(--color-text-white);
+  position: relative;
+  z-index: 1;
+}
+
+.optionIcon.light {
+  background: linear-gradient(135deg, #4FC3E0, #87CEEB);
+  box-shadow: 0 8px 20px rgba(79, 195, 224, 0.3);
+}
+
+.optionIcon.users {
+  background: linear-gradient(135deg, var(--color-accent-10), #ff8a4c);
+  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+}
+
+.optionTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.625rem;
+  color: var(--color-text-primary);
+}
+
+.optionDescription {
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+.optionButton {
+  width: 100%;
+  padding: 0.9375rem 2.5rem;
+  background-color: var(--color-secondary-30);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.optionButton:hover {
+  background-color: var(--color-secondary-30-light);
+}
+
+/* History Section */
+.historySection {
+  background-color: var(--color-text-white);
+  border-radius: 0.9375rem;
+  padding: 1.5625rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.historyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.historyTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.viewAllLink {
+  color: var(--color-secondary-30);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 700;
+  transition: color 0.2s ease;
+}
+
+.viewAllLink:hover {
+  color: var(--color-secondary-30-light);
+}
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9375rem;
+}
+
+.historyItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.9375rem;
+  background-color: #f8f9fa;
+  border-radius: 0.625rem;
+  transition: background-color 0.2s ease;
+}
+
+.historyItem:hover {
+  background-color: #f1f3f5;
+}
+
+.historyItemContent {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.historyIcon {
+  width: 2.5rem;
+  height: 2.5rem;
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  color: var(--color-text-white);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: 0 4px 10px rgba(0, 71, 119, 0.2);
+  flex-shrink: 0;
+}
+
+.historyIcon.red {
+  background: linear-gradient(135deg, #E74C3C, #C0392B);
+  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
+}
+
+.historyIcon.black {
+  background: linear-gradient(135deg, #2C3E50, #34495E);
+  box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
+}
+
+.historyItemTitle {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.viewDetailsButton {
+  padding: 0.5rem 1.25rem;
+  background-color: #A8E6A3;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  color: #2d6b2a;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  flex-shrink: 0;
+}
+
+.viewDetailsButton:hover {
+  background-color: #92d98e;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .optionsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .optionsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .title {
+    font-size: 1.75rem;
+  }
+
+  .optionIcon {
+    width: 5rem;
+    height: 5rem;
+  }
+
+  .optionIcon svg {
+    width: 3rem;
+    height: 3rem;
+  }
+
+  .optionTitle {
+    font-size: 1.25rem;
+  }
+
+  .historyItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .historyItemContent {
+    width: 100%;
+  }
+
+  .viewDetailsButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard {
+    gap: 1.5rem;
+  }
+
+  .title {
+    font-size: 1.5rem;
+  }
+
+  .optionCard {
+    padding: 1.5rem;
+  }
+
+  .historySection {
+    padding: 1.25rem;
+  }
+
+  .historyHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
