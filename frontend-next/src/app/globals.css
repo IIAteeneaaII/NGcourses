@@ -34,6 +34,23 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
   --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+
+  /* Admin Panel - Colores específicos */
+  --color-admin-sidebar: var(--color-secondary-30);
+  --color-admin-sidebar-hover: var(--color-secondary-30-light);
+  --color-admin-sidebar-active: var(--color-accent-10);
+
+  /* Tablas */
+  --color-table-header: var(--color-primary-60);
+  --color-table-row-hover: #F9FAFB;
+
+  /* Status Colors - Extended */
+  --color-status-draft: var(--color-text-light);
+  --color-status-published: var(--color-success);
+  --color-status-archived: var(--color-warning);
+  --color-status-active: var(--color-success);
+  --color-status-inactive: var(--color-text-light);
+  --color-status-suspended: var(--color-error);
 }
 
 @theme inline {
