@@ -13,7 +13,7 @@ Plataforma de cursos online con integración de Bunny.net para streaming de vide
 ## Estructura del Proyecto
 
 ```
-frontend-next/
+frontend/
 ├── src/
 │   ├── app/                    # App Router de Next.js
 │   │   └── curso-videos/       # Página de videos del curso
@@ -51,8 +51,17 @@ BUNNY_TOKEN_KEY=5e74ac0b-bb86-45c1-945b-e6f18ba8ebf5
 
 ## Instalación
 
+### Opción 1: Desde la raíz del proyecto (Recomendado)
+
 ```bash
-cd frontend-next
+npm install
+npm run dev
+```
+
+### Opción 2: Desde la carpeta frontend
+
+```bash
+cd frontend
 npm install
 npm run dev
 ```
