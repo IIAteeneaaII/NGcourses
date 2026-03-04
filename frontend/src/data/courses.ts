@@ -26,6 +26,29 @@ export const MOCK_COURSES_INFO: Record<string, CourseInfo> = {
     ],
     image: '/images/courses/facturacion-electronica.jpg',
   },
+  '7': {
+    id: '7',
+    title: 'Excel Práctico: De Básico a Intermedio',
+    instructor: 'Abraham Correa',
+    rating: 5.0,
+    level: 'Básico – Intermedio',
+    duration: '3 semanas',
+    lessonsCount: 7,
+    description: 'Aprende Excel desde cero hasta nivel intermedio mediante ejercicios prácticos reales. Dominarás el formato profesional de hojas de cálculo, el uso de tablas, fórmulas financieras, referencias absolutas y análisis dinámico con filtros y SUBTOTAL. Este curso está diseñado para que desarrolles habilidades aplicables en entornos administrativos, contables y empresariales.',
+    learningOutcomes: [
+      'Dar formato profesional a hojas de cálculo y crear tablas con filas de totales',
+      'Calcular bonos, descuentos, sueldo bruto y neto con referencias absolutas',
+      'Ordenar, filtrar y buscar datos de forma eficiente',
+      'Usar SUBTOTAL para cálculos dinámicos y análisis con filtros',
+    ],
+    requirements: 'Conocimientos básicos de computación. Manejo básico de teclado y mouse. No se requiere experiencia previa en Excel.',
+    syllabus: [
+      'Módulo 1 – Fundamentos y Tablas: Formato de datos, cálculo de totales, tablas y filtros',
+      'Módulo 2 – Cálculos Financieros y Referencias: Bonos, descuentos, referencias absolutas, IVA',
+      'Módulo 3 – Análisis con Filtros y SUBTOTAL: Ordenamiento avanzado, filtros, cálculos dinámicos',
+    ],
+    image: '/images/courses/excel-practico.png',
+  },
 };
 
 // Datos de ejemplo para videos - TODO: Reemplazar con datos del backend FastAPI
@@ -65,6 +88,60 @@ export const MOCK_COURSES_DATA: Record<string, Course> = {
         lessons: [
           { id: 'l7', name: 'Lección 7: Cancelación de documentos', completed: false, order: 7, videoId: 'VIDEO_ID_LECCION_7' },
           { id: 'l8', name: 'Lección 8: Gestión y archivo de facturas', completed: false, order: 8, videoId: 'VIDEO_ID_LECCION_8' },
+        ],
+      },
+    ],
+  },
+  '7': {
+    id: '7',
+    title: 'Excel Práctico: De Básico a Intermedio',
+    description: 'Curso práctico de Excel desde los fundamentos hasta técnicas intermedias de análisis de datos.',
+    progress: 0,
+    modules: [
+      {
+        id: 'excel-m1',
+        name: 'Módulo 1: Fundamentos y Tablas',
+        order: 1,
+        lessons: [
+          { id: 'excel-l1', name: 'Lección 1: Formato de datos (Fecha, Número, Moneda)', completed: false, order: 1, videoUrl: '/videos/excel-practico/modulo1/leccion-1.mp4' },
+          { id: 'excel-l2', name: 'Lección 2: Cálculo de totales', completed: false, order: 2, videoUrl: '/videos/excel-practico/modulo1/leccion-2.mp4' },
+          { id: 'excel-l3', name: 'Lección 3: Conversión a tabla y fila de totales', completed: false, order: 3, videoUrl: '/videos/excel-practico/modulo1/leccion-3.mp4' },
+          { id: 'excel-l4', name: 'Lección 4: Ordenar, filtrar, buscar y reemplazar', completed: false, order: 4, videoUrl: '/videos/excel-practico/modulo1/leccion-4.mp4' },
+        ],
+        resources: [
+          { id: 'r1-1', name: 'Instrucciones Ejercicio Módulo 1', url: '/resources/excel-practico/modulo1/instrucciones-ejercicio-modulo-1.docx', type: 'docx' },
+          { id: 'r1-2', name: 'Módulo 1 - Material de clase', url: '/resources/excel-practico/modulo1/modulo-1.docx', type: 'docx' },
+          { id: 'r1-3', name: 'Ejercicio Módulo 1', url: '/resources/excel-practico/modulo1/modulo1-ejercicio.xlsx', type: 'xlsx' },
+          { id: 'r1-4', name: 'Ventas - Práctica Módulo 1', url: '/resources/excel-practico/modulo1/modulo1-ventas.xlsx', type: 'xlsx' },
+        ],
+      },
+      {
+        id: 'excel-m2',
+        name: 'Módulo 2: Cálculos Financieros y Referencias',
+        order: 2,
+        lessons: [
+          { id: 'excel-l5', name: 'Lección 5: Bonos, descuentos, sueldo bruto y neto', completed: false, order: 5, videoUrl: '/videos/excel-practico/modulo2/leccion-1.mp4' },
+          { id: 'excel-l6', name: 'Lección 6: Referencias absolutas, IVA y hoja resumen', completed: false, order: 6, videoUrl: '/videos/excel-practico/modulo2/leccion-2.mp4' },
+        ],
+        resources: [
+          { id: 'r2-1', name: 'Instrucciones Ejercicio Módulo 2', url: '/resources/excel-practico/modulo2/instrucciones-ejercicio-modulo-2.docx', type: 'docx' },
+          { id: 'r2-2', name: 'Módulo 2 - Material de clase', url: '/resources/excel-practico/modulo2/modulo-2.docx', type: 'docx' },
+          { id: 'r2-3', name: 'Ejercicio Módulo 2', url: '/resources/excel-practico/modulo2/modulo02-ejercicio.xlsx', type: 'xlsx' },
+          { id: 'r2-4', name: 'Enseñanza Módulo 2', url: '/resources/excel-practico/modulo2/modulo02-ensenanza.xlsx', type: 'xlsx' },
+        ],
+      },
+      {
+        id: 'excel-m3',
+        name: 'Módulo 3: Análisis con Filtros y SUBTOTAL',
+        order: 3,
+        lessons: [
+          { id: 'excel-l7', name: 'Lección 7: Ordenamiento avanzado, filtros y SUBTOTAL', completed: false, order: 7, videoUrl: '/videos/excel-practico/modulo3/leccion-1.mp4' },
+        ],
+        resources: [
+          { id: 'r3-1', name: 'Instrucciones Ejercicio Módulo 3', url: '/resources/excel-practico/modulo3/instrucciones-ejercicio-modulo-3.docx', type: 'docx' },
+          { id: 'r3-2', name: 'Módulo 3 - Material de clase', url: '/resources/excel-practico/modulo3/modulo-3.docx', type: 'docx' },
+          { id: 'r3-3', name: 'Ejercicio Módulo 3', url: '/resources/excel-practico/modulo3/modulo03-ejercicio.xlsx', type: 'xlsx' },
+          { id: 'r3-4', name: 'Enseñanza Módulo 3', url: '/resources/excel-practico/modulo3/modulo03-ensenanza.xlsx', type: 'xlsx' },
         ],
       },
     ],
@@ -111,6 +188,16 @@ export const MOCK_COURSES_CARDS: CourseCard[] = [
     tag: 'Destacado',
     category: 'Contabilidad',
   },
+  {
+    id: '7',
+    title: 'Excel Práctico: De Básico a Intermedio',
+    instructor: 'Abraham Correa',
+    level: 'Básico – Intermedio',
+    rating: 5,
+    image: '/images/courses/excel-practico.png',
+    tag: 'Nuevo',
+    category: 'Ofimática',
+  },
 ];
 
 export function getAllCourseCards(): CourseCard[] {
@@ -141,7 +228,7 @@ export const MOCK_USER_PROFILE: UserProfile = {
 };
 
 export const MOCK_USER_STATISTICS: UserStatistics = {
-  coursesEnrolled: 6,
+  coursesEnrolled: 7,
   coursesCompleted: 3,
   totalTime: '45h',
 };
@@ -164,6 +251,12 @@ export const MOCK_COURSES_IN_PROGRESS: CourseInProgress[] = [
     title: 'Gestión Contable para PyMEs',
     progress: 40,
     order: 3,
+  },
+  {
+    id: '7',
+    title: 'Excel Práctico: De Básico a Intermedio',
+    progress: 0,
+    order: 4,
   },
 ];
 
@@ -235,11 +328,20 @@ export const MOCK_USER_COURSES: UserCourse[] = [
     status: 'completed',
     completedDate: 'Completado el 10 de Diciembre, 2024',
   },
+  {
+    id: '7',
+    title: 'Excel Práctico: De Básico a Intermedio',
+    instructor: 'Abraham Correa',
+    lessonsCount: 7,
+    image: '/images/courses/excel-practico.png',
+    status: 'in_progress',
+    progress: 0,
+  },
 ];
 
 export const MOCK_MY_COURSES_STATISTICS: MyCoursesStatistics = {
-  totalCourses: 6,
-  inProgress: 3,
+  totalCourses: 7,
+  inProgress: 4,
   completed: 3,
   totalHours: '45h',
 };

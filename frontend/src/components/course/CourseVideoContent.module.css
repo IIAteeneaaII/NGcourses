@@ -81,6 +81,8 @@
 }
 
 .videoSection {
+  display: flex;
+  flex-direction: column;
   background-color: var(--color-primary-60-alt);
   border-radius: 1rem;
   padding: 1.25rem;
