@@ -27,7 +27,7 @@
 /* Options Grid */
 .optionsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }
@@ -82,6 +82,11 @@
 .optionIcon.light {
   background: linear-gradient(135deg, #4FC3E0, #87CEEB);
   box-shadow: 0 8px 20px rgba(79, 195, 224, 0.3);
+}
+
+.optionIcon.instructors {
+  background: linear-gradient(135deg, #10b981, #34d399);
+  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
 }
 
 .optionIcon.users {

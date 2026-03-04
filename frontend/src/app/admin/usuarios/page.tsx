@@ -18,7 +18,6 @@ const ROLES: Record<string, string> = {
   admin: 'Administrador',
   instructor: 'Instructor',
   estudiante: 'Estudiante',
-  supervisor: 'Supervisor',
 };
 
 const MOCK_USERS: User[] = [
