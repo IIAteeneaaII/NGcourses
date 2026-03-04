@@ -2,15 +2,24 @@ export interface Lesson {
   id: string;
   name: string;
   videoId?: string;
+  videoUrl?: string;
   duration?: number;
   completed: boolean;
   order: number;
+}
+
+export interface Resource {
+  id: string;
+  name: string;
+  url: string;
+  type: 'docx' | 'xlsx' | 'pdf' | 'other';
 }
 
 export interface Module {
   id: string;
   name: string;
   lessons: Lesson[];
+  resources?: Resource[];
   order: number;
 }
 

@@ -17,10 +17,12 @@ export default function CourseVideoContent({ initialCourse }: CourseVideoContent
   const [currentLesson, setCurrentLesson] = useState<Lesson>(course.modules[0].lessons[0]);
   const [progress, setProgress] = useState(course.progress);
 
-  const bunnyConfig = {
-    libraryId: process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '583601',
-    videoId: currentLesson.videoId || process.env.NEXT_PUBLIC_BUNNY_VIDEO_ID || '2694e857-a403-4f27-8b00-32b9ba4049c3',
-  };
+  const bunnyConfig = !currentLesson.videoUrl
+    ? {
+        libraryId: process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '583601',
+        videoId: currentLesson.videoId || process.env.NEXT_PUBLIC_BUNNY_VIDEO_ID || '2694e857-a403-4f27-8b00-32b9ba4049c3',
+      }
+    : undefined;
 
   const handleLessonSelect = (lesson: Lesson) => {
     setCurrentLesson(lesson);
@@ -69,10 +71,15 @@ export default function CourseVideoContent({ initialCourse }: CourseVideoContent
           <div className={styles.videoSection}>
             <VideoPlayer
               config={bunnyConfig}
+              videoUrl={currentLesson.videoUrl}
               onTimeUpdate={(time) => console.log('Current time:', time)}
               onEnded={() => console.log('Video ended')}
             />
-            <VideoControls progress={progress} onMarkComplete={handleMarkComplete} />
+            <VideoControls
+              progress={progress}
+              onMarkComplete={handleMarkComplete}
+              resources={course.modules.find(m => m.lessons.some(l => l.id === currentLesson.id))?.resources}
+            />
           </div>
 
           <LessonsSidebar
