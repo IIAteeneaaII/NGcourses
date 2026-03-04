@@ -1,0 +1,535 @@
+/* Page Container */
+.pageContainer {
+  width: 100%;
+  min-height: calc(100vh - 4rem);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 300px;
+  font-size: 1.125rem;
+  color: var(--color-text-secondary);
+}
+
+/* Header Bar */
+.headerBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.backButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(0, 71, 119, 0.3);
+}
+
+.backButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 71, 119, 0.4);
+}
+
+.saveButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 2rem;
+  background: var(--color-success);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 10px rgba(34, 197, 94, 0.3);
+}
+
+.saveButton:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(34, 197, 94, 0.4);
+}
+
+.saveButton:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Content Card */
+.contentCard {
+  background: var(--color-text-white);
+  border-radius: 1.25rem;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.cardHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary-60);
+}
+
+.courseInfo {
+  flex: 1;
+}
+
+.pageTitle {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.5rem 0;
+}
+
+.courseDescription {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}
+
+.courseStats {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.statItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 1.5rem;
+  background: var(--color-primary-60);
+  border-radius: 0.75rem;
+  border: 2px solid var(--color-secondary-30);
+}
+
+.statNumber {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-secondary-30);
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 1.5rem;
+}
+
+/* Modules Container */
+.modulesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.moduleCard {
+  background: var(--color-primary-60);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+
+.moduleHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.expandButton {
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  transition: transform 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.expandButton svg.rotated {
+  transform: rotate(90deg);
+}
+
+.moduleNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: var(--color-secondary-30);
+  color: var(--color-text-white);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.moduleTitleInput {
+  flex: 1;
+  padding: 0.625rem 0.875rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  background: var(--color-text-white);
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.moduleTitleInput:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+}
+
+.lessonCount {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  padding: 0.375rem 0.75rem;
+  background: var(--color-text-white);
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+
+.deleteModuleButton {
+  padding: 0.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--color-error);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.deleteModuleButton:hover {
+  color: #dc2626;
+}
+
+.moduleContent {
+  padding: 1.25rem;
+}
+
+.moduleDescriptionGroup {
+  margin-bottom: 1rem;
+}
+
+.moduleDescriptionInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  background: var(--color-text-white);
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  resize: vertical;
+  font-family: inherit;
+  transition: all 0.2s ease-in-out;
+}
+
+.moduleDescriptionInput:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+}
+
+/* Lessons */
+.lessonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lessonCard {
+  background: var(--color-text-white);
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+}
+
+.lessonHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.lessonNumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-white);
+  background: var(--color-secondary-30);
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.lessonTitleInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  background: var(--color-primary-60);
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.lessonTitleInput:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+  background: var(--color-text-white);
+}
+
+/* Toggle Switch */
+.toggleLabel {
+  position: relative;
+  display: inline-block;
+  width: 2.75rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+}
+
+.toggleInput {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggleSlider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #cbd5e1;
+  transition: 0.3s;
+  border-radius: 1.5rem;
+}
+
+.toggleSlider:before {
+  position: absolute;
+  content: '';
+  height: 1.125rem;
+  width: 1.125rem;
+  left: 0.1875rem;
+  bottom: 0.1875rem;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggleInput:checked + .toggleSlider {
+  background-color: var(--color-success);
+}
+
+.toggleInput:checked + .toggleSlider:before {
+  transform: translateX(1.25rem);
+}
+
+.deleteLessonButton {
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-error);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  border-radius: 0.25rem;
+  flex-shrink: 0;
+}
+
+.deleteLessonButton:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.lessonInputs {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+}
+
+.lessonInput {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  background: var(--color-primary-60);
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.lessonInput:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+  background: var(--color-text-white);
+}
+
+.lessonDurationInput {
+  width: 5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  background: var(--color-primary-60);
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+}
+
+.lessonDurationInput:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+  background: var(--color-text-white);
+}
+
+.addLessonButton {
+  width: 100%;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-secondary-30);
+  background: var(--color-primary-60);
+  border: 1px dashed var(--color-secondary-30);
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.addLessonButton:hover {
+  background: #e0f2fe;
+  border-style: solid;
+}
+
+.addModuleButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 1rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-secondary-30);
+  background: var(--color-primary-60);
+  border: 2px dashed var(--color-secondary-30);
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.addModuleButton:hover {
+  background: #e0f2fe;
+  border-style: solid;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .headerBar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .backButton,
+  .saveButton {
+    justify-content: center;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .courseStats {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .moduleHeader {
+    flex-wrap: wrap;
+  }
+
+  .moduleTitleInput {
+    order: 5;
+    width: 100%;
+    margin-top: 0.5rem;
+  }
+
+  .lessonHeader {
+    flex-wrap: wrap;
+  }
+
+  .lessonTitleInput {
+    order: 5;
+    width: 100%;
+  }
+
+  .lessonInputs {
+    grid-template-columns: 1fr;
+  }
+
+  .lessonDurationInput {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .contentCard {
+    padding: 1.25rem;
+  }
+
+  .pageTitle {
+    font-size: 1.5rem;
+  }
+
+  .moduleHeader {
+    padding: 0.875rem;
+  }
+
+  .moduleContent {
+    padding: 1rem;
+  }
+
+  .statItem {
+    padding: 0.75rem 1rem;
+  }
+
+  .statNumber {
+    font-size: 1.25rem;
+  }
+}
