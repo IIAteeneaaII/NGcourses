@@ -1,12 +1,16 @@
 import uuid
 from typing import Any
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.core.config import settings
 from app.models._enums import EstadoCurso, RolUsuario
 from app.models.contenido import (
+    BunnyVideoInitResponse,
+    BunnyVideoStatusResponse,
     CursoCreate,
     CursoDetalle,
     CursoPublic,
@@ -20,6 +24,7 @@ from app.models.contenido import (
     ModuloUpdate,
 )
 from app.models.schemas import Message
+from app.services import bunny as bunny_svc
 
 router = APIRouter(prefix="/cursos", tags=["cursos"])
 
@@ -349,3 +354,178 @@ def delete_leccion(
 
     crud.delete_leccion(session=session, leccion_id=leccion_id)
     return Message(message="Lección eliminada exitosamente")
+
+
+# ── Video Bunny.net ────────────────────────────────────────────────────────────
+
+def _get_leccion_with_access(
+    session: SessionDep,
+    current_user: CurrentUser,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+):
+    """Helper: valida acceso y retorna (db_curso, db_leccion)."""
+    from app.models.contenido import Leccion, Modulo
+
+    db_curso = crud.get_curso(session=session, curso_id=curso_id)
+    if not db_curso:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+    _require_curso_owner_or_admin(current_user, db_curso.instructor_id)
+
+    db_modulo = session.get(Modulo, modulo_id)
+    if not db_modulo or db_modulo.curso_id != curso_id:
+        raise HTTPException(status_code=404, detail="Módulo no encontrado")
+
+    db_leccion = session.get(Leccion, leccion_id)
+    if not db_leccion or db_leccion.modulo_id != modulo_id:
+        raise HTTPException(status_code=404, detail="Lección no encontrada")
+
+    return db_curso, db_leccion
+
+
+@router.post(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/video-init",
+    response_model=BunnyVideoInitResponse,
+    status_code=201,
+)
+def init_video_upload(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """
+    Inicia el proceso de upload de video a Bunny.net para una lección.
+    1. Crea el video en Bunny Stream.
+    2. Guarda el bunny_video_id en la lección.
+    3. Retorna la URL TUS y headers para que el frontend suba directamente.
+    """
+    if not settings.bunny_enabled:
+        raise HTTPException(status_code=503, detail="Bunny.net no configurado")
+
+    db_curso, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+
+    # Si ya tiene video en Bunny, eliminarlo primero
+    if db_leccion.bunny_video_id:
+        try:
+            bunny_svc.delete_video(db_leccion.bunny_video_id)
+        except httpx.HTTPError:
+            pass  # Si falla la eliminación, continuar igual
+
+    # Crear video en Bunny.net
+    try:
+        bunny_resp = bunny_svc.create_video(title=db_leccion.titulo)
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Error al crear video en Bunny.net: {e}")
+
+    video_id = bunny_resp["guid"]
+
+    # Guardar en BD
+    from app.models.contenido import Leccion
+    from datetime import datetime
+    db_leccion.bunny_video_id = video_id
+    db_leccion.hls_url = None
+    db_leccion.thumbnail_url = None
+    db_leccion.actualizado_en = datetime.utcnow()
+    session.add(db_leccion)
+    session.commit()
+    session.refresh(db_leccion)
+
+    # Preparar respuesta con datos para TUS upload
+    tus_headers = bunny_svc.get_tus_headers(video_id=video_id, file_size=0)
+    embed_url = bunny_svc.build_embed_url(video_id)
+
+    return BunnyVideoInitResponse(
+        bunny_video_id=video_id,
+        tus_upload_url=bunny_svc.get_tus_upload_url(video_id),
+        tus_headers=tus_headers,
+        embed_url=embed_url,
+    )
+
+
+@router.get(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/video-status",
+    response_model=BunnyVideoStatusResponse,
+)
+def get_video_status(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Consulta el estado de encoding del video en Bunny.net."""
+    if not settings.bunny_enabled:
+        raise HTTPException(status_code=503, detail="Bunny.net no configurado")
+
+    _, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+
+    if not db_leccion.bunny_video_id:
+        raise HTTPException(status_code=404, detail="Esta lección no tiene video subido")
+
+    try:
+        info = bunny_svc.get_video(db_leccion.bunny_video_id)
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Error consultando Bunny.net: {e}")
+
+    raw_status = info.get("status", 0)
+    status_str = bunny_svc.VIDEO_STATUS.get(raw_status, "unknown")
+    is_ready = raw_status in (3, 4)
+
+    return BunnyVideoStatusResponse(
+        bunny_video_id=db_leccion.bunny_video_id,
+        status=status_str,
+        is_ready=is_ready,
+        hls_url=db_leccion.hls_url,
+        thumbnail_url=db_leccion.thumbnail_url,
+        embed_url=bunny_svc.build_embed_url(db_leccion.bunny_video_id) if is_ready else None,
+    )
+
+
+@router.delete(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/video",
+    response_model=Message,
+)
+def delete_video(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Elimina el video de Bunny.net y limpia los campos de la lección."""
+    if not settings.bunny_enabled:
+        raise HTTPException(status_code=503, detail="Bunny.net no configurado")
+
+    _, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+
+    if not db_leccion.bunny_video_id:
+        raise HTTPException(status_code=404, detail="Esta lección no tiene video")
+
+    try:
+        bunny_svc.delete_video(db_leccion.bunny_video_id)
+    except httpx.HTTPError as e:
+        raise HTTPException(status_code=502, detail=f"Error eliminando video de Bunny.net: {e}")
+
+    from datetime import datetime
+    db_leccion.bunny_video_id = None
+    db_leccion.hls_url = None
+    db_leccion.thumbnail_url = None
+    db_leccion.duracion_seg = 0
+    db_leccion.actualizado_en = datetime.utcnow()
+    session.add(db_leccion)
+    session.commit()
+
+    return Message(message="Video eliminado exitosamente")

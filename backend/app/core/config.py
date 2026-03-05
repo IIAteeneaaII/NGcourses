@@ -94,6 +94,17 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER: EmailStr
     FIRST_SUPERUSER_PASSWORD: str
 
+    # Bunny.net Video Streaming
+    BUNNY_API_KEY: str | None = None
+    BUNNY_LIBRARY_ID: str | None = None
+    BUNNY_CDN_HOSTNAME: str | None = None  # e.g. "vz-xxxxxxxx.b-cdn.net"
+    BUNNY_WEBHOOK_SECRET: str | None = None  # para validar firma HMAC
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def bunny_enabled(self) -> bool:
+        return bool(self.BUNNY_API_KEY and self.BUNNY_LIBRARY_ID)
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (

@@ -299,3 +299,23 @@ class CursoUpdate(SQLModel):
     descripcion: str | None = None
     estado: EstadoCurso | None = None
     es_gratis: bool | None = None
+
+
+# -- Bunny.net Video Upload --
+
+class BunnyVideoInitResponse(SQLModel):
+    """Respuesta al iniciar un upload de video a Bunny.net."""
+    bunny_video_id: str
+    tus_upload_url: str
+    tus_headers: dict[str, str]
+    embed_url: str
+
+
+class BunnyVideoStatusResponse(SQLModel):
+    """Estado de encoding del video en Bunny.net."""
+    bunny_video_id: str
+    status: str  # queued, processing, encoding, finished, failed
+    is_ready: bool
+    hls_url: str | None = None
+    thumbnail_url: str | None = None
+    embed_url: str | None = None
