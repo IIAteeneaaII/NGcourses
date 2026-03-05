@@ -1,34 +1,68 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import LessonsSidebar from '@/components/course/LessonsSidebar';
 import VideoControls from '@/components/course/VideoControls';
 import type { Course, Lesson } from '@/types/course';
+import { progresoApi } from '@/lib/api/client';
 import styles from './CourseVideoContent.module.css';
 
 interface CourseVideoContentProps {
   initialCourse: Course;
+  inscripcionId?: string | null;
 }
 
-export default function CourseVideoContent({ initialCourse }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId }: CourseVideoContentProps) {
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson>(course.modules[0].lessons[0]);
   const [progress, setProgress] = useState(course.progress);
 
-  const bunnyConfig = !currentLesson.videoUrl
+  // Para throttle del tracking: cada 10 segundos
+  const lastSentTime = useRef<number>(0);
+  const videoDuration = useRef<number>(0);
+
+  const bunnyConfig = !currentLesson.videoUrl && currentLesson.videoId
     ? {
         libraryId: process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '583601',
-        videoId: currentLesson.videoId || process.env.NEXT_PUBLIC_BUNNY_VIDEO_ID || '2694e857-a403-4f27-8b00-32b9ba4049c3',
+        videoId: currentLesson.videoId,
       }
     : undefined;
 
   const handleLessonSelect = (lesson: Lesson) => {
     setCurrentLesson(lesson);
+    lastSentTime.current = 0;
   };
 
-  const handleMarkComplete = () => {
+  const handleTimeUpdate = useCallback((currentTime: number) => {
+    if (!inscripcionId) return;
+    const now = Date.now();
+    if (now - lastSentTime.current < 10_000) return; // throttle 10s
+    lastSentTime.current = now;
+
+    const duration = videoDuration.current || 1;
+    const pct = Math.min(100, Math.round((currentTime / duration) * 100));
+
+    progresoApi.registrar({
+      inscripcion_id: inscripcionId,
+      leccion_id: currentLesson.id,
+      visto_seg: Math.round(currentTime),
+      progreso_pct: pct,
+    }).catch(() => {}); // Fire & forget
+  }, [inscripcionId, currentLesson.id]);
+
+  const handleMarkComplete = async () => {
+    // Enviar 100% al backend si hay inscripción
+    if (inscripcionId) {
+      progresoApi.registrar({
+        inscripcion_id: inscripcionId,
+        leccion_id: currentLesson.id,
+        visto_seg: videoDuration.current || 0,
+        progreso_pct: 100,
+      }).catch(() => {});
+    }
+
     const updatedModules = course.modules.map((module) => ({
       ...module,
       lessons: module.lessons.map((lesson) =>
@@ -72,8 +106,8 @@ export default function CourseVideoContent({ initialCourse }: CourseVideoContent
             <VideoPlayer
               config={bunnyConfig}
               videoUrl={currentLesson.videoUrl}
-              onTimeUpdate={(time) => console.log('Current time:', time)}
-              onEnded={() => console.log('Video ended')}
+              onTimeUpdate={handleTimeUpdate}
+              onEnded={() => handleTimeUpdate(videoDuration.current)}
             />
             <VideoControls
               progress={progress}

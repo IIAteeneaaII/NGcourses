@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './LoginContent.module.css';
+import { login } from '@/lib/auth';
 
 export default function LoginContent() {
   const router = useRouter();
@@ -10,11 +11,27 @@ export default function LoginContent() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implementar autenticación con backend
-    router.push('/cursos');
+    setError('');
+    setLoading(true);
+    try {
+      const user = await login(email, password);
+      if (user.is_superuser || user.rol === 'administrador') {
+        router.push('/admin');
+      } else if (user.rol === 'instructor') {
+        router.push('/instructor');
+      } else {
+        router.push('/cursos');
+      }
+    } catch {
+      setError('Correo o contraseña incorrectos');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,8 +140,14 @@ export default function LoginContent() {
                 </button>
               </div>
 
-              <button type="submit" className={styles.submitButton}>
-                Iniciar sesión
+              {error && (
+                <p style={{ color: 'var(--color-accent-10)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
+                  {error}
+                </p>
+              )}
+
+              <button type="submit" className={styles.submitButton} disabled={loading}>
+                {loading ? 'Ingresando...' : 'Iniciar sesión'}
               </button>
             </form>
 
