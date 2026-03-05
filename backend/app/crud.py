@@ -1,3 +1,5 @@
+import hashlib
+import secrets
 import uuid
 from datetime import datetime
 from typing import Any
@@ -11,7 +13,9 @@ from app.models.contenido import (
     Modulo, ModuloCreate, ModuloUpdate,
     Leccion, LeccionCreate, LeccionUpdate,
 )
-from app.models._enums import EstadoCurso
+from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoCalificacion
+from app.models.inscripcion import Certificado, Inscripcion, ProgresoLeccion
+from app.models.calificacion import Calificacion, VotoResena
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -176,3 +180,260 @@ def delete_leccion(*, session: Session, leccion_id: uuid.UUID) -> None:
     if db_leccion:
         session.delete(db_leccion)
         session.commit()
+
+
+# ── Inscripciones ─────────────────────────────────────────────────────────────
+
+def get_inscripcion(*, session: Session, inscripcion_id: uuid.UUID) -> Inscripcion | None:
+    return session.get(Inscripcion, inscripcion_id)
+
+
+def get_inscripcion_by_usuario_curso(
+    *, session: Session, usuario_id: uuid.UUID, curso_id: uuid.UUID
+) -> Inscripcion | None:
+    statement = select(Inscripcion).where(
+        Inscripcion.usuario_id == usuario_id,
+        Inscripcion.curso_id == curso_id,
+    )
+    return session.exec(statement).first()
+
+
+def get_inscripciones_usuario(
+    *, session: Session, usuario_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> tuple[list[Inscripcion], int]:
+    q = select(Inscripcion).where(Inscripcion.usuario_id == usuario_id)
+    count = session.exec(select(func.count()).select_from(Inscripcion).where(Inscripcion.usuario_id == usuario_id)).one()
+    items = session.exec(q.offset(skip).limit(limit)).all()
+    return list(items), count
+
+
+def create_inscripcion(
+    *, session: Session, usuario_id: uuid.UUID, curso_id: uuid.UUID
+) -> Inscripcion:
+    db_obj = Inscripcion(usuario_id=usuario_id, curso_id=curso_id)
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def update_ultimo_acceso(*, session: Session, inscripcion: Inscripcion) -> None:
+    inscripcion.ultimo_acceso_en = datetime.utcnow()
+    session.add(inscripcion)
+    session.commit()
+
+
+# ── Progreso ──────────────────────────────────────────────────────────────────
+
+def get_progreso(
+    *, session: Session, inscripcion_id: uuid.UUID, leccion_id: uuid.UUID
+) -> ProgresoLeccion | None:
+    statement = select(ProgresoLeccion).where(
+        ProgresoLeccion.inscripcion_id == inscripcion_id,
+        ProgresoLeccion.leccion_id == leccion_id,
+    )
+    return session.exec(statement).first()
+
+
+def get_progreso_curso(
+    *, session: Session, inscripcion_id: uuid.UUID
+) -> list[ProgresoLeccion]:
+    statement = select(ProgresoLeccion).where(
+        ProgresoLeccion.inscripcion_id == inscripcion_id
+    )
+    return list(session.exec(statement).all())
+
+
+def upsert_progreso(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    visto_seg: int,
+    progreso_pct: int,
+    umbral_completado_pct: int = 90,
+) -> ProgresoLeccion:
+    db_prog = get_progreso(session=session, inscripcion_id=inscripcion_id, leccion_id=leccion_id)
+    now = datetime.utcnow()
+
+    if db_prog is None:
+        db_prog = ProgresoLeccion(
+            inscripcion_id=inscripcion_id,
+            leccion_id=leccion_id,
+            visto_seg=visto_seg,
+            progreso_pct=progreso_pct,
+            actualizado_en=now,
+        )
+    else:
+        db_prog.visto_seg = max(db_prog.visto_seg, visto_seg)
+        db_prog.progreso_pct = max(db_prog.progreso_pct, progreso_pct)
+        db_prog.actualizado_en = now
+
+    # Marcar como completado si supera el umbral
+    if not db_prog.completado and db_prog.progreso_pct >= umbral_completado_pct:
+        db_prog.completado = True
+        db_prog.completado_en = now
+
+    session.add(db_prog)
+    session.commit()
+    session.refresh(db_prog)
+    return db_prog
+
+
+def check_and_emit_certificate(
+    *, session: Session, inscripcion_id: uuid.UUID
+) -> Certificado | None:
+    """
+    Verifica si todas las lecciones del curso están completadas.
+    Si es así y no hay certificado aún, lo genera automáticamente.
+    """
+    inscripcion = session.get(Inscripcion, inscripcion_id)
+    if not inscripcion:
+        return None
+
+    # Obtener todas las lecciones del curso
+    statement = (
+        select(Leccion)
+        .join(Modulo, Leccion.modulo_id == Modulo.id)
+        .where(Modulo.curso_id == inscripcion.curso_id)
+    )
+    todas_lecciones = list(session.exec(statement).all())
+    if not todas_lecciones:
+        return None
+
+    # Verificar progreso completado en todas
+    completadas = get_progreso_curso(session=session, inscripcion_id=inscripcion_id)
+    completadas_ids = {p.leccion_id for p in completadas if p.completado}
+    total_ids = {l.id for l in todas_lecciones}
+
+    if not total_ids.issubset(completadas_ids):
+        return None
+
+    # Ya existe certificado?
+    existing = session.exec(
+        select(Certificado).where(Certificado.inscripcion_id == inscripcion_id)
+    ).first()
+    if existing:
+        return existing
+
+    # Generar folio único
+    folio = f"NG-{secrets.token_hex(6).upper()}"
+    hash_ver = hashlib.sha256(f"{inscripcion_id}{folio}".encode()).hexdigest()
+
+    certificado = Certificado(
+        inscripcion_id=inscripcion_id,
+        usuario_id=inscripcion.usuario_id,
+        curso_id=inscripcion.curso_id,
+        folio=folio,
+        hash_verificacion=hash_ver,
+    )
+    session.add(certificado)
+
+    # Actualizar inscripción a FINALIZADA
+    inscripcion.estado = EstadoInscripcion.FINALIZADA
+    session.add(inscripcion)
+
+    session.commit()
+    session.refresh(certificado)
+    return certificado
+
+
+# ── Calificaciones ────────────────────────────────────────────────────────────
+
+def get_calificacion(
+    *, session: Session, calificacion_id: uuid.UUID
+) -> Calificacion | None:
+    return session.get(Calificacion, calificacion_id)
+
+
+def get_calificacion_by_usuario_curso(
+    *, session: Session, usuario_id: uuid.UUID, curso_id: uuid.UUID
+) -> Calificacion | None:
+    statement = select(Calificacion).where(
+        Calificacion.usuario_id == usuario_id,
+        Calificacion.curso_id == curso_id,
+    )
+    return session.exec(statement).first()
+
+
+def get_calificaciones_curso(
+    *, session: Session, curso_id: uuid.UUID, skip: int = 0, limit: int = 50
+) -> tuple[list[Calificacion], int]:
+    q = select(Calificacion).where(
+        Calificacion.curso_id == curso_id,
+        Calificacion.estado == EstadoCalificacion.PUBLICA,
+    )
+    count = session.exec(
+        select(func.count()).select_from(Calificacion).where(
+            Calificacion.curso_id == curso_id,
+            Calificacion.estado == EstadoCalificacion.PUBLICA,
+        )
+    ).one()
+    items = session.exec(q.offset(skip).limit(limit)).all()
+    return list(items), count
+
+
+def create_calificacion(
+    *,
+    session: Session,
+    usuario_id: uuid.UUID,
+    curso_id: uuid.UUID,
+    estrellas: int,
+    titulo: str | None = None,
+    comentario: str | None = None,
+) -> Calificacion:
+    db_obj = Calificacion(
+        usuario_id=usuario_id,
+        curso_id=curso_id,
+        estrellas=estrellas,
+        titulo=titulo,
+        comentario=comentario,
+        estado=EstadoCalificacion.PENDIENTE,
+    )
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def update_calificacion(
+    *,
+    session: Session,
+    db_cal: Calificacion,
+    estrellas: int | None = None,
+    titulo: str | None = None,
+    comentario: str | None = None,
+) -> Calificacion:
+    if estrellas is not None:
+        db_cal.estrellas = estrellas
+    if titulo is not None:
+        db_cal.titulo = titulo
+    if comentario is not None:
+        db_cal.comentario = comentario
+    db_cal.actualizado_en = datetime.utcnow()
+    session.add(db_cal)
+    session.commit()
+    session.refresh(db_cal)
+    return db_cal
+
+
+def upsert_voto_resena(
+    *, session: Session, calificacion_id: uuid.UUID, usuario_id: uuid.UUID, voto: int
+) -> VotoResena:
+    statement = select(VotoResena).where(
+        VotoResena.calificacion_id == calificacion_id,
+        VotoResena.usuario_id == usuario_id,
+    )
+    db_voto = session.exec(statement).first()
+    if db_voto:
+        db_voto.voto = voto
+    else:
+        db_voto = VotoResena(
+            calificacion_id=calificacion_id,
+            usuario_id=usuario_id,
+            voto=voto,
+        )
+    session.add(db_voto)
+    session.commit()
+    session.refresh(db_voto)
+    return db_voto
