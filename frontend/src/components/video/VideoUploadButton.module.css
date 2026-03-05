@@ -1,0 +1,78 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: var(--color-secondary-30);
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.button.ready {
+  background: #22c55e;
+}
+
+.button.error {
+  background: #ef4444;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255,255,255,0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.progressBar {
+  width: 100%;
+  height: 6px;
+  background: rgba(0,71,119,0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-accent-10);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.errorText {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.successText {
+  color: #22c55e;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.existingBadge {
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
