@@ -65,7 +65,7 @@ class Curso(SQLModel, table=True):
     __tablename__ = "cursos"
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
-    categoria_id: uuid.UUID = Field(foreign_key="categorias.id", nullable=False)
+    categoria_id: uuid.UUID | None = Field(default=None, foreign_key="categorias.id", nullable=True)
     instructor_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
     titulo: str = Field(max_length=255)
     slug: str = Field(max_length=255, unique=True, index=True)
@@ -75,6 +75,9 @@ class Curso(SQLModel, table=True):
     calificacion_prom: float = Field(default=0.0)
     total_resenas: int = Field(default=0)
     es_gratis: bool = Field(default=False)
+    portada_url: str | None = Field(default=None, max_length=500)
+    bunny_library_id: str | None = Field(default=None, max_length=50)
+    bunny_collection_id: str | None = Field(default=None, max_length=100)
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     publicado_en: datetime | None = Field(default=None)
     creado_en: datetime = Field(default_factory=datetime.utcnow)
@@ -175,6 +178,33 @@ class CategoriaCreate(SQLModel):
     activa: bool = True
 
 
+class CategoriaUpdate(SQLModel):
+    nombre: str | None = None
+    slug: str | None = None
+    descripcion: str | None = None
+    orden: int | None = None
+    activa: bool | None = None
+
+
+# -- Etiqueta --
+
+class EtiquetaPublic(SQLModel):
+    id: uuid.UUID
+    nombre: str
+    slug: str
+    creado_en: datetime
+
+
+class EtiquetaCreate(SQLModel):
+    nombre: str
+    slug: str
+
+
+class EtiquetaUpdate(SQLModel):
+    nombre: str | None = None
+    slug: str | None = None
+
+
 # -- Recurso de Lección --
 
 class RecursoLeccionPublic(SQLModel):
@@ -260,7 +290,7 @@ class ModuloUpdate(SQLModel):
 class CursoPublic(SQLModel):
     id: uuid.UUID
     instructor_id: uuid.UUID
-    categoria_id: uuid.UUID
+    categoria_id: uuid.UUID | None = None
     titulo: str
     slug: str
     descripcion: str | None = None
@@ -269,6 +299,9 @@ class CursoPublic(SQLModel):
     calificacion_prom: float
     total_resenas: int
     es_gratis: bool
+    portada_url: str | None = None
+    bunny_library_id: str | None = None
+    bunny_collection_id: str | None = None
     publicado_en: datetime | None = None
     creado_en: datetime
     actualizado_en: datetime | None = None
@@ -286,10 +319,11 @@ class CursosPublic(SQLModel):
 class CursoCreate(SQLModel):
     titulo: str
     slug: str
-    categoria_id: uuid.UUID
+    categoria_id: uuid.UUID | None = None
     descripcion: str | None = None
     estado: EstadoCurso = EstadoCurso.BORRADOR
     es_gratis: bool = False
+    bunny_library_id: str | None = None
 
 
 class CursoUpdate(SQLModel):
@@ -299,6 +333,8 @@ class CursoUpdate(SQLModel):
     descripcion: str | None = None
     estado: EstadoCurso | None = None
     es_gratis: bool | None = None
+    portada_url: str | None = None
+    bunny_library_id: str | None = None
 
 
 # -- Bunny.net Video Upload --

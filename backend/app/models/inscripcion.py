@@ -29,7 +29,7 @@ class Inscripcion(SQLModel, table=True):
     progreso: list["ProgresoLeccion"] = Relationship(
         back_populates="inscripcion", cascade_delete=True
     )
-    certificado: "Certificado | None" = Relationship(back_populates="inscripcion")
+    certificado: "Certificado" = Relationship(back_populates="inscripcion")
 
 
 # ── Progreso de Lecciones ──────────────────────────────────────────────────
