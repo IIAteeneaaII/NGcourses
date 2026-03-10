@@ -81,6 +81,23 @@ class ApiClient {
     return this.request<T>(endpoint, { method: 'DELETE' });
   }
 
+  async uploadFile<T>(endpoint: string, file: File, fieldName = 'file'): Promise<T> {
+    const url = `${this.baseUrl}${endpoint}`;
+    const token = getToken();
+    const formData = new FormData();
+    formData.append(fieldName, file);
+
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    const response = await fetch(url, { method: 'POST', headers, body: formData });
+    if (!response.ok) {
+      const error: ApiError = { detail: await response.text(), status: response.status };
+      throw error;
+    }
+    return response.json();
+  }
+
   /** Login con OAuth2 form data */
   async loginForm(email: string, password: string): Promise<{ access_token: string; token_type: string }> {
     const url = `${this.baseUrl}/api/v1/login/access-token`;
@@ -111,21 +128,79 @@ export const authApi = {
 };
 
 export const cursosApi = {
-  list: (params?: { skip?: number; limit?: number }) => {
+  list: (params?: { skip?: number; limit?: number; categoria_id?: string; search?: string; estado?: string }) => {
     const qs = new URLSearchParams();
     if (params?.skip) qs.set('skip', String(params.skip));
     if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.categoria_id) qs.set('categoria_id', params.categoria_id);
+    if (params?.search) qs.set('search', params.search);
+    if (params?.estado) qs.set('estado', params.estado);
     return apiClient.get(`/api/v1/cursos/?${qs}`);
   },
   get: (id: string) => apiClient.get(`/api/v1/cursos/${id}`),
   create: (data: unknown) => apiClient.post('/api/v1/cursos/', data),
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/cursos/${id}`, data),
   delete: (id: string) => apiClient.delete(`/api/v1/cursos/${id}`),
+  uploadCover: (id: string, file: File) => apiClient.uploadFile(`/api/v1/cursos/${id}/cover`, file),
+  // Módulos
+  createModulo: (curso_id: string, data: unknown) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/modulos`, data),
+  updateModulo: (curso_id: string, modulo_id: string, data: unknown) =>
+    apiClient.patch(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}`, data),
+  deleteModulo: (curso_id: string, modulo_id: string) =>
+    apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}`),
+  // Lecciones
+  createLeccion: (curso_id: string, modulo_id: string, data: unknown) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones`, data),
+  updateLeccion: (curso_id: string, modulo_id: string, leccion_id: string, data: unknown) =>
+    apiClient.patch(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`, data),
+  deleteLeccion: (curso_id: string, modulo_id: string, leccion_id: string) =>
+    apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`),
+  // Recursos
+  listRecursos: (curso_id: string, modulo_id: string, leccion_id: string) =>
+    apiClient.get(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos`),
+  createRecurso: (curso_id: string, modulo_id: string, leccion_id: string, data: unknown) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos`, data),
+  deleteRecurso: (curso_id: string, modulo_id: string, leccion_id: string, recurso_id: string) =>
+    apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/${recurso_id}`),
 };
 
 export const inscripcionesApi = {
   mis: () => apiClient.get('/api/v1/inscripciones/me'),
   inscribirse: (curso_id: string) => apiClient.post('/api/v1/inscripciones/', { curso_id }),
+  porCurso: (curso_id: string) => apiClient.get(`/api/v1/inscripciones/curso/${curso_id}`),
+};
+
+export const categoriasApi = {
+  list: () => apiClient.get('/api/v1/categorias/'),
+  create: (data: unknown) => apiClient.post('/api/v1/categorias/', data),
+  update: (id: string, data: unknown) => apiClient.patch(`/api/v1/categorias/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/api/v1/categorias/${id}`),
+};
+
+export const etiquetasApi = {
+  list: () => apiClient.get('/api/v1/etiquetas/'),
+  create: (data: unknown) => apiClient.post('/api/v1/etiquetas/', data),
+  asignar: (curso_id: string, etiqueta_id: string) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/etiquetas`, { etiqueta_id }),
+  remover: (curso_id: string, etiqueta_id: string) =>
+    apiClient.delete(`/api/v1/cursos/${curso_id}/etiquetas/${etiqueta_id}`),
+};
+
+export const usersApi = {
+  list: (params?: { skip?: number; limit?: number; rol?: string; estado?: string; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.skip) qs.set('skip', String(params.skip));
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.rol) qs.set('rol', params.rol);
+    if (params?.estado) qs.set('estado', params.estado);
+    if (params?.search) qs.set('search', params.search);
+    return apiClient.get(`/api/v1/users/?${qs}`);
+  },
+  get: (id: string) => apiClient.get(`/api/v1/users/${id}`),
+  create: (data: unknown) => apiClient.post('/api/v1/users/', data),
+  update: (id: string, data: unknown) => apiClient.patch(`/api/v1/users/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/api/v1/users/${id}`),
 };
 
 export const progresoApi = {

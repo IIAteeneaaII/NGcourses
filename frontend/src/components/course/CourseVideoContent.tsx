@@ -12,9 +12,10 @@ import styles from './CourseVideoContent.module.css';
 interface CourseVideoContentProps {
   initialCourse: Course;
   inscripcionId?: string | null;
+  bunnyLibraryId?: string | null;
 }
 
-export default function CourseVideoContent({ initialCourse, inscripcionId }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId }: CourseVideoContentProps) {
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson>(course.modules[0].lessons[0]);
   const [progress, setProgress] = useState(course.progress);
@@ -25,7 +26,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId }: Cou
 
   const bunnyConfig = !currentLesson.videoUrl && currentLesson.videoId
     ? {
-        libraryId: process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '583601',
+        libraryId: bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '',
         videoId: currentLesson.videoId,
       }
     : undefined;
