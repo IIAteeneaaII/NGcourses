@@ -27,6 +27,7 @@ interface ApiCursoDetalle {
   id: string;
   titulo: string;
   descripcion: string | null;
+  bunny_library_id: string | null;
   modulos: ApiModulo[];
 }
 
@@ -52,6 +53,7 @@ export default function CursoVideosPage() {
 
   const [course, setCourse] = useState<Course | null>(null);
   const [inscripcionId, setInscripcionId] = useState<string | null>(null);
+  const [bunnyLibraryId, setBunnyLibraryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
@@ -59,6 +61,7 @@ export default function CursoVideosPage() {
     async function fetchData() {
       try {
         const cursoDetalle = await cursosApi.get(id) as ApiCursoDetalle;
+        setBunnyLibraryId(cursoDetalle.bunny_library_id);
 
         // Inscripción del usuario en este curso
         const inscResp = await inscripcionesApi.mis() as ApiInscripcionesResp;
@@ -124,5 +127,5 @@ export default function CursoVideosPage() {
 
   if (hasError || !course) return notFound();
 
-  return <CourseVideoContent initialCourse={course} inscripcionId={inscripcionId} />;
+  return <CourseVideoContent initialCourse={course} inscripcionId={inscripcionId} bunnyLibraryId={bunnyLibraryId} />;
 }
