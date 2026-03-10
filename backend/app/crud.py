@@ -9,9 +9,13 @@ from sqlmodel import Session, select, func
 from app.core.security import get_password_hash, verify_password
 from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
 from app.models.contenido import (
+    Categoria, CategoriaCreate, CategoriaUpdate,
+    CursoEtiqueta,
+    Etiqueta, EtiquetaCreate, EtiquetaUpdate,
     Curso, CursoCreate, CursoUpdate,
     Modulo, ModuloCreate, ModuloUpdate,
     Leccion, LeccionCreate, LeccionUpdate,
+    RecursoLeccion, RecursoLeccionCreate,
 )
 from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoCalificacion
 from app.models.inscripcion import Certificado, Inscripcion, ProgresoLeccion
@@ -65,6 +69,107 @@ def create_item(*, session: Session, item_in: ItemCreate, owner_id: uuid.UUID) -
     return db_item
 
 
+# ── Categorías ────────────────────────────────────────────────────────────────
+
+def get_categorias(*, session: Session) -> list[Categoria]:
+    return list(session.exec(select(Categoria).order_by(Categoria.orden)).all())
+
+
+def get_categoria(*, session: Session, categoria_id: uuid.UUID) -> Categoria | None:
+    return session.get(Categoria, categoria_id)
+
+
+def create_categoria(*, session: Session, categoria_in: CategoriaCreate) -> Categoria:
+    db_obj = Categoria.model_validate(categoria_in)
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def update_categoria(
+    *, session: Session, db_categoria: Categoria, categoria_in: CategoriaUpdate
+) -> Categoria:
+    data = categoria_in.model_dump(exclude_unset=True)
+    db_categoria.sqlmodel_update(data)
+    session.add(db_categoria)
+    session.commit()
+    session.refresh(db_categoria)
+    return db_categoria
+
+
+def delete_categoria(*, session: Session, categoria_id: uuid.UUID) -> None:
+    db = session.get(Categoria, categoria_id)
+    if db:
+        session.delete(db)
+        session.commit()
+
+
+# ── Etiquetas ─────────────────────────────────────────────────────────────────
+
+def get_etiquetas(*, session: Session) -> list[Etiqueta]:
+    return list(session.exec(select(Etiqueta).order_by(Etiqueta.nombre)).all())
+
+
+def get_etiqueta(*, session: Session, etiqueta_id: uuid.UUID) -> Etiqueta | None:
+    return session.get(Etiqueta, etiqueta_id)
+
+
+def create_etiqueta(*, session: Session, etiqueta_in: EtiquetaCreate) -> Etiqueta:
+    db_obj = Etiqueta.model_validate(etiqueta_in)
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def update_etiqueta(
+    *, session: Session, db_etiqueta: Etiqueta, etiqueta_in: EtiquetaUpdate
+) -> Etiqueta:
+    data = etiqueta_in.model_dump(exclude_unset=True)
+    db_etiqueta.sqlmodel_update(data)
+    session.add(db_etiqueta)
+    session.commit()
+    session.refresh(db_etiqueta)
+    return db_etiqueta
+
+
+def delete_etiqueta(*, session: Session, etiqueta_id: uuid.UUID) -> None:
+    db = session.get(Etiqueta, etiqueta_id)
+    if db:
+        session.delete(db)
+        session.commit()
+
+
+def assign_etiqueta_curso(
+    *, session: Session, curso_id: uuid.UUID, etiqueta_id: uuid.UUID
+) -> None:
+    existing = session.exec(
+        select(CursoEtiqueta).where(
+            CursoEtiqueta.curso_id == curso_id,
+            CursoEtiqueta.etiqueta_id == etiqueta_id,
+        )
+    ).first()
+    if not existing:
+        db_obj = CursoEtiqueta(curso_id=curso_id, etiqueta_id=etiqueta_id)
+        session.add(db_obj)
+        session.commit()
+
+
+def remove_etiqueta_curso(
+    *, session: Session, curso_id: uuid.UUID, etiqueta_id: uuid.UUID
+) -> None:
+    db_obj = session.exec(
+        select(CursoEtiqueta).where(
+            CursoEtiqueta.curso_id == curso_id,
+            CursoEtiqueta.etiqueta_id == etiqueta_id,
+        )
+    ).first()
+    if db_obj:
+        session.delete(db_obj)
+        session.commit()
+
+
 # ── Cursos ────────────────────────────────────────────────────────────────────
 
 def get_cursos(
@@ -74,15 +179,26 @@ def get_cursos(
     limit: int = 100,
     estado: EstadoCurso | None = None,
     instructor_id: uuid.UUID | None = None,
+    categoria_id: uuid.UUID | None = None,
+    search: str | None = None,
 ) -> tuple[list[Curso], int]:
     query = select(Curso)
     count_query = select(func.count()).select_from(Curso)
+
+    filters = []
     if estado:
-        query = query.where(Curso.estado == estado)
-        count_query = count_query.where(Curso.estado == estado)
+        filters.append(Curso.estado == estado)
     if instructor_id:
-        query = query.where(Curso.instructor_id == instructor_id)
-        count_query = count_query.where(Curso.instructor_id == instructor_id)
+        filters.append(Curso.instructor_id == instructor_id)
+    if categoria_id:
+        filters.append(Curso.categoria_id == categoria_id)
+    if search:
+        filters.append(Curso.titulo.ilike(f"%{search}%"))
+
+    for f in filters:
+        query = query.where(f)
+        count_query = count_query.where(f)
+
     count = session.exec(count_query).one()
     cursos = session.exec(query.offset(skip).limit(limit)).all()
     return list(cursos), count
@@ -182,6 +298,30 @@ def delete_leccion(*, session: Session, leccion_id: uuid.UUID) -> None:
         session.commit()
 
 
+# ── Recursos de Lección ───────────────────────────────────────────────────────
+
+def get_recursos_leccion(*, session: Session, leccion_id: uuid.UUID) -> list[RecursoLeccion]:
+    statement = select(RecursoLeccion).where(RecursoLeccion.leccion_id == leccion_id)
+    return list(session.exec(statement).all())
+
+
+def create_recurso_leccion(
+    *, session: Session, recurso_in: RecursoLeccionCreate, leccion_id: uuid.UUID
+) -> RecursoLeccion:
+    db_obj = RecursoLeccion.model_validate(recurso_in, update={"leccion_id": leccion_id})
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+    return db_obj
+
+
+def delete_recurso_leccion(*, session: Session, recurso_id: uuid.UUID) -> None:
+    db = session.get(RecursoLeccion, recurso_id)
+    if db:
+        session.delete(db)
+        session.commit()
+
+
 # ── Inscripciones ─────────────────────────────────────────────────────────────
 
 def get_inscripcion(*, session: Session, inscripcion_id: uuid.UUID) -> Inscripcion | None:
@@ -215,6 +355,17 @@ def create_inscripcion(
     session.commit()
     session.refresh(db_obj)
     return db_obj
+
+
+def get_inscripciones_curso(
+    *, session: Session, curso_id: uuid.UUID, skip: int = 0, limit: int = 200
+) -> tuple[list[Inscripcion], int]:
+    q = select(Inscripcion).where(Inscripcion.curso_id == curso_id)
+    count = session.exec(
+        select(func.count()).select_from(Inscripcion).where(Inscripcion.curso_id == curso_id)
+    ).one()
+    items = session.exec(q.offset(skip).limit(limit)).all()
+    return list(items), count
 
 
 def update_ultimo_acceso(*, session: Session, inscripcion: Inscripcion) -> None:

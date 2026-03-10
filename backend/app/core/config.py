@@ -95,10 +95,11 @@ class Settings(BaseSettings):
     FIRST_SUPERUSER_PASSWORD: str
 
     # Bunny.net Video Streaming
-    BUNNY_API_KEY: str | None = None
+    BUNNY_API_KEY: str | None = None        # API key de la librería (AccessKey para REST API)
+    BUNNY_TOKEN_KEY: str | None = None      # Token key de la librería (firma TUS upload)
     BUNNY_LIBRARY_ID: str | None = None
-    BUNNY_CDN_HOSTNAME: str | None = None  # e.g. "vz-xxxxxxxx.b-cdn.net"
-    BUNNY_WEBHOOK_SECRET: str | None = None  # para validar firma HMAC
+    BUNNY_CDN_HOSTNAME: str | None = None   # e.g. "vz-0bae202f-e4d.b-cdn.net"
+    BUNNY_WEBHOOK_SECRET: str | None = None # para validar firma HMAC del webhook
 
     @computed_field  # type: ignore[prop-decorator]
     @property
