@@ -7,9 +7,12 @@ import styles from './CourseInfoContent.module.css';
 
 interface CourseInfoContentProps {
   course: CourseInfo;
+  isEnrolled?: boolean;
+  onInscribirse?: () => void;
+  enrollLoading?: boolean;
 }
 
-export default function CourseInfoContent({ course }: CourseInfoContentProps) {
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading }: CourseInfoContentProps) {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -99,11 +102,22 @@ export default function CourseInfoContent({ course }: CourseInfoContentProps) {
 
           <div className={styles.actionsContainer}>
             <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
-              Iniciar curso
+              {isEnrolled ? 'Continuar curso' : 'Iniciar curso'}
             </Link>
-            <button className={styles.favoriteButton}>
-              Guardar / Favoritos
-            </button>
+            {!isEnrolled && onInscribirse && (
+              <button
+                className={styles.favoriteButton}
+                onClick={onInscribirse}
+                disabled={enrollLoading}
+              >
+                {enrollLoading ? 'Inscribiendo...' : 'Inscribirme gratis'}
+              </button>
+            )}
+            {isEnrolled && (
+              <span className={styles.favoriteButton} style={{ cursor: 'default', opacity: 0.7 }}>
+                Ya estás inscrito
+              </span>
+            )}
           </div>
         </div>
       </main>

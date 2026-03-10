@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import * as tus from 'tus-js-client';
 import { videoApi } from '@/lib/api/client';
 import styles from './VideoUploadButton.module.css';
 
@@ -41,12 +42,12 @@ export default function VideoUploadButton({
   const [embedUrl, setEmbedUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const uploadRef = useRef<tus.Upload | null>(null);
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validar tipo de archivo
     if (!file.type.startsWith('video/')) {
       setErrorMsg('Solo se permiten archivos de video');
       return;
@@ -57,14 +58,14 @@ export default function VideoUploadButton({
     setProgress(0);
 
     try {
-      // 1. Inicializar upload en backend → Bunny.net
+      // 1. Inicializar en backend → Bunny crea el video y devuelve TUS headers
       const initResp = await videoApi.initUpload(cursoId, moduloId, leccionId) as BunnyInitResponse;
-      const { bunny_video_id, tus_upload_url, tus_headers } = initResp;
+      const { bunny_video_id, tus_headers } = initResp;
 
       setStatus('uploading');
 
-      // 2. Upload TUS directo a Bunny.net
-      await uploadViaTUS(file, tus_upload_url, tus_headers, bunny_video_id);
+      // 2. Upload TUS correcto con chunks de 5MB
+      await uploadViaTUS(file, tus_headers, bunny_video_id);
 
       // 3. Esperar encoding
       setStatus('encoding');
@@ -76,48 +77,31 @@ export default function VideoUploadButton({
     }
   };
 
-  /**
-   * Upload TUS simplificado usando XMLHttpRequest para tracking de progreso.
-   * Bunny.net acepta upload directo (non-resumable) vía POST con los headers TUS.
-   */
-  const uploadViaTUS = async (
+  const uploadViaTUS = (
     file: File,
-    uploadUrl: string,
     tusHeaders: Record<string, string>,
     videoId: string,
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-
-      xhr.upload.onprogress = (event) => {
-        if (event.lengthComputable) {
-          const pct = Math.round((event.loaded / event.total) * 100);
+      const upload = new tus.Upload(file, {
+        endpoint: 'https://video.bunnycdn.com/tusupload',
+        retryDelays: [0, 3000, 5000, 10000],
+        chunkSize: 5 * 1024 * 1024, // 5 MB por chunk
+        headers: tusHeaders,
+        metadata: {
+          filename: file.name,
+          filetype: file.type,
+        },
+        onProgress: (bytesUploaded, bytesTotal) => {
+          const pct = Math.round((bytesUploaded / bytesTotal) * 100);
           setProgress(pct);
-        }
-      };
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
-        } else {
-          reject(new Error(`Upload fallido: HTTP ${xhr.status}`));
-        }
-      };
-
-      xhr.onerror = () => reject(new Error('Error de red durante el upload'));
-
-      // Bunny.net TUS endpoint
-      const tusUrl = `https://video.bunnycdn.com/tusupload`;
-      xhr.open('POST', tusUrl);
-
-      // Headers TUS requeridos por Bunny
-      Object.entries(tusHeaders).forEach(([key, val]) => {
-        xhr.setRequestHeader(key, val);
+        },
+        onSuccess: () => resolve(),
+        onError: (err) => reject(new Error(err.message)),
       });
-      xhr.setRequestHeader('Tus-Resumable', '1.0.0');
-      xhr.setRequestHeader('Upload-Length', String(file.size));
 
-      xhr.send(file);
+      uploadRef.current = upload;
+      upload.start();
     });
   };
 
@@ -137,22 +121,20 @@ export default function VideoUploadButton({
           setErrorMsg('El video falló al procesarse en Bunny.net');
         }
       } catch {
-        // Ignorar errores de polling
+        // ignorar errores de polling
       }
-    }, 5000); // Revisar cada 5 segundos
+    }, 5000);
   };
 
-  const handleClick = () => {
-    fileInputRef.current?.click();
-  };
+  const handleClick = () => fileInputRef.current?.click();
 
   const getStatusLabel = () => {
     switch (status) {
       case 'initiating': return 'Iniciando...';
       case 'uploading': return `Subiendo ${progress}%`;
       case 'encoding': return 'Procesando en Bunny.net...';
-      case 'ready': return 'Video listo';
-      case 'error': return 'Error';
+      case 'ready': return 'Video listo ✓';
+      case 'error': return 'Error — reintentar';
       default: return currentBunnyVideoId ? 'Reemplazar video' : 'Subir video';
     }
   };
