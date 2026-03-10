@@ -2,8 +2,10 @@ from fastapi import APIRouter
 
 from app.api.routes import (
     calificaciones,
+    categorias,
     certificados,
     cursos,
+    etiquetas,
     inscripciones,
     items,
     login,
@@ -20,6 +22,8 @@ api_router.include_router(login.router)
 api_router.include_router(users.router)
 api_router.include_router(utils.router)
 api_router.include_router(items.router)
+api_router.include_router(categorias.router)
+api_router.include_router(etiquetas.router)
 api_router.include_router(cursos.router)
 api_router.include_router(inscripciones.router)
 api_router.include_router(progreso.router)

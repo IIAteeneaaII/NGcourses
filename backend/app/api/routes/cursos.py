@@ -1,8 +1,9 @@
+import os
 import uuid
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
@@ -22,6 +23,8 @@ from app.models.contenido import (
     ModuloCreate,
     ModuloPublic,
     ModuloUpdate,
+    RecursoLeccionCreate,
+    RecursoLeccionPublic,
 )
 from app.models.schemas import Message
 from app.services import bunny as bunny_svc
@@ -51,28 +54,35 @@ def list_cursos(
     skip: int = 0,
     limit: int = 100,
     estado: EstadoCurso | None = None,
+    categoria_id: uuid.UUID | None = None,
+    search: str | None = None,
 ) -> Any:
     """
     Lista cursos. Usuarios normales solo ven PUBLICADOS.
     Instructores ven sus propios cursos en cualquier estado.
     Admins/superusers ven todos.
+    Soporta filtros: ?categoria_id=&search=&estado=
     """
     is_admin = current_user.is_superuser or current_user.rol in {
         RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
     }
 
     if is_admin:
-        cursos, count = crud.get_cursos(session=session, skip=skip, limit=limit, estado=estado)
+        cursos, count = crud.get_cursos(
+            session=session, skip=skip, limit=limit,
+            estado=estado, categoria_id=categoria_id, search=search
+        )
     elif current_user.rol == RolUsuario.INSTRUCTOR:
         cursos, count = crud.get_cursos(
             session=session, skip=skip, limit=limit,
-            estado=estado, instructor_id=current_user.id
+            estado=estado, instructor_id=current_user.id,
+            categoria_id=categoria_id, search=search
         )
     else:
-        # Estudiantes solo ven publicados
         cursos, count = crud.get_cursos(
             session=session, skip=skip, limit=limit,
-            estado=EstadoCurso.PUBLICADO
+            estado=EstadoCurso.PUBLICADO,
+            categoria_id=categoria_id, search=search
         )
 
     return CursosPublic(data=cursos, count=count)
@@ -125,6 +135,18 @@ def create_curso(
     db_curso = crud.create_curso(
         session=session, curso_in=curso_in, instructor_id=current_user.id
     )
+
+    # Crear colección en Bunny.net con el nombre del curso
+    if settings.bunny_enabled:
+        try:
+            collection = bunny_svc.create_collection(name=db_curso.titulo)
+            db_curso.bunny_collection_id = collection.get("guid")
+            session.add(db_curso)
+            session.commit()
+            session.refresh(db_curso)
+        except Exception:
+            pass  # No falla el curso si Bunny falla
+
     return db_curso
 
 
@@ -163,6 +185,55 @@ def delete_curso(
 
     crud.delete_curso(session=session, curso_id=curso_id)
     return Message(message="Curso eliminado exitosamente")
+
+
+# ── Portada ───────────────────────────────────────────────────────────────────
+
+COVERS_DIR = "/app/app/media/covers"
+ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+
+@router.post("/{curso_id}/cover", response_model=CursoPublic)
+async def upload_cover(
+    *,
+    curso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+) -> Any:
+    """Sube la imagen de portada del curso. Guarda en disco y actualiza portada_url."""
+    db_curso = crud.get_curso(session=session, curso_id=curso_id)
+    if not db_curso:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+    _require_curso_owner_or_admin(current_user, db_curso.instructor_id)
+
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPEG, PNG o WEBP.")
+
+    contents = await file.read()
+    if len(contents) > MAX_IMAGE_SIZE:
+        raise HTTPException(status_code=400, detail="La imagen excede el tamaño máximo de 5MB.")
+
+    ext = (file.filename or "cover.jpg").rsplit(".", 1)[-1].lower()
+    if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
+        ext = "jpg"
+
+    os.makedirs(COVERS_DIR, exist_ok=True)
+    filename = f"{curso_id}.{ext}"
+    filepath = os.path.join(COVERS_DIR, filename)
+
+    with open(filepath, "wb") as f:
+        f.write(contents)
+
+    portada_url = f"/media/covers/{filename}"
+    db_curso.portada_url = portada_url
+    session.add(db_curso)
+    session.commit()
+    session.refresh(db_curso)
+
+    return db_curso
 
 
 # ── Módulos ───────────────────────────────────────────────────────────────────
@@ -411,16 +482,22 @@ def init_video_upload(
         session, current_user, curso_id, modulo_id, leccion_id
     )
 
+    lib_id = db_curso.bunny_library_id  # None → usará el default del .env
+
     # Si ya tiene video en Bunny, eliminarlo primero
     if db_leccion.bunny_video_id:
         try:
-            bunny_svc.delete_video(db_leccion.bunny_video_id)
+            bunny_svc.delete_video(db_leccion.bunny_video_id, library_id=lib_id)
         except httpx.HTTPError:
             pass  # Si falla la eliminación, continuar igual
 
     # Crear video en Bunny.net
     try:
-        bunny_resp = bunny_svc.create_video(title=db_leccion.titulo)
+        bunny_resp = bunny_svc.create_video(
+            title=db_leccion.titulo,
+            collection_id=db_curso.bunny_collection_id,
+            library_id=lib_id,
+        )
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Error al crear video en Bunny.net: {e}")
 
@@ -438,8 +515,8 @@ def init_video_upload(
     session.refresh(db_leccion)
 
     # Preparar respuesta con datos para TUS upload
-    tus_headers = bunny_svc.get_tus_headers(video_id=video_id, file_size=0)
-    embed_url = bunny_svc.build_embed_url(video_id)
+    tus_headers = bunny_svc.get_tus_headers(video_id=video_id, library_id=lib_id)
+    embed_url = bunny_svc.build_embed_url(video_id, library_id=lib_id)
 
     return BunnyVideoInitResponse(
         bunny_video_id=video_id,
@@ -465,15 +542,17 @@ def get_video_status(
     if not settings.bunny_enabled:
         raise HTTPException(status_code=503, detail="Bunny.net no configurado")
 
-    _, db_leccion = _get_leccion_with_access(
+    db_curso, db_leccion = _get_leccion_with_access(
         session, current_user, curso_id, modulo_id, leccion_id
     )
 
     if not db_leccion.bunny_video_id:
         raise HTTPException(status_code=404, detail="Esta lección no tiene video subido")
 
+    lib_id = db_curso.bunny_library_id
+
     try:
-        info = bunny_svc.get_video(db_leccion.bunny_video_id)
+        info = bunny_svc.get_video(db_leccion.bunny_video_id, library_id=lib_id)
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Error consultando Bunny.net: {e}")
 
@@ -487,7 +566,7 @@ def get_video_status(
         is_ready=is_ready,
         hls_url=db_leccion.hls_url,
         thumbnail_url=db_leccion.thumbnail_url,
-        embed_url=bunny_svc.build_embed_url(db_leccion.bunny_video_id) if is_ready else None,
+        embed_url=bunny_svc.build_embed_url(db_leccion.bunny_video_id, library_id=lib_id) if is_ready else None,
     )
 
 
@@ -507,7 +586,7 @@ def delete_video(
     if not settings.bunny_enabled:
         raise HTTPException(status_code=503, detail="Bunny.net no configurado")
 
-    _, db_leccion = _get_leccion_with_access(
+    db_curso, db_leccion = _get_leccion_with_access(
         session, current_user, curso_id, modulo_id, leccion_id
     )
 
@@ -515,7 +594,7 @@ def delete_video(
         raise HTTPException(status_code=404, detail="Esta lección no tiene video")
 
     try:
-        bunny_svc.delete_video(db_leccion.bunny_video_id)
+        bunny_svc.delete_video(db_leccion.bunny_video_id, library_id=db_curso.bunny_library_id)
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Error eliminando video de Bunny.net: {e}")
 
@@ -529,3 +608,75 @@ def delete_video(
     session.commit()
 
     return Message(message="Video eliminado exitosamente")
+
+
+# ── Recursos de Lección ────────────────────────────────────────────────────────
+
+@router.get(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/recursos",
+    response_model=list[RecursoLeccionPublic],
+)
+def list_recursos(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Lista los recursos de una lección."""
+    db_curso, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+    recursos = crud.get_recursos_leccion(session=session, leccion_id=leccion_id)
+    return [RecursoLeccionPublic.model_validate(r, from_attributes=True) for r in recursos]
+
+
+@router.post(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/recursos",
+    response_model=RecursoLeccionPublic,
+    status_code=201,
+)
+def create_recurso(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    recurso_in: RecursoLeccionCreate,
+) -> Any:
+    """Crea un recurso en una lección."""
+    db_curso, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+    db_recurso = crud.create_recurso_leccion(
+        session=session, recurso_in=recurso_in, leccion_id=leccion_id
+    )
+    return RecursoLeccionPublic.model_validate(db_recurso, from_attributes=True)
+
+
+@router.delete(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/recursos/{recurso_id}",
+    response_model=Message,
+)
+def delete_recurso(
+    *,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    recurso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Elimina un recurso de una lección."""
+    db_curso, db_leccion = _get_leccion_with_access(
+        session, current_user, curso_id, modulo_id, leccion_id
+    )
+    from app.models.contenido import RecursoLeccion
+    db_recurso = session.get(RecursoLeccion, recurso_id)
+    if not db_recurso or db_recurso.leccion_id != leccion_id:
+        raise HTTPException(status_code=404, detail="Recurso no encontrado")
+
+    crud.delete_recurso_leccion(session=session, recurso_id=recurso_id)
+    return Message(message="Recurso eliminado exitosamente")
