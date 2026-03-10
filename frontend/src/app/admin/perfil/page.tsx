@@ -1,190 +1,119 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { authApi, cursosApi, usersApi } from '@/lib/api/client';
 import styles from './page.module.css';
 
-interface UserProfile {
-  name: string;
-  email: string;
-  role: string;
-  department: string;
-  phone: string;
-  registrationDate: string;
-  initials: string;
-}
-
-interface UserStats {
-  coursesCreated: number;
-  approvedRequests: number;
-  activeStudents: number;
-}
-
-interface RecentCourse {
+interface ApiUser {
   id: string;
-  number: string;
-  title: string;
-  status: string;
-  studentsEnrolled?: number;
+  full_name: string | null;
+  email: string;
+  telefono: string | null;
+  rol: string;
 }
 
-const MOCK_PROFILE: UserProfile = {
-  name: 'Supervisor Pascual',
-  email: 'supervisor@pascual.com',
-  role: 'Supervisor de Cursos',
-  department: 'Capacitacion Empresarial',
-  phone: '+52 55 1234 5678',
-  registrationDate: '10 de Enero, 2024',
-  initials: 'S',
-};
+interface ApiCursosResp {
+  count: number;
+  data: unknown[];
+}
 
-const MOCK_STATS: UserStats = {
-  coursesCreated: 12,
-  approvedRequests: 8,
-  activeStudents: 150,
-};
-
-const MOCK_COURSES: RecentCourse[] = [
-  {
-    id: '1',
-    number: '01',
-    title: 'Facturacion Electronica Avanzada',
-    status: 'Publicado',
-    studentsEnrolled: 45,
-  },
-  {
-    id: '2',
-    number: '02',
-    title: 'Gestion de Recursos Humanos',
-    status: 'Publicado',
-    studentsEnrolled: 38,
-  },
-  {
-    id: '3',
-    number: '03',
-    title: 'Marketing Digital Corporativo',
-    status: 'En revision - Borrador',
-  },
-];
+interface ApiUsersResp {
+  count: number;
+  data: unknown[];
+}
 
 export default function PerfilAdminPage() {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
-  const [profile] = useState<UserProfile>(MOCK_PROFILE);
-  const [stats] = useState<UserStats>(MOCK_STATS);
-  const [courses] = useState<RecentCourse[]>(MOCK_COURSES);
+  const [user, setUser] = useState<ApiUser | null>(null);
+  const [stats, setStats] = useState({ coursesCreated: 0, activeStudents: 0 });
+  const [loading, setLoading] = useState(true);
 
-  const handleEditProfile = () => {
-    setIsEditing(!isEditing);
-    // TODO: Implement edit functionality
-    alert('Funcionalidad de edicion de perfil en desarrollo');
-  };
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [userRaw, cursosResp, usersResp] = await Promise.all([
+          authApi.me() as Promise<ApiUser>,
+          cursosApi.list({ limit: 1 }) as Promise<ApiCursosResp>,
+          usersApi.list({ limit: 1 }) as Promise<ApiUsersResp>,
+        ]);
+        setUser(userRaw);
+        setStats({
+          coursesCreated: cursosResp.count ?? 0,
+          activeStudents: usersResp.count ?? 0,
+        });
+      } catch {
+        // fallo silencioso
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <span>Cargando...</span>
+      </div>
+    );
+  }
+
+  const nombre = user?.full_name || user?.email?.split('@')[0] || 'Admin';
+  const initials = nombre.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join('') || 'A';
 
   return (
     <div className={styles.pageContainer}>
-      <button
-        className={styles.backButton}
-        onClick={() => router.push('/admin')}
-      >
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
+      <button className={styles.backButton} onClick={() => router.push('/admin')}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
         Volver a opciones
       </button>
 
       <div className={styles.profileContainer}>
-        {/* Profile Header */}
         <div className={styles.profileHeader}>
-          <div className={styles.avatarLarge}>{profile.initials}</div>
+          <div className={styles.avatarLarge}>{initials}</div>
           <div className={styles.profileInfo}>
-            <h1 className={styles.profileName}>{profile.name}</h1>
-            <p className={styles.profileEmail}>{profile.email}</p>
-            <button
-              className={styles.editProfileButton}
-              onClick={handleEditProfile}
-            >
-              Editar Perfil
-            </button>
+            <h1 className={styles.profileName}>{nombre}</h1>
+            <p className={styles.profileEmail}>{user?.email ?? ''}</p>
           </div>
         </div>
 
         <div className={styles.profileSections}>
-          {/* Estadisticas */}
           <div className={styles.profileSection}>
             <h3 className={styles.sectionTitle}>Estadisticas</h3>
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
                 <div className={styles.statNumber}>{stats.coursesCreated}</div>
-                <div className={styles.statLabel}>Cursos Creados</div>
-              </div>
-              <div className={styles.statCard}>
-                <div className={styles.statNumber}>{stats.approvedRequests}</div>
-                <div className={styles.statLabel}>Solicitudes Aprobadas</div>
+                <div className={styles.statLabel}>Cursos en plataforma</div>
               </div>
               <div className={styles.statCard}>
                 <div className={styles.statNumber}>{stats.activeStudents}</div>
-                <div className={styles.statLabel}>Estudiantes Activos</div>
+                <div className={styles.statLabel}>Usuarios registrados</div>
               </div>
             </div>
           </div>
 
-          {/* Informacion Personal */}
           <div className={styles.profileSection}>
             <h3 className={styles.sectionTitle}>Informacion Personal</h3>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Nombre Completo</span>
-                <div className={styles.infoValue}>{profile.name}</div>
+                <div className={styles.infoValue}>{nombre}</div>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Correo Electronico</span>
-                <div className={styles.infoValue}>{profile.email}</div>
+                <div className={styles.infoValue}>{user?.email ?? ''}</div>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Rol</span>
-                <div className={styles.infoValue}>{profile.role}</div>
-              </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Departamento</span>
-                <div className={styles.infoValue}>{profile.department}</div>
+                <div className={styles.infoValue}>{user?.rol ?? 'administrador'}</div>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Telefono</span>
-                <div className={styles.infoValue}>{profile.phone}</div>
+                <div className={styles.infoValue}>{user?.telefono || '—'}</div>
               </div>
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Fecha de Registro</span>
-                <div className={styles.infoValue}>{profile.registrationDate}</div>
-              </div>
-            </div>
-          </div>
-
-          {/* Cursos Recientes */}
-          <div className={styles.profileSection}>
-            <h3 className={styles.sectionTitle}>Cursos Creados Recientemente</h3>
-            <div className={styles.courseList}>
-              {courses.map((course) => (
-                <div key={course.id} className={styles.courseItem}>
-                  <div className={styles.courseItemInfo}>
-                    <div className={styles.courseIcon}>{course.number}</div>
-                    <div className={styles.courseDetails}>
-                      <div className={styles.courseItemTitle}>{course.title}</div>
-                      <div className={styles.courseStatus}>
-                        {course.status}
-                        {course.studentsEnrolled &&
-                          ` - ${course.studentsEnrolled} estudiantes inscritos`}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </div>
