@@ -24,6 +24,7 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
+from app.models._enums import EstadoUsuario, RolUsuario
 from app.utils import generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -34,16 +35,34 @@ router = APIRouter(prefix="/users", tags=["users"])
     dependencies=[Depends(get_current_active_superuser)],
     response_model=UsersPublic,
 )
-def read_users(session: SessionDep, skip: int = 0, limit: int = 100) -> Any:
+def read_users(
+    session: SessionDep,
+    skip: int = 0,
+    limit: int = 100,
+    rol: RolUsuario | None = None,
+    estado: EstadoUsuario | None = None,
+    search: str | None = None,
+) -> Any:
     """
-    Retrieve users.
+    Retrieve users. Soporta filtros: ?rol=&estado=&search=
     """
+    query = select(User)
+    count_query = select(func.count()).select_from(User)
 
-    count_statement = select(func.count()).select_from(User)
-    count = session.exec(count_statement).one()
+    filters = []
+    if rol:
+        filters.append(User.rol == rol)
+    if estado:
+        filters.append(User.estado == estado)
+    if search:
+        filters.append(User.email.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%"))  # type: ignore
 
-    statement = select(User).offset(skip).limit(limit)
-    users = session.exec(statement).all()
+    for f in filters:
+        query = query.where(f)
+        count_query = count_query.where(f)
+
+    count = session.exec(count_query).one()
+    users = session.exec(query.offset(skip).limit(limit)).all()
 
     return UsersPublic(data=users, count=count)
 

@@ -11,7 +11,8 @@ from fastapi import APIRouter, Header, HTTPException, Request
 from sqlmodel import select
 
 from app.api.deps import SessionDep
-from app.models.contenido import Leccion
+from app.core.config import settings
+from app.models.contenido import Leccion, Modulo, Curso
 from app.services import bunny as bunny_svc
 
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
@@ -50,6 +51,7 @@ async def bunny_webhook(
 
     video_guid = data.get("VideoGuid") or data.get("videoGuid")
     status = data.get("Status") or data.get("status", 0)
+    video_library_id = str(data.get("VideoLibraryId") or data.get("videoLibraryId") or "")
 
     if not video_guid:
         return {"ok": True, "message": "Sin VideoGuid, ignorado"}
@@ -59,8 +61,17 @@ async def bunny_webhook(
     db_leccion = session.exec(statement).first()
 
     if not db_leccion:
-        # El video puede existir sin lección asignada aún, no es error
         return {"ok": True, "message": "Lección no encontrada para este video"}
+
+    # Validar que el VideoLibraryId coincide con el curso o el default del .env
+    if video_library_id:
+        db_modulo = session.get(Modulo, db_leccion.modulo_id)
+        db_curso = session.get(Curso, db_modulo.curso_id) if db_modulo else None
+        curso_lib = db_curso.bunny_library_id if db_curso else None
+        default_lib = settings.BUNNY_LIBRARY_ID or ""
+        expected = curso_lib or default_lib
+        if expected and video_library_id != str(expected):
+            return {"ok": True, "message": "VideoLibraryId no coincide, ignorado"}
 
     # Status 3=finished, 4=resolution_finished → actualizar URLs
     if status in (3, 4):
