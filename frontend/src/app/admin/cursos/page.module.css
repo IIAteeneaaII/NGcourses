@@ -111,6 +111,14 @@
   transform: translateX(4px);
 }
 
+.courseThumbnail {
+  width: 3.5rem;
+  height: 2.25rem;
+  object-fit: cover;
+  border-radius: 0.375rem;
+  flex-shrink: 0;
+}
+
 .courseInfo {
   display: flex;
   align-items: center;
