@@ -91,6 +91,29 @@ def mis_inscripciones(
     )
 
 
+@router.get("/usuario/{usuario_id}", response_model=InscripcionesPublic)
+def inscripciones_por_usuario(
+    usuario_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    skip: int = 0,
+    limit: int = 200,
+) -> Any:
+    """Lista inscripciones de un alumno específico. Solo admin."""
+    is_admin = current_user.is_superuser or current_user.rol in {
+        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+    }
+    if not is_admin:
+        raise HTTPException(status_code=403, detail="Sin permiso")
+    items, count = crud.get_inscripciones_usuario(
+        session=session, usuario_id=usuario_id, skip=skip, limit=limit
+    )
+    return InscripcionesPublic(
+        data=[InscripcionPublic.model_validate(i, from_attributes=True) for i in items],
+        count=count,
+    )
+
+
 @router.get("/{inscripcion_id}", response_model=InscripcionPublic)
 def get_inscripcion(
     inscripcion_id: uuid.UUID,
