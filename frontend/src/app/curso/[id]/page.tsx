@@ -11,6 +11,8 @@ interface ApiModulo {
   lecciones: unknown[];
 }
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
 interface ApiCurso {
   id: string;
   titulo: string;
@@ -18,6 +20,7 @@ interface ApiCurso {
   duracion_seg: number;
   calificacion_prom: number;
   modulos: ApiModulo[];
+  portada_url: string | null;
 }
 
 interface ApiInscripcionesResp {
@@ -62,7 +65,7 @@ export default function CursoInfoPage() {
           learningOutcomes: [],
           requirements: '',
           syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
-          image: '/placeholder-course.jpg',
+          image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
         };
 
         setCourse(courseInfo);

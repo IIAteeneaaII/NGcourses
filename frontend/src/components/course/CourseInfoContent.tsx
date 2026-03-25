@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { CourseInfo } from '@/types/course';
@@ -10,15 +11,18 @@ interface CourseInfoContentProps {
   isEnrolled?: boolean;
   onInscribirse?: () => void;
   enrollLoading?: boolean;
+  backHref?: string;
 }
 
-export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading }: CourseInfoContentProps) {
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading, backHref = '/cursos' }: CourseInfoContentProps) {
+  const [imgSrc, setImgSrc] = useState(course.image);
+
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.logo}>Cursos Online</div>
-          <Link href="/cursos" className={styles.navLink}>
+          <Link href={backHref} className={styles.navLink}>
             Cursos
           </Link>
         </div>
@@ -26,7 +30,7 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
 
       <main className={styles.main}>
         <div className={styles.backButtonContainer}>
-          <Link href="/cursos" className={styles.backButton}>
+          <Link href={backHref} className={styles.backButton}>
             ← Volver
           </Link>
         </div>
@@ -36,11 +40,13 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
 
           <div className={styles.courseHeader}>
             <Image
-              src={course.image}
+              src={imgSrc}
               alt={course.title}
               width={280}
               height={180}
+              unoptimized
               className={styles.courseImage}
+              onError={() => setImgSrc('/placeholder-course.jpg')}
             />
 
             <div className={styles.courseInfo}>
@@ -101,22 +107,20 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
           </div>
 
           <div className={styles.actionsContainer}>
-            <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
-              {isEnrolled ? 'Continuar curso' : 'Iniciar curso'}
-            </Link>
-            {!isEnrolled && onInscribirse && (
-              <button
-                className={styles.favoriteButton}
-                onClick={onInscribirse}
-                disabled={enrollLoading}
-              >
-                {enrollLoading ? 'Inscribiendo...' : 'Inscribirme gratis'}
-              </button>
-            )}
-            {isEnrolled && (
-              <span className={styles.favoriteButton} style={{ cursor: 'default', opacity: 0.7 }}>
-                Ya estás inscrito
-              </span>
+            {isEnrolled ? (
+              <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
+                Continuar curso
+              </Link>
+            ) : (
+              onInscribirse && (
+                <button
+                  className={styles.startButton}
+                  onClick={onInscribirse}
+                  disabled={enrollLoading}
+                >
+                  {enrollLoading ? 'Inscribiendo...' : 'Inscribirme gratis'}
+                </button>
+              )
             )}
           </div>
         </div>

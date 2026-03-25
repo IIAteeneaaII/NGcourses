@@ -6,12 +6,15 @@ import type { CourseCard, User } from '@/types/course';
 import { cursosApi } from '@/lib/api/client';
 import { getCurrentUser } from '@/lib/auth';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+
 interface ApiCurso {
   id: string;
   titulo: string;
   instructor_id: string;
   calificacion_prom: number;
   descripcion: string | null;
+  portada_url: string | null;
 }
 
 interface ApiResponse {
@@ -50,7 +53,7 @@ export default function CursosPage() {
             instructor: '',
             level: 'Intermedio',
             rating: c.calificacion_prom || 0,
-            image: '/placeholder-course.jpg',
+            image: c.portada_url ? `${API_URL}${c.portada_url}` : '/placeholder-course.jpg',
           }));
           setCourses(cards);
         }
