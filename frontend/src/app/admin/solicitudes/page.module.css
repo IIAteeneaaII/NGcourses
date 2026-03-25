@@ -293,6 +293,104 @@
   padding: 2rem !important;
 }
 
+/* Action buttons in review table */
+.actionButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btnView, .btnPublish, .btnChanges, .btnReject {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 0.4rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.btnView {
+  background: var(--color-primary-60);
+  color: var(--color-secondary-30);
+  border: 1px solid var(--color-secondary-30) !important;
+}
+.btnView:hover:not(:disabled) { background: #c8e6f5; }
+
+.btnPublish {
+  background: #d1fae5;
+  color: #065f46;
+}
+.btnPublish:hover:not(:disabled) { background: #a7f3d0; }
+
+.btnChanges {
+  background: #dbeafe;
+  color: #1e40af;
+}
+.btnChanges:hover:not(:disabled) { background: #bfdbfe; }
+
+.btnReject {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.btnReject:hover:not(:disabled) { background: #fecaca; }
+
+.btnPublish:disabled, .btnChanges:disabled, .btnReject:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Confirmation modal */
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 0.9375rem;
+  padding: 2rem;
+  max-width: 440px;
+  width: 90%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.modalTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 0.75rem;
+}
+
+.modalDesc {
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  margin: 0 0 1.5rem;
+  line-height: 1.5;
+}
+
+.modalActions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+}
+
+.cancelBtn {
+  padding: 0.5rem 1.25rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  cursor: pointer;
+}
+.cancelBtn:hover { background: #f8fafc; }
+
 /* Responsive */
 @media (max-width: 1024px) {
   .contentGrid {
