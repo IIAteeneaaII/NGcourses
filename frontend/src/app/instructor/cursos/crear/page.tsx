@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cursosApi, categoriasApi } from '@/lib/api/client';
+import VideoUploadButton from '@/components/video/VideoUploadButton';
 import styles from './page.module.css';
 
 function slugify(text: string): string {
@@ -20,33 +21,16 @@ function slugify(text: string): string {
   );
 }
 
-interface ApiCategoria {
-  id: string;
-  nombre: string;
-}
+interface ApiCategoria { id: string; nombre: string }
+interface ApiModulo { id: string; titulo: string; descripcion: string | null }
+interface ApiLeccion { id: string; titulo: string; bunny_video_id: string | null; es_visible: boolean }
+interface ApiLeccionRecurso { id: string; titulo: string; url: string; tipo: string }
 
-interface ApiCurso {
+interface RecursoItem {
   id: string;
-}
-
-interface ApiModulo {
-  id: string;
-}
-
-interface CourseFormData {
-  title: string;
-  description: string;
-  category: string;
-  level: string;
-  coverImage: File | null;
-  coverImagePreview: string;
-  modules: Module[];
-  allowComments: boolean;
-  allowDownloads: boolean;
-  certificateEnabled: boolean;
-  requireSequential: boolean;
-  visibility: 'public' | 'private' | 'restricted';
-  publishImmediately: boolean;
+  titulo: string;
+  url: string;
+  tipo: string;
 }
 
 interface Module {
@@ -61,14 +45,18 @@ interface Lesson {
   id: string;
   title: string;
   isVisible: boolean;
+  bunnyVideoId: string | null;
+  recursos: RecursoItem[];
+  showRecursos: boolean;
+  newRecursoTitulo: string;
 }
 
 const STEPS = [
-  { id: 1, name: 'Info Basica', icon: '1' },
+  { id: 1, name: 'Info Básica', icon: '1' },
   { id: 2, name: 'Portada', icon: '2' },
   { id: 3, name: 'Estructura', icon: '3' },
-  { id: 4, name: 'Configuracion', icon: '4' },
-  { id: 5, name: 'Publicar', icon: '5' },
+  { id: 4, name: 'Configuración', icon: '4' },
+  { id: 5, name: 'Enviar', icon: '5' },
 ];
 
 export default function CrearCursoPage() {
@@ -76,127 +64,73 @@ export default function CrearCursoPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const [showPreview, setShowPreview] = useState(false);
   const [categories, setCategories] = useState<ApiCategoria[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState('');
 
-  const [formData, setFormData] = useState<CourseFormData>({
-    title: '',
-    description: '',
-    category: '',
-    level: '',
-    coverImage: null,
-    coverImagePreview: '',
-    modules: [],
-    allowComments: true,
-    allowDownloads: false,
-    certificateEnabled: true,
-    requireSequential: false,
-    visibility: 'public',
-    publishImmediately: false,
-  });
+  // Datos del step 1
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [level, setLevel] = useState('');
+
+  // Portada
+  const [coverImagePreview, setCoverImagePreview] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
+
+  // Curso ya creado en backend
+  const [cursoId, setCursoId] = useState<string | null>(null);
+  const [modules, setModules] = useState<Module[]>([]);
+
+  // Configuración
+  const [allowComments, setAllowComments] = useState(true);
+  const [certificateEnabled, setCertificateEnabled] = useState(true);
+  const [requireSequential, setRequireSequential] = useState(false);
+
+  // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
+  const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
+
+  // UI state
+  const [isCreating, setIsCreating] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   useEffect(() => {
-    categoriasApi.list().then((data) => {
-      const cats = data as ApiCategoria[];
-      setCategories(cats);
-    }).catch(() => {});
+    categoriasApi.list().then((data) => setCategories(data as ApiCategoria[])).catch(() => {});
   }, []);
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value,
-    }));
-  };
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData((prev) => ({
-          ...prev,
-          coverImage: file,
-          coverImagePreview: reader.result as string,
-        }));
-      };
-      reader.readAsDataURL(file);
+  // Avanzar paso — al ir de step 1 a step 2, crear el curso en backend
+  const handleNext = async () => {
+    if (currentStep === 1) {
+      if (cursoId) {
+        setCurrentStep(2);
+        return;
+      }
+      setIsCreating(true);
+      setCreateError('');
+      try {
+        const resp = await cursosApi.create({
+          titulo: title,
+          slug: slugify(title),
+          descripcion: description,
+          ...(category ? { categoria_id: category } : {}),
+          estado: 'borrador',
+          es_gratis: true,
+        }) as { id: string };
+        setCursoId(resp.id);
+        setCurrentStep(2);
+      } catch (err) {
+        setCreateError(err instanceof Error ? err.message : 'Error al crear el borrador');
+      } finally {
+        setIsCreating(false);
+      }
+      return;
     }
-  };
-
-  const addModule = () => {
-    const newModule: Module = {
-      id: `module-${Date.now()}`,
-      title: '',
-      description: '',
-      lessons: [],
-      isExpanded: true,
-    };
-    setFormData((prev) => ({ ...prev, modules: [...prev.modules, newModule] }));
-  };
-
-  const updateModule = (moduleId: string, updates: Partial<Module>) => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.map((m) => m.id === moduleId ? { ...m, ...updates } : m),
-    }));
-  };
-
-  const deleteModule = (moduleId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.filter((m) => m.id !== moduleId),
-    }));
-  };
-
-  const addLesson = (moduleId: string) => {
-    const newLesson: Lesson = {
-      id: `lesson-${Date.now()}`,
-      title: '',
-      isVisible: true,
-    };
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: [...m.lessons, newLesson] } : m
-      ),
-    }));
-  };
-
-  const updateLesson = (moduleId: string, lessonId: string, updates: Partial<Lesson>) => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.map((m) =>
-        m.id === moduleId
-          ? { ...m, lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, ...updates } : l) }
-          : m
-      ),
-    }));
-  };
-
-  const deleteLesson = (moduleId: string, lessonId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.map((m) =>
-        m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m
-      ),
-    }));
-  };
-
-  const toggleModuleExpand = (moduleId: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      modules: prev.modules.map((m) =>
-        m.id === moduleId ? { ...m, isExpanded: !m.isExpanded } : m
-      ),
-    }));
-  };
-
-  const handleNext = () => {
+    // Al avanzar desde step 2, subir portada si hay un archivo seleccionado
+    if (currentStep === 2 && cursoId && coverFile) {
+      try {
+        await cursosApi.uploadCover(cursoId, coverFile);
+      } catch {
+        // No bloqueamos el avance si falla la portada
+      }
+    }
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
   };
 
@@ -204,75 +138,204 @@ export default function CrearCursoPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  const handleSubmit = async () => {
-    setIsSubmitting(true);
-    setSubmitError('');
+  // Módulos
+  const addModule = async () => {
+    if (!cursoId) return;
     try {
-      const cursoResp = await cursosApi.create({
-        titulo: formData.title,
-        slug: slugify(formData.title),
-        descripcion: formData.description,
-        ...(formData.category ? { categoria_id: formData.category } : {}),
-        estado: formData.publishImmediately ? 'publicado' : 'borrador',
-        es_gratis: true,
-      }) as ApiCurso;
+      const resp = await cursosApi.createModulo(cursoId, {
+        titulo: 'Nuevo módulo',
+        descripcion: '',
+        orden: modules.length + 1,
+      }) as ApiModulo;
+      setModules((prev) => [...prev, {
+        id: resp.id,
+        title: resp.titulo,
+        description: resp.descripcion || '',
+        lessons: [],
+        isExpanded: true,
+      }]);
+    } catch {
+      alert('Error al crear el módulo');
+    }
+  };
 
-      const cursoId = cursoResp.id;
+  const updateModuleLocal = (moduleId: string, updates: Partial<Module>) => {
+    setModules((prev) => prev.map((m) => m.id === moduleId ? { ...m, ...updates } : m));
+  };
 
-      for (let mi = 0; mi < formData.modules.length; mi++) {
-        const mod = formData.modules[mi];
-        const modResp = await cursosApi.createModulo(cursoId, {
-          titulo: mod.title || `Modulo ${mi + 1}`,
-          descripcion: mod.description,
-          orden: mi + 1,
-        }) as ApiModulo;
+  const deleteModule = async (moduleId: string) => {
+    if (!cursoId || !confirm('¿Eliminar este módulo y todas sus lecciones?')) return;
+    try {
+      await cursosApi.deleteModulo(cursoId, moduleId);
+      setModules((prev) => prev.filter((m) => m.id !== moduleId));
+    } catch {
+      alert('Error al eliminar el módulo');
+    }
+  };
 
-        for (let li = 0; li < mod.lessons.length; li++) {
-          const les = mod.lessons[li];
-          await cursosApi.createLeccion(cursoId, modResp.id, {
-            titulo: les.title || `Leccion ${li + 1}`,
-            tipo: 'video',
-            orden: li + 1,
-            es_visible: les.isVisible,
-            duracion_seg: 0,
-          });
-        }
+  // Lecciones
+  const addLesson = async (moduleId: string) => {
+    if (!cursoId) return;
+    const mod = modules.find((m) => m.id === moduleId);
+    if (!mod) return;
+    try {
+      const resp = await cursosApi.createLeccion(cursoId, moduleId, {
+        titulo: 'Nueva lección',
+        tipo: 'video',
+        orden: mod.lessons.length + 1,
+        es_visible: true,
+        duracion_seg: 0,
+      }) as ApiLeccion;
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: [...m.lessons, {
+            id: resp.id,
+            title: resp.titulo,
+            isVisible: resp.es_visible,
+            bunnyVideoId: resp.bunny_video_id,
+            recursos: [],
+            showRecursos: false,
+            newRecursoTitulo: '',
+          }],
+        } : m
+      ));
+    } catch {
+      alert('Error al crear la lección');
+    }
+  };
+
+  const updateLessonLocal = (moduleId: string, lessonId: string, updates: Partial<Lesson>) => {
+    setModules((prev) => prev.map((m) =>
+      m.id === moduleId ? {
+        ...m,
+        lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, ...updates } : l),
+      } : m
+    ));
+  };
+
+  const deleteLesson = async (moduleId: string, lessonId: string) => {
+    if (!cursoId || !confirm('¿Eliminar esta lección?')) return;
+    try {
+      await cursosApi.deleteLeccion(cursoId, moduleId, lessonId);
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m
+      ));
+    } catch {
+      alert('Error al eliminar la lección');
+    }
+  };
+
+  const updateLessonRecursoField = (moduleId: string, lessonId: string, field: 'newRecursoTitulo' | 'showRecursos', value: string | boolean) => {
+    setModules((prev) => prev.map((m) =>
+      m.id === moduleId ? {
+        ...m,
+        lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, [field]: value } : l),
+      } : m
+    ));
+  };
+
+  const handleRecursoFileSelect = (lessonId: string, files: FileList) => {
+    setPendingRecursoFiles((prev) => ({ ...prev, [lessonId]: Array.from(files) }));
+  };
+
+  const addRecurso = useCallback(async (moduleId: string, lesson: Lesson) => {
+    if (!cursoId) return;
+    const files = pendingRecursoFiles[lesson.id];
+    if (!files || files.length === 0) return;
+    try {
+      const nuevos: ApiLeccionRecurso[] = [];
+      for (const file of files) {
+        const resp = await cursosApi.uploadRecurso(
+          cursoId, moduleId, lesson.id, file,
+          files.length === 1 ? (lesson.newRecursoTitulo.trim() || undefined) : undefined
+        ) as ApiLeccionRecurso;
+        nuevos.push(resp);
       }
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lesson.id ? {
+            ...l,
+            recursos: [...l.recursos, ...nuevos],
+            newRecursoTitulo: '',
+          } : l),
+        } : m
+      ));
+      setPendingRecursoFiles((prev) => {
+        const next = { ...prev };
+        delete next[lesson.id];
+        return next;
+      });
+    } catch {
+      alert('Error al agregar el recurso');
+    }
+  }, [cursoId, pendingRecursoFiles]);
 
+  const deleteRecurso = useCallback(async (moduleId: string, lessonId: string, recursoId: string) => {
+    if (!cursoId) return;
+    try {
+      await cursosApi.deleteRecurso(cursoId, moduleId, lessonId, recursoId);
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lessonId ? {
+            ...l,
+            recursos: l.recursos.filter((r) => r.id !== recursoId),
+          } : l),
+        } : m
+      ));
+    } catch {
+      alert('Error al eliminar el recurso');
+    }
+  }, [cursoId]);
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setCoverFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setCoverImagePreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Enviar para revisión al finalizar
+  const handleSubmit = async () => {
+    if (!cursoId) return;
+    setIsPublishing(true);
+    try {
+      await cursosApi.update(cursoId, { estado: 'revision', titulo: title, descripcion: description });
       router.push(`/instructor/cursos/${cursoId}/editar`);
-    } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'Error al crear el curso');
+    } catch {
+      alert('Error al enviar el curso para revisión');
     } finally {
-      setIsSubmitting(false);
+      setIsPublishing(false);
     }
   };
 
   const isStepComplete = (step: number): boolean => {
     switch (step) {
-      case 1:
-        return !!(formData.title && formData.description && formData.level);
-      case 2:
-        return !!formData.coverImagePreview;
-      case 3:
-        return formData.modules.length > 0;
-      case 4:
-        return true;
-      case 5:
-        return true;
-      default:
-        return false;
+      case 1: return !!(title && description && level);
+      case 2: return true; // portada opcional
+      case 3: return modules.length > 0;
+      case 4: return true;
+      case 5: return true;
+      default: return false;
     }
   };
+
+  const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
         <div className={styles.headerLeft}>
-          <button className={styles.returnButton} onClick={() => router.push('/instructor')}>
+          <button className={styles.returnButton} onClick={() => router.push('/instructor/cursos')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
-            Volver
+            Volver a cursos
           </button>
           <h1 className={styles.pageTitle}>Crear Nuevo Curso</h1>
         </div>
@@ -307,81 +370,40 @@ export default function CrearCursoPage() {
         <main className={styles.mainContent}>
           <div className={styles.formContainer}>
 
-            {/* Step 1: Info Basica */}
+            {/* Step 1: Info Básica */}
             {currentStep === 1 && (
               <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Informacion Basica</h2>
-                <p className={styles.stepDescription}>Completa la informacion fundamental de tu curso</p>
+                <h2 className={styles.stepTitle}>Información Básica</h2>
+                <p className={styles.stepDescription}>Completa la información fundamental de tu curso</p>
 
                 <div className={styles.formGroup}>
-                  <label htmlFor="title" className={styles.label}>
-                    Titulo del curso <span className={styles.required}>*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="title"
-                    name="title"
-                    value={formData.title}
-                    onChange={handleInputChange}
-                    className={styles.input}
-                    placeholder="Ej: Facturacion Electronica Avanzada"
-                    required
-                  />
+                  <label className={styles.label}>Título del curso <span className={styles.required}>*</span></label>
+                  <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} className={styles.input} placeholder="Ej: Facturación Electrónica Avanzada" />
                 </div>
 
                 <div className={styles.formGroup}>
-                  <label htmlFor="description" className={styles.label}>
-                    Descripcion <span className={styles.required}>*</span>
-                  </label>
-                  <textarea
-                    id="description"
-                    name="description"
-                    value={formData.description}
-                    onChange={handleInputChange}
-                    className={styles.textarea}
-                    rows={5}
-                    placeholder="Describe el contenido y objetivos del curso..."
-                    required
-                  />
+                  <label className={styles.label}>Descripción <span className={styles.required}>*</span></label>
+                  <textarea value={description} onChange={(e) => setDescription(e.target.value)} className={styles.textarea} rows={5} placeholder="Describe el contenido y objetivos del curso..." />
                 </div>
 
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
-                    <label htmlFor="category" className={styles.label}>
-                      Categoria <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      id="category"
-                      name="category"
-                      value={formData.category}
-                      onChange={handleInputChange}
-                      className={styles.select}
-                      required
-                    >
-                      <option value="">Seleccionar categoria</option>
+                    <label className={styles.label}>Categoría</label>
+                    <select value={category} onChange={(e) => setCategory(e.target.value)} className={styles.select}>
+                      <option value="">Sin categoría</option>
                       {categories.map((cat) => (
                         <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                       ))}
                     </select>
                     {categories.length === 0 && (
-                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                        No hay categorias. Pide al administrador que cree una primero.
+                      <p style={{ color: '#e53e3e', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                        No hay categorías. Pide al administrador que cree una primero.
                       </p>
                     )}
                   </div>
-
                   <div className={styles.formGroup}>
-                    <label htmlFor="level" className={styles.label}>
-                      Nivel <span className={styles.required}>*</span>
-                    </label>
-                    <select
-                      id="level"
-                      name="level"
-                      value={formData.level}
-                      onChange={handleInputChange}
-                      className={styles.select}
-                      required
-                    >
+                    <label className={styles.label}>Nivel <span className={styles.required}>*</span></label>
+                    <select value={level} onChange={(e) => setLevel(e.target.value)} className={styles.select}>
                       <option value="">Seleccionar nivel</option>
                       <option value="principiante">Principiante</option>
                       <option value="intermedio">Intermedio</option>
@@ -389,6 +411,12 @@ export default function CrearCursoPage() {
                     </select>
                   </div>
                 </div>
+
+                {createError && (
+                  <p style={{ color: 'red', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7' }}>
+                    {createError}
+                  </p>
+                )}
               </div>
             )}
 
@@ -399,13 +427,11 @@ export default function CrearCursoPage() {
                 <p className={styles.stepDescription}>Sube una imagen atractiva para tu curso (recomendado: 1200x675px)</p>
 
                 <div className={styles.uploadArea}>
-                  {formData.coverImagePreview ? (
+                  {coverImagePreview ? (
                     <div className={styles.imagePreview}>
-                      <img src={formData.coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <button
-                        className={styles.removeImageButton}
-                        onClick={() => setFormData((prev) => ({ ...prev, coverImage: null, coverImagePreview: '' }))}
-                      >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
+                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                         </svg>
@@ -420,7 +446,7 @@ export default function CrearCursoPage() {
                           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                         </svg>
                         <p className={styles.uploadText}>Haz clic para subir una imagen</p>
-                        <p className={styles.uploadHint}>PNG, JPG o WEBP (max. 5MB)</p>
+                        <p className={styles.uploadHint}>PNG, JPG o WEBP (máx. 5MB)</p>
                       </div>
                     </label>
                   )}
@@ -428,34 +454,38 @@ export default function CrearCursoPage() {
               </div>
             )}
 
-            {/* Step 3: Estructura */}
-            {currentStep === 3 && (
+            {/* Step 3: Estructura con VideoUploadButton real */}
+            {currentStep === 3 && !cursoId && (
+              <div className={styles.stepContent}>
+                <p style={{ color: 'red' }}>Error: el curso no fue creado. Vuelve al Step 1 y vuelve a intentar.</p>
+              </div>
+            )}
+            {currentStep === 3 && cursoId && (
               <div className={styles.stepContent}>
                 <h2 className={styles.stepTitle}>Estructura del Curso</h2>
-                <p className={styles.stepDescription}>
-                  Organiza tu curso en modulos y lecciones. Los videos se suben despues de crear el curso.
-                </p>
+                <p className={styles.stepDescription}>Agrega módulos, lecciones y sube los videos directamente.</p>
 
                 <div className={styles.modulesContainer}>
-                  {formData.modules.map((module, moduleIndex) => (
+                  {modules.map((module, moduleIndex) => (
                     <div key={module.id} className={styles.moduleCard}>
                       <div className={styles.moduleHeader}>
-                        <button className={styles.expandButton} onClick={() => toggleModuleExpand(module.id)}>
-                          <svg
-                            width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                            className={module.isExpanded ? styles.rotated : ''}
-                          >
+                        <button className={styles.expandButton} onClick={() => updateModuleLocal(module.id, { isExpanded: !module.isExpanded })}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                            className={module.isExpanded ? styles.rotated : ''}>
                             <path d="M9 18l6-6-6-6" />
                           </svg>
                         </button>
+                        <div className={styles.moduleNumber}>{moduleIndex + 1}</div>
                         <input
                           type="text"
                           value={module.title}
-                          onChange={(e) => updateModule(module.id, { title: e.target.value })}
+                          onChange={(e) => updateModuleLocal(module.id, { title: e.target.value })}
+                          onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch(() => {})}
                           className={styles.moduleTitleInput}
-                          placeholder={`Modulo ${moduleIndex + 1}: Titulo`}
+                          placeholder="Título del módulo"
                         />
-                        <button className={styles.deleteModuleButton} onClick={() => deleteModule(module.id)}>
+                        <span className={styles.lessonCount}>{module.lessons.length} lecciones</span>
+                        <button className={styles.deleteModuleButton} onClick={() => deleteModule(module.id)} title="Eliminar módulo">
                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
                           </svg>
@@ -464,13 +494,14 @@ export default function CrearCursoPage() {
 
                       {module.isExpanded && (
                         <div className={styles.moduleContent}>
-                          <div className={styles.formGroup}>
+                          <div className={styles.moduleDescriptionGroup}>
                             <textarea
                               value={module.description}
-                              onChange={(e) => updateModule(module.id, { description: e.target.value })}
-                              className={styles.textarea}
+                              onChange={(e) => updateModuleLocal(module.id, { description: e.target.value })}
+                              onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch(() => {})}
+                              className={styles.moduleDescriptionInput}
+                              placeholder="Descripción del módulo (opcional)"
                               rows={2}
-                              placeholder="Descripcion del modulo (opcional)"
                             />
                           </div>
 
@@ -482,26 +513,99 @@ export default function CrearCursoPage() {
                                   <input
                                     type="text"
                                     value={lesson.title}
-                                    onChange={(e) => updateLesson(module.id, lesson.id, { title: e.target.value })}
+                                    onChange={(e) => updateLessonLocal(module.id, lesson.id, { title: e.target.value })}
+                                    onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: lesson.isVisible }).catch(() => {})}
                                     className={styles.lessonTitleInput}
-                                    placeholder="Titulo de la leccion"
+                                    placeholder="Título de la lección"
                                   />
                                   <label className={styles.toggleLabel}>
                                     <input
                                       type="checkbox"
                                       checked={lesson.isVisible}
-                                      onChange={(e) => updateLesson(module.id, lesson.id, { isVisible: e.target.checked })}
+                                      onChange={(e) => {
+                                        updateLessonLocal(module.id, lesson.id, { isVisible: e.target.checked });
+                                        cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: e.target.checked }).catch(() => {});
+                                      }}
                                       className={styles.toggleInput}
                                     />
                                     <span className={styles.toggleSlider}></span>
                                   </label>
-                                  <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)}>×</button>
+                                  <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar lección">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M18 6L6 18M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                <div className={styles.lessonInputs}>
+                                  <VideoUploadButton
+                                    cursoId={cursoId}
+                                    moduloId={module.id}
+                                    leccionId={lesson.id}
+                                    currentBunnyVideoId={lesson.bunnyVideoId}
+                                    onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
+                                  />
+                                  {/* Recursos adicionales */}
+                                  <button
+                                    type="button"
+                                    className={styles.toggleRecursosBtn}
+                                    onClick={() => updateLessonRecursoField(module.id, lesson.id, 'showRecursos', !lesson.showRecursos)}
+                                  >
+                                    {lesson.showRecursos ? '▲' : '▼'} Recursos ({lesson.recursos.length})
+                                  </button>
+                                  {lesson.showRecursos && (
+                                    <div className={styles.recursosSection}>
+                                      {lesson.recursos.map((r) => (
+                                        <div key={r.id} className={styles.recursoItem}>
+                                          <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
+                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                            {r.titulo}
+                                          </a>
+                                          <button
+                                            type="button"
+                                            className={styles.deleteRecursoBtn}
+                                            onClick={() => deleteRecurso(module.id, lesson.id, r.id)}
+                                          >✕</button>
+                                        </div>
+                                      ))}
+                                      <div className={styles.addRecursoForm}>
+                                        <input
+                                          type="text"
+                                          placeholder="Nombre del recurso (opcional)"
+                                          value={lesson.newRecursoTitulo}
+                                          onChange={(e) => updateLessonRecursoField(module.id, lesson.id, 'newRecursoTitulo', e.target.value)}
+                                          className={styles.recursoInput}
+                                        />
+                                        <label className={styles.recursoFileLabel}>
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                            multiple
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                              if (e.target.files?.length) handleRecursoFileSelect(lesson.id, e.target.files);
+                                            }}
+                                          />
+                                          {pendingRecursoFiles[lesson.id]?.length
+                                            ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
+                                            : '📎 Seleccionar archivos'}
+                                        </label>
+                                        <button
+                                          type="button"
+                                          className={styles.addRecursoBtn}
+                                          onClick={() => addRecurso(module.id, lesson)}
+                                          disabled={!pendingRecursoFiles[lesson.id]?.length}
+                                        >
+                                          + Subir recurso
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}
 
                             <button className={styles.addLessonButton} onClick={() => addLesson(module.id)}>
-                              + Agregar leccion
+                              + Agregar lección
                             </button>
                           </div>
                         </div>
@@ -513,45 +617,37 @@ export default function CrearCursoPage() {
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14" />
                     </svg>
-                    Agregar modulo
+                    Agregar módulo
                   </button>
                 </div>
               </div>
             )}
 
-            {/* Step 4: Configuracion */}
+            {/* Step 4: Configuración */}
             {currentStep === 4 && (
               <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Configuracion</h2>
+                <h2 className={styles.stepTitle}>Configuración</h2>
                 <p className={styles.stepDescription}>Personaliza las opciones de tu curso</p>
 
                 <div className={styles.configSection}>
                   <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="allowComments" checked={formData.allowComments} onChange={handleInputChange} className={styles.checkbox} />
+                    <input type="checkbox" checked={allowComments} onChange={(e) => setAllowComments(e.target.checked)} className={styles.checkbox} />
                     <div className={styles.checkboxContent}>
                       <span className={styles.checkboxTitle}>Permitir comentarios</span>
-                      <span className={styles.checkboxDescription}>Los estudiantes podran comentar en las lecciones</span>
+                      <span className={styles.checkboxDescription}>Los estudiantes podrán comentar en las lecciones</span>
                     </div>
                   </label>
 
                   <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="allowDownloads" checked={formData.allowDownloads} onChange={handleInputChange} className={styles.checkbox} />
+                    <input type="checkbox" checked={certificateEnabled} onChange={(e) => setCertificateEnabled(e.target.checked)} className={styles.checkbox} />
                     <div className={styles.checkboxContent}>
-                      <span className={styles.checkboxTitle}>Permitir descargas</span>
-                      <span className={styles.checkboxDescription}>Los estudiantes podran descargar materiales del curso</span>
-                    </div>
-                  </label>
-
-                  <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="certificateEnabled" checked={formData.certificateEnabled} onChange={handleInputChange} className={styles.checkbox} />
-                    <div className={styles.checkboxContent}>
-                      <span className={styles.checkboxTitle}>Certificado de finalizacion</span>
+                      <span className={styles.checkboxTitle}>Certificado de finalización</span>
                       <span className={styles.checkboxDescription}>Emitir certificado al completar el curso</span>
                     </div>
                   </label>
 
                   <label className={styles.checkboxLabel}>
-                    <input type="checkbox" name="requireSequential" checked={formData.requireSequential} onChange={handleInputChange} className={styles.checkbox} />
+                    <input type="checkbox" checked={requireSequential} onChange={(e) => setRequireSequential(e.target.checked)} className={styles.checkbox} />
                     <div className={styles.checkboxContent}>
                       <span className={styles.checkboxTitle}>Avance secuencial</span>
                       <span className={styles.checkboxDescription}>Las lecciones deben completarse en orden</span>
@@ -561,77 +657,62 @@ export default function CrearCursoPage() {
               </div>
             )}
 
-            {/* Step 5: Publicar */}
+            {/* Step 5: Enviar para revisión */}
             {currentStep === 5 && (
               <div className={styles.stepContent}>
-                <h2 className={styles.stepTitle}>Publicar Curso</h2>
-                <p className={styles.stepDescription}>Revisa y publica tu curso</p>
+                <h2 className={styles.stepTitle}>Enviar para Revisión</h2>
+                <p className={styles.stepDescription}>
+                  El curso quedará en estado pendiente y solo será publicado cuando un administrador lo apruebe.
+                </p>
 
                 <div className={styles.summaryGrid}>
                   <div className={styles.summaryCard}>
-                    <span className={styles.summaryLabel}>Titulo</span>
-                    <span className={styles.summaryValue}>{formData.title || 'Sin titulo'}</span>
+                    <span className={styles.summaryLabel}>Título</span>
+                    <span className={styles.summaryValue}>{title || 'Sin título'}</span>
                   </div>
                   <div className={styles.summaryCard}>
-                    <span className={styles.summaryLabel}>Categoria</span>
-                    <span className={styles.summaryValue}>
-                      {categories.find((c) => c.id === formData.category)?.nombre || 'Sin categoria'}
-                    </span>
+                    <span className={styles.summaryLabel}>Categoría</span>
+                    <span className={styles.summaryValue}>{categories.find((c) => c.id === category)?.nombre || 'Sin categoría'}</span>
                   </div>
                   <div className={styles.summaryCard}>
                     <span className={styles.summaryLabel}>Nivel</span>
-                    <span className={styles.summaryValue}>{formData.level || 'Sin nivel'}</span>
+                    <span className={styles.summaryValue}>{level || 'Sin nivel'}</span>
                   </div>
                   <div className={styles.summaryCard}>
-                    <span className={styles.summaryLabel}>Modulos</span>
-                    <span className={styles.summaryValue}>{formData.modules.length}</span>
+                    <span className={styles.summaryLabel}>Módulos</span>
+                    <span className={styles.summaryValue}>{modules.length}</span>
                   </div>
                   <div className={styles.summaryCard}>
                     <span className={styles.summaryLabel}>Lecciones</span>
+                    <span className={styles.summaryValue}>{totalLessons}</span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Videos subidos</span>
                     <span className={styles.summaryValue}>
-                      {formData.modules.reduce((acc, m) => acc + m.lessons.length, 0)}
+                      {modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.bunnyVideoId).length, 0)} / {totalLessons}
                     </span>
                   </div>
                 </div>
-
-                <div className={styles.formGroup}>
-                  <label htmlFor="visibility" className={styles.label}>Visibilidad</label>
-                  <select id="visibility" name="visibility" value={formData.visibility} onChange={handleInputChange} className={styles.select}>
-                    <option value="public">Publico - Visible para todos</option>
-                    <option value="private">Privado - Solo usuarios asignados</option>
-                    <option value="restricted">Restringido - Requiere aprobacion</option>
-                  </select>
-                </div>
-
-                <label className={styles.checkboxLabel}>
-                  <input type="checkbox" name="publishImmediately" checked={formData.publishImmediately} onChange={handleInputChange} className={styles.checkbox} />
-                  <div className={styles.checkboxContent}>
-                    <span className={styles.checkboxTitle}>Publicar inmediatamente</span>
-                    <span className={styles.checkboxDescription}>El curso estara disponible para los estudiantes de inmediato</span>
-                  </div>
-                </label>
-
-                {submitError && (
-                  <p style={{ color: 'red', marginTop: '1rem', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7' }}>
-                    {submitError}
-                  </p>
-                )}
               </div>
             )}
 
             {/* Navigation Buttons */}
             <div className={styles.navigationButtons}>
               <button className={styles.backButton} onClick={handlePrev} disabled={currentStep === 1}>
-                Atras
+                Atrás
               </button>
 
               {currentStep < STEPS.length ? (
-                <button className={styles.nextButton} onClick={handleNext} disabled={!isStepComplete(currentStep)}>
-                  Siguiente
+                <button
+                  className={styles.nextButton}
+                  onClick={handleNext}
+                  disabled={!isStepComplete(currentStep) || isCreating}
+                >
+                  {isCreating ? 'Creando borrador...' : 'Siguiente'}
                 </button>
               ) : (
-                <button className={styles.publishButton} onClick={handleSubmit} disabled={isSubmitting}>
-                  {isSubmitting ? 'Creando...' : formData.publishImmediately ? 'Publicar curso' : 'Guardar como borrador'}
+                <button className={styles.publishButton} onClick={handleSubmit} disabled={isPublishing}>
+                  {isPublishing ? 'Enviando...' : 'Enviar para revisión'}
                 </button>
               )}
             </div>
@@ -648,23 +729,26 @@ export default function CrearCursoPage() {
               <button className={styles.closeButton} onClick={() => setShowPreview(false)}>×</button>
             </div>
             <div className={styles.modalBody}>
-              {formData.coverImagePreview && (
-                <img src={formData.coverImagePreview} alt={formData.title} className={styles.modalImage} />
+              {coverImagePreview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={coverImagePreview} alt={title} className={styles.modalImage} />
               )}
-              <h3 className={styles.modalCourseTitle}>{formData.title}</h3>
-              <p className={styles.modalCourseDescription}>{formData.description}</p>
+              <h3 className={styles.modalCourseTitle}>{title}</h3>
+              <p className={styles.modalCourseDescription}>{description}</p>
               <div className={styles.modalMeta}>
-                <span>Categoria: {categories.find((c) => c.id === formData.category)?.nombre}</span>
-                <span>Nivel: {formData.level}</span>
+                <span>Categoría: {categories.find((c) => c.id === category)?.nombre || '—'}</span>
+                <span>Nivel: {level || '—'}</span>
               </div>
               <div className={styles.modalModules}>
                 <h4>Contenido del curso</h4>
-                {formData.modules.map((module, idx) => (
+                {modules.map((module, idx) => (
                   <div key={module.id} className={styles.modalModule}>
-                    <strong>Modulo {idx + 1}: {module.title || 'Sin titulo'}</strong>
+                    <strong>Módulo {idx + 1}: {module.title || 'Sin título'}</strong>
                     <ul>
                       {module.lessons.map((lesson) => (
-                        <li key={lesson.id}>{lesson.title || 'Sin titulo'}</li>
+                        <li key={lesson.id}>
+                          {lesson.title || 'Sin título'}{lesson.bunnyVideoId ? ' ✓' : ''}
+                        </li>
                       ))}
                     </ul>
                   </div>
