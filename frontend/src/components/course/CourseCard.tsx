@@ -1,3 +1,6 @@
+'use client';
+
+import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { CourseCard as CourseCardType } from '@/types/course';
@@ -8,6 +11,7 @@ interface CourseCardProps {
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
+  const [imgSrc, setImgSrc] = useState(course.image);
   const getTagClass = (tag: string) => {
     switch (tag) {
       case 'Nuevo':
@@ -37,11 +41,13 @@ export default function CourseCard({ course }: CourseCardProps) {
     <Link href={`/curso/${course.id}`} className={styles.card}>
       <div className={styles.imageContainer}>
         <Image
-          src={course.image}
+          src={imgSrc}
           alt={course.title}
           fill
+          unoptimized
           className={styles.image}
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          onError={() => setImgSrc('/placeholder-course.jpg')}
         />
       </div>
 
