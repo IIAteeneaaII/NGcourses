@@ -30,6 +30,9 @@ class TipoRecurso(str, enum.Enum):
     PDF = "pdf"
     LINK = "link"
     ARCHIVO = "archivo"
+    DOCX = "docx"
+    XLSX = "xlsx"
+    PPTX = "pptx"
 
 
 class EstadoInscripcion(str, enum.Enum):
