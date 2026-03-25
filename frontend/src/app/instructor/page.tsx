@@ -81,7 +81,7 @@ export default function InstructorDashboardPage() {
         </div>
       </div>
 
-      <div className={styles.optionsGrid}>
+      <div className={styles.bottomGrid}>
         <div className={styles.optionCard}>
           <div className={styles.optionIcon}>
             <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -103,29 +103,33 @@ export default function InstructorDashboardPage() {
           <p className={styles.optionDescription}>Monitorea el progreso de los alumnos en tus cursos</p>
           <Link href="/instructor/alumnos" className={styles.optionButton}>Ver alumnos</Link>
         </div>
-      </div>
 
-      <div className={styles.historySection}>
-        <div className={styles.historyHeader}>
-          <h3 className={styles.historyTitle}>Cursos Recientes</h3>
-          <Link href="/instructor/cursos" className={styles.viewAllLink}>Ver todos los cursos</Link>
-        </div>
-        <div className={styles.historyList}>
-          {recent.map((curso) => (
-            <div key={curso.id} className={styles.historyItem}>
-              <div className={styles.historyItemContent}>
-                <div className={styles.historyIcon}>
-                  {curso.estado === 'publicado' ? 'CP' : 'BD'}
-                </div>
-                <div className={styles.historyItemInfo}>
-                  <span className={styles.historyItemTitle}>{curso.titulo}</span>
-                  <span className={styles.historyItemTime}>
-                    {formatRelativeTime(curso.actualizado_en || curso.creado_en)}
-                  </span>
+        <div className={styles.historySection}>
+          <div className={styles.historyHeader}>
+            <h3 className={styles.historyTitle}>Cursos Recientes</h3>
+            <Link href="/instructor/cursos" className={styles.viewAllLink}>Ver todos los cursos</Link>
+          </div>
+          <div className={styles.historyList}>
+            {loading && <p className={styles.historyEmpty}>Cargando...</p>}
+            {!loading && recent.length === 0 && (
+              <p className={styles.historyEmpty}>Aún no tienes cursos.</p>
+            )}
+            {recent.map((curso) => (
+              <div key={curso.id} className={styles.historyItem}>
+                <div className={styles.historyItemContent}>
+                  <div className={styles.historyIcon}>
+                    {curso.estado === 'publicado' ? 'CP' : 'BD'}
+                  </div>
+                  <div className={styles.historyItemInfo}>
+                    <span className={styles.historyItemTitle}>{curso.titulo}</span>
+                    <span className={styles.historyItemTime}>
+                      {formatRelativeTime(curso.actualizado_en || curso.creado_en)}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
