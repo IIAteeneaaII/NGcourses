@@ -39,10 +39,14 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = {
-        detail: await response.text(),
-        status: response.status,
-      };
+      let detail = 'Error desconocido';
+      try {
+        const body = await response.json();
+        detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body);
+      } catch {
+        detail = await response.text();
+      }
+      const error: ApiError = { detail, status: response.status };
       throw error;
     }
 
@@ -161,6 +165,21 @@ export const cursosApi = {
     apiClient.get(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos`),
   createRecurso: (curso_id: string, modulo_id: string, leccion_id: string, data: unknown) =>
     apiClient.post(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos`, data),
+  uploadRecurso: async (curso_id: string, modulo_id: string, leccion_id: string, file: File, titulo?: string) => {
+    const url = `${API_URL}/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/upload`;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const form = new FormData();
+    form.append('file', file);
+    if (titulo) form.append('titulo', titulo);
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const response = await fetch(url, { method: 'POST', headers, body: form });
+    if (!response.ok) {
+      const error: ApiError = { detail: await response.text(), status: response.status };
+      throw error;
+    }
+    return response.json();
+  },
   deleteRecurso: (curso_id: string, modulo_id: string, leccion_id: string, recurso_id: string) =>
     apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/${recurso_id}`),
 };
@@ -200,6 +219,7 @@ export const usersApi = {
   get: (id: string) => apiClient.get(`/api/v1/users/${id}`),
   create: (data: unknown) => apiClient.post('/api/v1/users/', data),
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/users/${id}`, data),
+  updateMe: (data: { email?: string; telefono?: string | null }) => apiClient.patch('/api/v1/users/me', data),
   delete: (id: string) => apiClient.delete(`/api/v1/users/${id}`),
 };
 
