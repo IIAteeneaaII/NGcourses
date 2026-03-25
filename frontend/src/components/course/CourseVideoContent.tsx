@@ -13,9 +13,10 @@ interface CourseVideoContentProps {
   initialCourse: Course;
   inscripcionId?: string | null;
   bunnyLibraryId?: string | null;
+  backHref?: string;
 }
 
-export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref }: CourseVideoContentProps) {
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson>(course.modules[0].lessons[0]);
   const [progress, setProgress] = useState(course.progress);
@@ -97,7 +98,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         <h1 className={styles.pageTitle}>Videos: {course.title}</h1>
 
         <div className={styles.backButtonContainer}>
-          <Link href={`/curso/${course.id}`} className={styles.backButton}>
+          <Link href={backHref ?? `/curso/${course.id}`} className={styles.backButton}>
             ← Volver a información del curso
           </Link>
         </div>
@@ -108,12 +109,17 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
               config={bunnyConfig}
               videoUrl={currentLesson.videoUrl}
               onTimeUpdate={handleTimeUpdate}
-              onEnded={() => handleTimeUpdate(videoDuration.current)}
+              onEnded={() => {
+                handleTimeUpdate(videoDuration.current);
+                handleMarkComplete();
+              }}
             />
             <VideoControls
               progress={progress}
               onMarkComplete={handleMarkComplete}
-              resources={course.modules.find(m => m.lessons.some(l => l.id === currentLesson.id))?.resources}
+              resources={currentLesson.resources}
+              courseId={course.id}
+              lessonId={currentLesson.id}
             />
           </div>
 
