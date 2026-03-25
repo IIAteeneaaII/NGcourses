@@ -1,10 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, notFound } from 'next/navigation';
+import { useParams, useSearchParams, notFound } from 'next/navigation';
 import CourseVideoContent from '@/components/course/CourseVideoContent';
 import { cursosApi, inscripcionesApi, progresoApi } from '@/lib/api/client';
 import type { Course, Module, Lesson } from '@/types/course';
+
+interface ApiRecurso {
+  id: string;
+  tipo: string;
+  titulo: string;
+  url: string;
+}
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
 
 interface ApiLeccion {
   id: string;
@@ -14,6 +23,7 @@ interface ApiLeccion {
   duracion_seg: number;
   bunny_video_id: string | null;
   hls_url: string | null;
+  recursos?: ApiRecurso[];
 }
 
 interface ApiModulo {
@@ -49,7 +59,9 @@ interface ProgresoResp {
 
 export default function CursoVideosPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const id = params.id as string;
+  const fromAdmin = searchParams.get('from') === 'admin';
 
   const [course, setCourse] = useState<Course | null>(null);
   const [inscripcionId, setInscripcionId] = useState<string | null>(null);
@@ -91,6 +103,12 @@ export default function CursoVideosPage() {
             duration: l.duracion_seg,
             completed: completadoMap[l.id] ?? false,
             order: l.orden,
+            resources: (l.recursos || []).map((r) => ({
+              id: r.id,
+              name: r.titulo,
+              url: r.url.startsWith('/') ? `${API_URL}${r.url}` : r.url,
+              type: (r.tipo === 'docx' || r.tipo === 'xlsx' || r.tipo === 'pdf') ? r.tipo : 'other' as const,
+            })),
           })),
         }));
 
@@ -127,5 +145,12 @@ export default function CursoVideosPage() {
 
   if (hasError || !course) return notFound();
 
-  return <CourseVideoContent initialCourse={course} inscripcionId={inscripcionId} bunnyLibraryId={bunnyLibraryId} />;
+  return (
+    <CourseVideoContent
+      initialCourse={course}
+      inscripcionId={inscripcionId}
+      bunnyLibraryId={bunnyLibraryId}
+      backHref={fromAdmin ? `/admin/cursos/${id}/preview` : undefined}
+    />
+  );
 }
