@@ -55,6 +55,10 @@ services:
     ports:
       - "8080:8080"
 
+  prestart:
+    volumes:
+      - ./backend/app:/app/app
+
   backend:
     restart: "no"
     ports:
@@ -80,6 +84,7 @@ services:
     # TODO: remove once coverage is done locally
     volumes:
       - ./backend/htmlcov:/app/htmlcov
+      - ./backend/app/media:/app/app/media
     environment:
       SMTP_HOST: "mailcatcher"
       SMTP_PORT: "1025"
@@ -94,6 +99,8 @@ services:
 
   frontend:
     restart: "no"
+    profiles:
+      - frontend
     ports:
       - "5173:80"
     build:
@@ -103,6 +110,8 @@ services:
         - NODE_ENV=development
 
   playwright:
+    profiles:
+      - testing
     build:
       context: ./frontend
       dockerfile: Dockerfile.playwright
