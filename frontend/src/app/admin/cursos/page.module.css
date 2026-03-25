@@ -65,6 +65,51 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 
+.searchBar {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.625rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.625rem;
+  margin-bottom: 1.5rem;
+  background: #f8fafc;
+  color: var(--color-text-secondary);
+}
+
+.searchBar:focus-within {
+  border-color: var(--color-secondary-30);
+  background: #fff;
+}
+
+.searchInput {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-secondary);
+}
+
+.clearSearch {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-secondary);
+  padding: 0.125rem 0.25rem;
+  line-height: 1;
+}
+
+.clearSearch:hover {
+  color: var(--color-text-primary);
+}
+
 .cardHeader {
   display: flex;
   justify-content: space-between;
@@ -198,6 +243,20 @@
 .editButton:hover {
   background: var(--color-secondary-30-light);
 }
+
+.deleteButton {
+  padding: 0.5rem 1rem;
+  background: #fee2e2;
+  color: #991b1b;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.deleteButton:hover { background: #fecaca; }
 
 /* Responsive */
 @media (max-width: 768px) {
