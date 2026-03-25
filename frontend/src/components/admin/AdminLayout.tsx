@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AdminHeader } from './AdminHeader';
+import { getCurrentUser } from '@/lib/auth';
 import styles from './AdminLayout.module.css';
 
 interface AdminLayoutProps {
@@ -9,9 +10,22 @@ interface AdminLayoutProps {
 }
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
+  const [headerUser, setHeaderUser] = useState<{ name: string; initials: string; role: string } | undefined>(undefined);
+
+  useEffect(() => {
+    getCurrentUser().then((u) => {
+      const name = u.full_name || u.email;
+      setHeaderUser({
+        name,
+        initials: name.slice(0, 2).toUpperCase(),
+        role: 'Admin',
+      });
+    }).catch(() => {/* mantener undefined para mostrar valor por defecto */});
+  }, []);
+
   return (
     <div className={styles.container}>
-      <AdminHeader />
+      <AdminHeader user={headerUser} />
 
       <div className={styles.contentWrapper}>
         <main className={styles.main}>
