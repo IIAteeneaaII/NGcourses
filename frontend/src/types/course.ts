@@ -6,6 +6,7 @@ export interface Lesson {
   duration?: number;
   completed: boolean;
   order: number;
+  resources?: Resource[];
 }
 
 export interface Resource {
