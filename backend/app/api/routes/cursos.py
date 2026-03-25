@@ -3,7 +3,7 @@ import uuid
 from typing import Any
 
 import httpx
-from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
@@ -40,8 +40,9 @@ def _require_instructor_or_admin(current_user: CurrentUser) -> None:
 
 
 def _require_curso_owner_or_admin(current_user: CurrentUser, instructor_id: uuid.UUID) -> None:
-    """Raise 403 if user is not the course owner and not superuser."""
-    if not current_user.is_superuser and current_user.id != instructor_id:
+    """Raise 403 if user is not the course owner and not superuser/admin."""
+    is_admin = current_user.is_superuser or current_user.rol == RolUsuario.ADMINISTRADOR
+    if not is_admin and current_user.id != instructor_id:
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar este curso")
 
 
@@ -653,6 +654,55 @@ def create_recurso(
     db_recurso = crud.create_recurso_leccion(
         session=session, recurso_in=recurso_in, leccion_id=leccion_id
     )
+    return RecursoLeccionPublic.model_validate(db_recurso, from_attributes=True)
+
+
+RECURSOS_DIR = "/app/app/media/recursos"
+_EXT_TO_TIPO = {
+    "pdf": "pdf",
+    "docx": "docx", "doc": "docx",
+    "xlsx": "xlsx", "xls": "xlsx",
+    "pptx": "pptx", "ppt": "pptx",
+}
+MAX_RECURSO_SIZE = 20 * 1024 * 1024  # 20 MB
+
+
+@router.post(
+    "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/recursos/upload",
+    response_model=RecursoLeccionPublic,
+    status_code=201,
+)
+async def upload_recurso(
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+    titulo: str = Form(default=""),
+) -> Any:
+    """Sube un archivo como recurso de una lección. Soporta PDF, DOCX, XLSX, PPTX."""
+    _get_leccion_with_access(session, current_user, curso_id, modulo_id, leccion_id)
+
+    contents = await file.read()
+    if len(contents) > MAX_RECURSO_SIZE:
+        raise HTTPException(status_code=400, detail="El archivo excede el tamaño máximo de 20MB.")
+
+    ext = (file.filename or "archivo").rsplit(".", 1)[-1].lower()
+    tipo = _EXT_TO_TIPO.get(ext, "archivo")
+
+    os.makedirs(RECURSOS_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4()}.{ext}"
+    with open(os.path.join(RECURSOS_DIR, filename), "wb") as f:
+        f.write(contents)
+
+    nombre = titulo.strip() or (file.filename or "recurso").rsplit(".", 1)[0]
+    recurso_in = RecursoLeccionCreate(
+        tipo=tipo,
+        titulo=nombre,
+        url=f"/media/recursos/{filename}",
+    )
+    db_recurso = crud.create_recurso_leccion(session=session, recurso_in=recurso_in, leccion_id=leccion_id)
     return RecursoLeccionPublic.model_validate(db_recurso, from_attributes=True)
 
 
