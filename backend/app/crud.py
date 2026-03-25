@@ -230,9 +230,44 @@ def update_curso(*, session: Session, db_curso: Curso, curso_in: CursoUpdate) ->
 
 def delete_curso(*, session: Session, curso_id: uuid.UUID) -> None:
     db_curso = session.get(Curso, curso_id)
-    if db_curso:
-        session.delete(db_curso)
-        session.commit()
+    if not db_curso:
+        return
+
+    # 1. Eliminar progreso de lecciones vinculado a inscripciones del curso
+    inscripciones = session.exec(
+        select(Inscripcion).where(Inscripcion.curso_id == curso_id)
+    ).all()
+    for insc in inscripciones:
+        progresos = session.exec(
+            select(ProgresoLeccion).where(ProgresoLeccion.inscripcion_id == insc.id)
+        ).all()
+        for p in progresos:
+            session.delete(p)
+        # Certificado vinculado a la inscripción
+        cert = session.exec(
+            select(Certificado).where(Certificado.inscripcion_id == insc.id)
+        ).first()
+        if cert:
+            session.delete(cert)
+        session.delete(insc)
+
+    # 2. Eliminar calificaciones y votos del curso
+    calificaciones = session.exec(
+        select(Calificacion).where(Calificacion.curso_id == curso_id)
+    ).all()
+    for cal in calificaciones:
+        votos = session.exec(
+            select(VotoResena).where(VotoResena.calificacion_id == cal.id)
+        ).all()
+        for v in votos:
+            session.delete(v)
+        session.delete(cal)
+
+    session.flush()
+
+    # 3. Eliminar el curso (cascade a módulos → lecciones → recursos vía SQLAlchemy)
+    session.delete(db_curso)
+    session.commit()
 
 
 # ── Módulos ───────────────────────────────────────────────────────────────────
