@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cursosApi, categoriasApi } from '@/lib/api/client';
 import VideoUploadButton from '@/components/video/VideoUploadButton';
@@ -24,6 +24,14 @@ function slugify(text: string): string {
 interface ApiCategoria { id: string; nombre: string }
 interface ApiModulo { id: string; titulo: string; descripcion: string | null }
 interface ApiLeccion { id: string; titulo: string; bunny_video_id: string | null; es_visible: boolean }
+interface ApiLeccionRecurso { id: string; titulo: string; url: string; tipo: string }
+
+interface RecursoItem {
+  id: string;
+  titulo: string;
+  url: string;
+  tipo: string;
+}
 
 interface Module {
   id: string;
@@ -38,6 +46,9 @@ interface Lesson {
   title: string;
   isVisible: boolean;
   bunnyVideoId: string | null;
+  recursos: RecursoItem[];
+  showRecursos: boolean;
+  newRecursoTitulo: string;
 }
 
 const STEPS = [
@@ -72,6 +83,9 @@ export default function CrearCursoPage() {
   const [allowComments, setAllowComments] = useState(true);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
+
+  // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
+  const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
 
   // UI state
   const [isCreating, setIsCreating] = useState(false);
@@ -124,7 +138,7 @@ export default function CrearCursoPage() {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
-  // Módulos — igual que editar/page.tsx
+  // Módulos
   const addModule = async () => {
     if (!cursoId) return;
     try {
@@ -180,6 +194,9 @@ export default function CrearCursoPage() {
             title: resp.titulo,
             isVisible: resp.es_visible,
             bunnyVideoId: resp.bunny_video_id,
+            recursos: [],
+            showRecursos: false,
+            newRecursoTitulo: '',
           }],
         } : m
       ));
@@ -209,6 +226,70 @@ export default function CrearCursoPage() {
     }
   };
 
+  const updateLessonRecursoField = (moduleId: string, lessonId: string, field: 'newRecursoTitulo' | 'showRecursos', value: string | boolean) => {
+    setModules((prev) => prev.map((m) =>
+      m.id === moduleId ? {
+        ...m,
+        lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, [field]: value } : l),
+      } : m
+    ));
+  };
+
+  const handleRecursoFileSelect = (lessonId: string, files: FileList) => {
+    setPendingRecursoFiles((prev) => ({ ...prev, [lessonId]: Array.from(files) }));
+  };
+
+  const addRecurso = useCallback(async (moduleId: string, lesson: Lesson) => {
+    if (!cursoId) return;
+    const files = pendingRecursoFiles[lesson.id];
+    if (!files || files.length === 0) return;
+    try {
+      const nuevos: ApiLeccionRecurso[] = [];
+      for (const file of files) {
+        const resp = await cursosApi.uploadRecurso(
+          cursoId, moduleId, lesson.id, file,
+          files.length === 1 ? (lesson.newRecursoTitulo.trim() || undefined) : undefined
+        ) as ApiLeccionRecurso;
+        nuevos.push(resp);
+      }
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lesson.id ? {
+            ...l,
+            recursos: [...l.recursos, ...nuevos],
+            newRecursoTitulo: '',
+          } : l),
+        } : m
+      ));
+      setPendingRecursoFiles((prev) => {
+        const next = { ...prev };
+        delete next[lesson.id];
+        return next;
+      });
+    } catch {
+      alert('Error al agregar el recurso');
+    }
+  }, [cursoId, pendingRecursoFiles]);
+
+  const deleteRecurso = useCallback(async (moduleId: string, lessonId: string, recursoId: string) => {
+    if (!cursoId) return;
+    try {
+      await cursosApi.deleteRecurso(cursoId, moduleId, lessonId, recursoId);
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lessonId ? {
+            ...l,
+            recursos: l.recursos.filter((r) => r.id !== recursoId),
+          } : l),
+        } : m
+      ));
+    } catch {
+      alert('Error al eliminar el recurso');
+    }
+  }, [cursoId]);
+
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -219,7 +300,7 @@ export default function CrearCursoPage() {
     }
   };
 
-  // Publicar al finalizar
+  // Publicar al finalizar (admin publica directamente)
   const handlePublish = async () => {
     if (!cursoId) return;
     setIsPublishing(true);
@@ -314,6 +395,11 @@ export default function CrearCursoPage() {
                         <option key={cat.id} value={cat.id}>{cat.nombre}</option>
                       ))}
                     </select>
+                    {categories.length === 0 && (
+                      <p style={{ color: '#e53e3e', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                        No hay categorías. Crea una en la sección de categorías primero.
+                      </p>
+                    )}
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.label}>Nivel <span className={styles.required}>*</span></label>
@@ -343,6 +429,7 @@ export default function CrearCursoPage() {
                 <div className={styles.uploadArea}>
                   {coverImagePreview ? (
                     <div className={styles.imagePreview}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
                       <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -457,6 +544,62 @@ export default function CrearCursoPage() {
                                     currentBunnyVideoId={lesson.bunnyVideoId}
                                     onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
                                   />
+                                  {/* Recursos adicionales */}
+                                  <button
+                                    type="button"
+                                    className={styles.toggleRecursosBtn}
+                                    onClick={() => updateLessonRecursoField(module.id, lesson.id, 'showRecursos', !lesson.showRecursos)}
+                                  >
+                                    {lesson.showRecursos ? '▲' : '▼'} Recursos ({lesson.recursos.length})
+                                  </button>
+                                  {lesson.showRecursos && (
+                                    <div className={styles.recursosSection}>
+                                      {lesson.recursos.map((r) => (
+                                        <div key={r.id} className={styles.recursoItem}>
+                                          <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
+                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                            {r.titulo}
+                                          </a>
+                                          <button
+                                            type="button"
+                                            className={styles.deleteRecursoBtn}
+                                            onClick={() => deleteRecurso(module.id, lesson.id, r.id)}
+                                          >✕</button>
+                                        </div>
+                                      ))}
+                                      <div className={styles.addRecursoForm}>
+                                        <input
+                                          type="text"
+                                          placeholder="Nombre del recurso (opcional)"
+                                          value={lesson.newRecursoTitulo}
+                                          onChange={(e) => updateLessonRecursoField(module.id, lesson.id, 'newRecursoTitulo', e.target.value)}
+                                          className={styles.recursoInput}
+                                        />
+                                        <label className={styles.recursoFileLabel}>
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                            multiple
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                              if (e.target.files?.length) handleRecursoFileSelect(lesson.id, e.target.files);
+                                            }}
+                                          />
+                                          {pendingRecursoFiles[lesson.id]?.length
+                                            ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
+                                            : '📎 Seleccionar archivos'}
+                                        </label>
+                                        <button
+                                          type="button"
+                                          className={styles.addRecursoBtn}
+                                          onClick={() => addRecurso(module.id, lesson)}
+                                          disabled={!pendingRecursoFiles[lesson.id]?.length}
+                                        >
+                                          + Subir recurso
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             ))}
@@ -584,7 +727,10 @@ export default function CrearCursoPage() {
               <button className={styles.closeButton} onClick={() => setShowPreview(false)}>×</button>
             </div>
             <div className={styles.modalBody}>
-              {coverImagePreview && <img src={coverImagePreview} alt={title} className={styles.modalImage} />}
+              {coverImagePreview && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={coverImagePreview} alt={title} className={styles.modalImage} />
+              )}
               <h3 className={styles.modalCourseTitle}>{title}</h3>
               <p className={styles.modalCourseDescription}>{description}</p>
               <div className={styles.modalMeta}>
