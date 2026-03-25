@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { AdminHeader } from './AdminHeader';
+import { AdminSidebar } from './AdminSidebar';
 import { getCurrentUser } from '@/lib/auth';
 import styles from './AdminLayout.module.css';
 
@@ -11,6 +12,7 @@ interface AdminLayoutProps {
 
 export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const [headerUser, setHeaderUser] = useState<{ name: string; initials: string; role: string } | undefined>(undefined);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     getCurrentUser().then((u) => {
@@ -28,6 +30,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       <AdminHeader user={headerUser} />
 
       <div className={styles.contentWrapper}>
+        <AdminSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <main className={styles.main}>
           <div className={styles.content}>
             {children}
