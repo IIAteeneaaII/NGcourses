@@ -379,10 +379,108 @@
 }
 
 .lessonInputs {
-  display: grid;
-  grid-template-columns: 1fr auto;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
+
+.toggleRecursosBtn {
+  background: none;
+  border: 1px dashed #cbd5e1;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.2s;
+}
+.toggleRecursosBtn:hover { border-color: var(--color-secondary-30); color: var(--color-secondary-30); }
+
+.recursosSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+}
+
+.recursoItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8125rem;
+}
+.recursoType {
+  background: #e2e8f0;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #475569;
+}
+.recursoTitle {
+  flex: 1;
+  color: var(--color-secondary-30);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.recursoTitle:hover { text-decoration: underline; }
+.deleteRecursoBtn {
+  background: none;
+  border: none;
+  color: #dc2626;
+  cursor: pointer;
+  font-size: 0.875rem;
+  padding: 0.1rem 0.25rem;
+}
+
+.addRecursoForm {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto auto;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+.recursoInput {
+  padding: 0.4rem 0.6rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  background: #fff;
+}
+.addRecursoBtn {
+  background: var(--color-secondary-30);
+  color: #fff;
+  border: none;
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.addRecursoBtn:hover { opacity: 0.88; }
+.addRecursoBtn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.recursoFileLabel {
+  display: flex;
+  align-items: center;
+  padding: 0.4rem 0.75rem;
+  border: 1px dashed #94a3b8;
+  border-radius: 0.375rem;
+  font-size: 0.8125rem;
+  color: #475569;
+  cursor: pointer;
+  background: #f8fafc;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s;
+}
+.recursoFileLabel:hover { border-color: var(--color-secondary-30); color: var(--color-secondary-30); }
 
 .lessonInput {
   padding: 0.5rem 0.75rem;

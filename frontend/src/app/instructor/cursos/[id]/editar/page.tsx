@@ -1,10 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { cursosApi } from '@/lib/api/client';
 import VideoUploadButton from '@/components/video/VideoUploadButton';
 import styles from './page.module.css';
+
+interface ApiLeccionRecurso {
+  id: string;
+  titulo: string;
+  url: string;
+  tipo: string;
+}
 
 interface ApiLeccion {
   id: string;
@@ -13,6 +20,7 @@ interface ApiLeccion {
   bunny_video_id: string | null;
   duracion_seg: number;
   es_visible: boolean;
+  recursos?: ApiLeccionRecurso[];
 }
 
 interface ApiModulo {
@@ -29,11 +37,21 @@ interface ApiCurso {
   modulos: ApiModulo[];
 }
 
+interface RecursoItem {
+  id: string;
+  titulo: string;
+  url: string;
+  tipo: string;
+}
+
 interface Lesson {
   id: string;
   title: string;
   bunnyVideoId: string | null;
   isVisible: boolean;
+  recursos: RecursoItem[];
+  showRecursos: boolean;
+  newRecursoTitulo: string;
 }
 
 interface Module {
@@ -71,6 +89,9 @@ export default function EditarCursoInstructorPage() {
             title: l.titulo,
             bunnyVideoId: l.bunny_video_id,
             isVisible: l.es_visible,
+            recursos: l.recursos || [],
+            showRecursos: false,
+            newRecursoTitulo: '',
           })),
         }))
       );
@@ -135,6 +156,11 @@ export default function EditarCursoInstructorPage() {
             title: resp.titulo,
             bunnyVideoId: resp.bunny_video_id,
             isVisible: resp.es_visible,
+            recursos: [],
+            showRecursos: false,
+            newRecursoTitulo: '',
+            newRecursoUrl: '',
+            newRecursoTipo: 'pdf',
           }],
         } : m
       ));
@@ -163,6 +189,70 @@ export default function EditarCursoInstructorPage() {
       alert('Error al eliminar la leccion');
     }
   };
+
+  const updateLessonRecursoField = (moduleId: string, lessonId: string, field: 'newRecursoTitulo' | 'showRecursos', value: string | boolean) => {
+    setModules((prev) => prev.map((m) =>
+      m.id === moduleId ? {
+        ...m,
+        lessons: m.lessons.map((l) => l.id === lessonId ? { ...l, [field]: value } : l),
+      } : m
+    ));
+  };
+
+  const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
+
+  const handleRecursoFileSelect = (lessonId: string, files: FileList) => {
+    setPendingRecursoFiles((prev) => ({ ...prev, [lessonId]: Array.from(files) }));
+  };
+
+  const addRecurso = useCallback(async (moduleId: string, lesson: Lesson) => {
+    const files = pendingRecursoFiles[lesson.id];
+    if (!files || files.length === 0) return;
+    try {
+      const nuevos: ApiLeccionRecurso[] = [];
+      for (const file of files) {
+        const resp = await cursosApi.uploadRecurso(
+          courseId, moduleId, lesson.id, file,
+          files.length === 1 ? (lesson.newRecursoTitulo.trim() || undefined) : undefined
+        ) as ApiLeccionRecurso;
+        nuevos.push(resp);
+      }
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lesson.id ? {
+            ...l,
+            recursos: [...l.recursos, ...nuevos],
+            newRecursoTitulo: '',
+          } : l),
+        } : m
+      ));
+      setPendingRecursoFiles((prev) => {
+        const next = { ...prev };
+        delete next[lesson.id];
+        return next;
+      });
+    } catch {
+      alert('Error al agregar el recurso');
+    }
+  }, [courseId, pendingRecursoFiles]);
+
+  const deleteRecurso = useCallback(async (moduleId: string, lessonId: string, recursoId: string) => {
+    try {
+      await cursosApi.deleteRecurso(courseId, moduleId, lessonId, recursoId);
+      setModules((prev) => prev.map((m) =>
+        m.id === moduleId ? {
+          ...m,
+          lessons: m.lessons.map((l) => l.id === lessonId ? {
+            ...l,
+            recursos: l.recursos.filter((r) => r.id !== recursoId),
+          } : l),
+        } : m
+      ));
+    } catch {
+      alert('Error al eliminar el recurso');
+    }
+  }, [courseId]);
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -307,6 +397,62 @@ export default function EditarCursoInstructorPage() {
                             currentBunnyVideoId={lesson.bunnyVideoId}
                             onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
                           />
+                          {/* Recursos adicionales */}
+                          <button
+                            type="button"
+                            className={styles.toggleRecursosBtn}
+                            onClick={() => updateLessonRecursoField(module.id, lesson.id, 'showRecursos', !lesson.showRecursos)}
+                          >
+                            {lesson.showRecursos ? '▲' : '▼'} Recursos ({lesson.recursos.length})
+                          </button>
+                          {lesson.showRecursos && (
+                            <div className={styles.recursosSection}>
+                              {lesson.recursos.map((r) => (
+                                <div key={r.id} className={styles.recursoItem}>
+                                  <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
+                                  <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                    {r.titulo}
+                                  </a>
+                                  <button
+                                    type="button"
+                                    className={styles.deleteRecursoBtn}
+                                    onClick={() => deleteRecurso(module.id, lesson.id, r.id)}
+                                  >✕</button>
+                                </div>
+                              ))}
+                              <div className={styles.addRecursoForm}>
+                                <input
+                                  type="text"
+                                  placeholder="Nombre del recurso (opcional)"
+                                  value={lesson.newRecursoTitulo}
+                                  onChange={(e) => updateLessonRecursoField(module.id, lesson.id, 'newRecursoTitulo', e.target.value)}
+                                  className={styles.recursoInput}
+                                />
+                                <label className={styles.recursoFileLabel}>
+                                  <input
+                                    type="file"
+                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                    multiple
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => {
+                                      if (e.target.files?.length) handleRecursoFileSelect(lesson.id, e.target.files);
+                                    }}
+                                  />
+                                  {pendingRecursoFiles[lesson.id]?.length
+                                    ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
+                                    : '📎 Seleccionar archivos'}
+                                </label>
+                                <button
+                                  type="button"
+                                  className={styles.addRecursoBtn}
+                                  onClick={() => addRecurso(module.id, lesson)}
+                                  disabled={!pendingRecursoFiles[lesson.id]?.length}
+                                >
+                                  + Subir recurso
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
