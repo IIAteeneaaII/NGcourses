@@ -18,7 +18,7 @@ const PROTECTED_PATHS = [
 const ADMIN_ONLY = ['/admin'];
 const INSTRUCTOR_ONLY = ['/instructor'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
