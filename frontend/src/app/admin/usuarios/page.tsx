@@ -11,6 +11,7 @@ interface CreateUserForm {
   full_name: string;
   password: string;
   rol: string;
+  telefono: string;
 }
 
 interface ApiUser {
@@ -44,7 +45,7 @@ export default function UsuariosPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [createForm, setCreateForm] = useState<CreateUserForm>({ email: '', full_name: '', password: '', rol: 'estudiante' });
+  const [createForm, setCreateForm] = useState<CreateUserForm>({ email: '', full_name: '', password: '', rol: 'estudiante', telefono: '' });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
 
@@ -96,9 +97,10 @@ export default function UsuariosPage() {
         full_name: createForm.full_name || null,
         password: createForm.password,
         rol: createForm.rol,
+        telefono: createForm.telefono || null,
       });
       setShowCreateModal(false);
-      setCreateForm({ email: '', full_name: '', password: '', rol: 'estudiante' });
+      setCreateForm({ email: '', full_name: '', password: '', rol: 'estudiante', telefono: '' });
       fetchUsers();
     } catch (err: unknown) {
       const apiErr = err as { detail?: string };
@@ -266,6 +268,16 @@ export default function UsuariosPage() {
                   onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
                   className={styles.formInput}
                   placeholder="••••••••"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Teléfono</label>
+                <input
+                  type="tel"
+                  value={createForm.telefono}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, telefono: e.target.value }))}
+                  className={styles.formInput}
+                  placeholder="+52 55 0000 0000"
                 />
               </div>
               <div className={styles.formGroup}>
