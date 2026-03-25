@@ -1,27 +1,51 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { cursosApi } from '@/lib/api/client';
 import styles from './page.module.css';
 
+interface ApiCurso {
+  id: string;
+  titulo: string;
+  estado: string;
+  creado_en?: string;
+}
+
+interface ApiResponse {
+  data: ApiCurso[];
+  count: number;
+}
+
 export default function AdminDashboardPage() {
-  const historyItems = [
-    {
-      id: 1,
-      initials: 'CR',
-      title: 'Facturación Electrónica Avanzada',
-      colorClass: 'red',
-    },
-    {
-      id: 2,
-      initials: 'SO',
-      title: 'Gestión de Recursos Humanos',
-      colorClass: 'black',
-    },
-    {
-      id: 3,
-      initials: 'EN',
-      title: 'Marketing Digital Corporativo',
-      colorClass: '',
-    },
-  ];
+  const [recentCourses, setRecentCourses] = useState<ApiCurso[]>([]);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    async function fetchData() {
+      try {
+        const [allResp, pendingResp] = await Promise.allSettled([
+          cursosApi.list({ limit: 200 }) as Promise<ApiResponse>,
+          cursosApi.list({ limit: 100, estado: 'pendiente' }) as Promise<ApiResponse>,
+        ]);
+        if (allResp.status === 'fulfilled') {
+          const sorted = [...(allResp.value.data ?? [])].sort((a, b) =>
+            new Date(b.creado_en ?? 0).getTime() - new Date(a.creado_en ?? 0).getTime()
+          );
+          setRecentCourses(sorted.slice(0, 3));
+        }
+        if (pendingResp.status === 'fulfilled') {
+          setPendingCount(pendingResp.value.count ?? 0);
+        }
+      } catch {
+        // silencioso
+      }
+    }
+    fetchData();
+  }, []);
+
+  const getInitials = (titulo: string) =>
+    titulo.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
 
   return (
     <div className={styles.dashboard}>
@@ -33,24 +57,15 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Options Grid - 3 Cards */}
+      {/* Options Grid - 4 Cards */}
       <div className={styles.optionsGrid}>
         {/* Gestionar Usuarios */}
         <div className={styles.optionCard}>
           <div className={`${styles.optionIcon} ${styles.users}`}>
-            <svg
-              width="60"
-              height="60"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               />
             </svg>
           </div>
@@ -58,83 +73,48 @@ export default function AdminDashboardPage() {
           <p className={styles.optionDescription}>
             Administra usuarios, roles y permisos del sistema
           </p>
-          <Link href="/admin/usuarios" className={styles.optionButton}>
-            Empezar
-          </Link>
+          <Link href="/admin/usuarios" className={styles.optionButton}>Empezar</Link>
         </div>
 
         {/* Crear Curso */}
         <div className={styles.optionCard}>
           <div className={styles.optionIcon}>
-            <svg
-              width="60"
-              height="60"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M12 5V19M5 12H19"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
             </svg>
           </div>
           <h2 className={styles.optionTitle}>Crear Curso</h2>
           <p className={styles.optionDescription}>
             Crea y gestiona tus propios cursos de capacitación
           </p>
-          <Link href="/admin/cursos/crear" className={styles.optionButton}>
-            Empezar
-          </Link>
+          <Link href="/admin/cursos/crear" className={styles.optionButton}>Empezar</Link>
         </div>
 
-        {/* Solicitar Curso */}
+        {/* Solicitudes de revisión */}
         <div className={styles.optionCard}>
           <div className={`${styles.optionIcon} ${styles.light}`}>
-            <svg
-              width="60"
-              height="60"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
               />
             </svg>
           </div>
-          <h2 className={styles.optionTitle}>Solicitar Curso</h2>
+          <h2 className={styles.optionTitle}>Solicitudes</h2>
           <p className={styles.optionDescription}>
-            Solicita cursos personalizados para tu equipo
+            Revisa y autoriza los cursos enviados por instructores
+            {pendingCount > 0 && <strong> ({pendingCount} pendiente{pendingCount !== 1 ? 's' : ''})</strong>}
           </p>
-          <Link href="/admin/solicitudes" className={styles.optionButton}>
-            Enviar solicitud
-          </Link>
+          <Link href="/admin/solicitudes" className={styles.optionButton}>Ver solicitudes</Link>
         </div>
 
         {/* Instructores */}
         <div className={styles.optionCard}>
           <div className={`${styles.optionIcon} ${styles.instructors}`}>
-            <svg
-              width="60"
-              height="60"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
+            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
                 d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
               />
             </svg>
           </div>
@@ -142,39 +122,35 @@ export default function AdminDashboardPage() {
           <p className={styles.optionDescription}>
             Gestiona los instructores registrados en la plataforma
           </p>
-          <Link href="/admin/instructores" className={styles.optionButton}>
-            Ver instructores
-          </Link>
+          <Link href="/admin/instructores" className={styles.optionButton}>Ver instructores</Link>
         </div>
       </div>
 
-      {/* History Section */}
+      {/* Cursos recientes (datos reales) */}
       <div className={styles.historySection}>
         <div className={styles.historyHeader}>
-          <h3 className={styles.historyTitle}>
-            Mis solicitudes / Mis cursos creados
-          </h3>
-          <Link href="/admin/cursos" className={styles.viewAllLink}>
-            Ver todo
-          </Link>
+          <h3 className={styles.historyTitle}>Cursos creados recientemente</h3>
+          <Link href="/admin/cursos" className={styles.viewAllLink}>Ver todo</Link>
         </div>
 
         <div className={styles.historyList}>
-          {historyItems.map((item) => (
-            <div key={item.id} className={styles.historyItem}>
-              <div className={styles.historyItemContent}>
-                <div
-                  className={`${styles.historyIcon} ${
-                    item.colorClass ? styles[item.colorClass] : ''
-                  }`}
-                >
-                  {item.initials}
+          {recentCourses.length === 0 ? (
+            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
+              No hay cursos creados aún.
+            </p>
+          ) : (
+            recentCourses.map((curso) => (
+              <div key={curso.id} className={styles.historyItem}>
+                <div className={styles.historyItemContent}>
+                  <div className={styles.historyIcon}>{getInitials(curso.titulo)}</div>
+                  <span className={styles.historyItemTitle}>{curso.titulo}</span>
                 </div>
-                <span className={styles.historyItemTitle}>{item.title}</span>
+                <Link href={`/admin/cursos/${curso.id}/editar`} className={styles.viewDetailsButton}>
+                  Ver detalles
+                </Link>
               </div>
-              <button className={styles.viewDetailsButton}>Ver detalles</button>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
     </div>
