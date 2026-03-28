@@ -18,14 +18,16 @@ interface CourseVideoContentProps {
 
 export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref }: CourseVideoContentProps) {
   const [course, setCourse] = useState<Course>(initialCourse);
-  const [currentLesson, setCurrentLesson] = useState<Lesson>(course.modules[0].lessons[0]);
+  const [currentLesson, setCurrentLesson] = useState<Lesson | null>(
+    course.modules.flatMap((m) => m.lessons)[0] ?? null
+  );
   const [progress, setProgress] = useState(course.progress);
 
   // Para throttle del tracking: cada 10 segundos
   const lastSentTime = useRef<number>(0);
   const videoDuration = useRef<number>(0);
 
-  const bunnyConfig = !currentLesson.videoUrl && currentLesson.videoId
+  const bunnyConfig = currentLesson && !currentLesson.videoUrl && currentLesson.videoId
     ? {
         libraryId: bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '',
         videoId: currentLesson.videoId,
@@ -38,7 +40,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   };
 
   const handleTimeUpdate = useCallback((currentTime: number) => {
-    if (!inscripcionId) return;
+    if (!inscripcionId || !currentLesson) return;
     const now = Date.now();
     if (now - lastSentTime.current < 10_000) return; // throttle 10s
     lastSentTime.current = now;
@@ -52,9 +54,10 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       visto_seg: Math.round(currentTime),
       progreso_pct: pct,
     }).catch(() => {}); // Fire & forget
-  }, [inscripcionId, currentLesson.id]);
+  }, [inscripcionId, currentLesson]);
 
   const handleMarkComplete = async () => {
+    if (!currentLesson) return;
     // Enviar 100% al backend si hay inscripción
     if (inscripcionId) {
       progresoApi.registrar({
@@ -82,6 +85,29 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
     setCourse({ ...course, modules: updatedModules, progress: newProgress });
     setProgress(newProgress);
   };
+
+  if (!currentLesson) {
+    return (
+      <div className={styles.container}>
+        <header className={styles.header}>
+          <div className={styles.headerContent}>
+            <div className={styles.logo}>Cursos Online</div>
+            <Link href="/cursos" className={styles.navTitle}>Cursos</Link>
+          </div>
+        </header>
+        <div className={styles.main}>
+          <div className={styles.backButtonContainer}>
+            <Link href={backHref ?? `/curso/${initialCourse.id}`} className={styles.backButton}>
+              ← Volver a información del curso
+            </Link>
+          </div>
+          <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
+            Este curso aún no tiene lecciones disponibles.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
