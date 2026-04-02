@@ -1,14 +1,19 @@
+import logging
 import os
 import uuid
 from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from sqlmodel import func, select
+
+logger = logging.getLogger(__name__)
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core.config import settings
-from app.models._enums import EstadoCurso, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
+from app.models.inscripcion import Inscripcion
 from app.models.contenido import (
     BunnyVideoInitResponse,
     BunnyVideoStatusResponse,
@@ -80,11 +85,34 @@ def list_cursos(
             categoria_id=categoria_id, search=search
         )
     else:
-        cursos, count = crud.get_cursos(
-            session=session, skip=skip, limit=limit,
-            estado=EstadoCurso.PUBLICADO,
-            categoria_id=categoria_id, search=search
+        # Estudiantes: solo ven cursos en los que están inscritos (acceso por invitación)
+        from app.models.contenido import Curso as CursoModel
+        stmt = (
+            select(CursoModel)
+            .join(Inscripcion, Inscripcion.curso_id == CursoModel.id)
+            .where(
+                Inscripcion.usuario_id == current_user.id,
+                Inscripcion.estado == EstadoInscripcion.ACTIVA,
+                CursoModel.estado == EstadoCurso.PUBLICADO,
+            )
         )
+        if categoria_id:
+            stmt = stmt.where(CursoModel.categoria_id == categoria_id)
+        if search:
+            stmt = stmt.where(CursoModel.titulo.ilike(f"%{search}%"))  # type: ignore[attr-defined]
+        items = list(session.exec(stmt.offset(skip).limit(limit)).all())
+        count_stmt = (
+            select(func.count())
+            .select_from(CursoModel)
+            .join(Inscripcion, Inscripcion.curso_id == CursoModel.id)
+            .where(
+                Inscripcion.usuario_id == current_user.id,
+                Inscripcion.estado == EstadoInscripcion.ACTIVA,
+                CursoModel.estado == EstadoCurso.PUBLICADO,
+            )
+        )
+        count = session.exec(count_stmt).one()
+        cursos, count = items, count
 
     return CursosPublic(data=cursos, count=count)
 
@@ -109,17 +137,27 @@ def get_curso(
     if not is_admin and not is_owner and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
-    # Cargar módulos y lecciones
+    # Cargar módulos y lecciones en 2 queries (evita N+1) — ISO 25010 §6.4
     modulos_db = crud.get_modulos(session=session, curso_id=curso_id)
+    lecciones_map = crud.get_lecciones_for_modulos(
+        session=session, modulo_ids=[m.id for m in modulos_db]
+    )
     modulos = []
     for m in modulos_db:
-        lecciones = crud.get_lecciones(session=session, modulo_id=m.id)
         modulo_data = ModuloPublic.model_validate(m, from_attributes=True)
-        modulo_data.lecciones = [LeccionPublic.model_validate(l, from_attributes=True) for l in lecciones]
+        modulo_data.lecciones = [
+            LeccionPublic.model_validate(l, from_attributes=True)
+            for l in lecciones_map.get(m.id, [])
+        ]
         modulos.append(modulo_data)
 
     curso_data = CursoDetalle.model_validate(db_curso, from_attributes=True)
     curso_data.modulos = modulos
+    meta = db_curso.metadata_ or {}
+    curso_data.nivel = meta.get("nivel")
+    curso_data.lo_que_aprenderas = meta.get("lo_que_aprenderas", [])
+    curso_data.requisitos = meta.get("requisitos")
+    curso_data.instructor_nombre = db_curso.instructor.full_name if db_curso.instructor else None
     return curso_data
 
 
@@ -137,16 +175,18 @@ def create_curso(
         session=session, curso_in=curso_in, instructor_id=current_user.id
     )
 
-    # Crear colección en Bunny.net con el nombre del curso
+    # Crear colección en Bunny.net con el nombre del curso y guardar library_id
     if settings.bunny_enabled:
         try:
             collection = bunny_svc.create_collection(name=db_curso.titulo)
             db_curso.bunny_collection_id = collection.get("guid")
+            db_curso.bunny_library_id = settings.BUNNY_LIBRARY_ID or db_curso.bunny_library_id
             session.add(db_curso)
             session.commit()
             session.refresh(db_curso)
-        except Exception:
-            pass  # No falla el curso si Bunny falla
+        except Exception as exc:
+            # ISO 25010 §6.4 — Fiabilidad: se loggea para diagnóstico, no falla el curso
+            logger.warning("No se pudo crear colección en Bunny.net: %s", exc)
 
     return db_curso
 
