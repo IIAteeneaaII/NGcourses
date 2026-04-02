@@ -253,3 +253,30 @@ export interface NavItem {
   badge?: number;
   children?: NavItem[];
 }
+
+// ============================================================================
+// INVITACIONES
+// ============================================================================
+
+export type EstadoInvitacion = 'pendiente' | 'usada' | 'expirada';
+
+export interface CourseInvitation {
+  id: string;
+  curso_id: string;
+  email: string;
+  expira_en: string;
+  usado_en: string | null;
+  creado_en: string;
+  estado: EstadoInvitacion;
+}
+
+export interface CourseInvitationsResponse {
+  data: CourseInvitation[];
+  count: number;
+}
+
+export interface InvitacionEnvioResult {
+  email: string;
+  estado: 'enviada' | 'ya_inscrito' | 'error';
+  detalle?: string;
+}

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cursosApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
@@ -59,7 +60,7 @@ export default function CursosListPage() {
       );
       setCursos(sorted);
       setCount(r.count);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => logError('admin/cursos/page/load', e)).finally(() => setLoading(false));
   }, []);
 
   const getStatusLabel = (status: string) => {
@@ -145,6 +146,9 @@ export default function CursosListPage() {
                   <span className={styles.assignedBadge}>
                     {course.creado_en?.slice(0, 10) ?? ''}
                   </span>
+                  <Link href={`/admin/cursos/${course.id}/invitaciones`} className={styles.editButton} title="Gestionar invitaciones">
+                    Invitaciones
+                  </Link>
                   <Link href={`/admin/cursos/${course.id}/editar`} className={styles.editButton}>
                     Editar
                   </Link>
