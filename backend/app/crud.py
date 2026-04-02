@@ -1,8 +1,14 @@
 import hashlib
+import json
 import secrets
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any
+
+# ISO 25010 §6.5 Mantenibilidad: constantes nombradas en lugar de magic numbers
+UMBRAL_COMPLETADO_PCT: int = 90  # Porcentaje mínimo para marcar una lección como completada
+FOLIO_TOKEN_BYTES: int = 6      # Bytes para generar el folio del certificado (12 chars hex)
+INVITACION_EXPIRACION_DIAS: int = 7  # Días de validez de un enlace de invitación
 
 from sqlmodel import Session, select, func
 
@@ -17,9 +23,11 @@ from app.models.contenido import (
     Leccion, LeccionCreate, LeccionUpdate,
     RecursoLeccion, RecursoLeccionCreate,
 )
-from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoCalificacion
+from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoCalificacion, RolUsuario
 from app.models.inscripcion import Certificado, Inscripcion, ProgresoLeccion
 from app.models.calificacion import Calificacion, VotoResena
+from app.models.quiz import QuizIntento, QuizRespuesta
+from app.models.invitacion import InvitacionCurso
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -80,7 +88,9 @@ def get_categoria(*, session: Session, categoria_id: uuid.UUID) -> Categoria | N
 
 
 def create_categoria(*, session: Session, categoria_in: CategoriaCreate) -> Categoria:
-    db_obj = Categoria.model_validate(categoria_in)
+    import re
+    slug = categoria_in.slug or re.sub(r"[^a-z0-9]+", "-", categoria_in.nombre.lower()).strip("-")
+    db_obj = Categoria.model_validate(categoria_in, update={"slug": slug})
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
@@ -208,8 +218,20 @@ def get_curso(*, session: Session, curso_id: uuid.UUID) -> Curso | None:
     return session.get(Curso, curso_id)
 
 
+_METADATA_FIELDS = ("nivel", "lo_que_aprenderas", "requisitos")
+
+
 def create_curso(*, session: Session, curso_in: CursoCreate, instructor_id: uuid.UUID) -> Curso:
-    db_curso = Curso.model_validate(curso_in, update={"instructor_id": instructor_id})
+    data = curso_in.model_dump(exclude_unset=True)
+    meta: dict = {}
+    for key in _METADATA_FIELDS:
+        val = data.pop(key, None)
+        if val is not None and val != [] and val != "":
+            meta[key] = val
+    update_extra: dict = {"instructor_id": instructor_id}
+    if meta:
+        update_extra["metadata_"] = meta
+    db_curso = Curso.model_validate(data, update=update_extra)
     session.add(db_curso)
     session.commit()
     session.refresh(db_curso)
@@ -221,6 +243,11 @@ def update_curso(*, session: Session, db_curso: Curso, curso_in: CursoUpdate) ->
     if "estado" in data and data["estado"] == EstadoCurso.PUBLICADO and db_curso.publicado_en is None:
         data["publicado_en"] = datetime.utcnow()
     data["actualizado_en"] = datetime.utcnow()
+    meta_update: dict = {k: data.pop(k) for k in _METADATA_FIELDS if k in data}
+    if meta_update:
+        current_meta = dict(db_curso.metadata_ or {})
+        current_meta.update(meta_update)
+        data["metadata_"] = current_meta
     db_curso.sqlmodel_update(data)
     session.add(db_curso)
     session.commit()
@@ -306,6 +333,23 @@ def delete_modulo(*, session: Session, modulo_id: uuid.UUID) -> None:
 def get_lecciones(*, session: Session, modulo_id: uuid.UUID) -> list[Leccion]:
     statement = select(Leccion).where(Leccion.modulo_id == modulo_id).order_by(Leccion.orden)
     return list(session.exec(statement).all())
+
+
+def get_lecciones_for_modulos(
+    *, session: Session, modulo_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, list[Leccion]]:
+    """ISO 25010 §6.4 Fiabilidad: carga todas las lecciones en una sola query (evita N+1)."""
+    if not modulo_ids:
+        return {}
+    statement = (
+        select(Leccion)
+        .where(Leccion.modulo_id.in_(modulo_ids))  # type: ignore[arg-type]
+        .order_by(Leccion.orden)
+    )
+    result: dict[uuid.UUID, list[Leccion]] = {}
+    for leccion in session.exec(statement).all():
+        result.setdefault(leccion.modulo_id, []).append(leccion)
+    return result
 
 
 def create_leccion(*, session: Session, leccion_in: LeccionCreate, modulo_id: uuid.UUID) -> Leccion:
@@ -437,7 +481,7 @@ def upsert_progreso(
     leccion_id: uuid.UUID,
     visto_seg: int,
     progreso_pct: int,
-    umbral_completado_pct: int = 90,
+    umbral_completado_pct: int = UMBRAL_COMPLETADO_PCT,
 ) -> ProgresoLeccion:
     db_prog = get_progreso(session=session, inscripcion_id=inscripcion_id, leccion_id=leccion_id)
     now = datetime.utcnow()
@@ -503,7 +547,7 @@ def check_and_emit_certificate(
         return existing
 
     # Generar folio único
-    folio = f"NG-{secrets.token_hex(6).upper()}"
+    folio = f"NG-{secrets.token_hex(FOLIO_TOKEN_BYTES).upper()}"
     hash_ver = hashlib.sha256(f"{inscripcion_id}{folio}".encode()).hexdigest()
 
     certificado = Certificado(
@@ -623,3 +667,199 @@ def upsert_voto_resena(
     session.commit()
     session.refresh(db_voto)
     return db_voto
+
+
+# ── Quiz ──────────────────────────────────────────────────────────────────────
+
+def crear_intento_quiz(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+    respuestas_in: list[dict],  # [{pregunta_id, opcion_id}]
+    quiz_data: dict,            # QuizData parsed from leccion.contenido
+) -> QuizIntento:
+    """
+    Califica un intento de quiz.
+    - aprobado = True solo si TODAS las preguntas son correctas.
+    - Guarda el intento y las respuestas individuales.
+    - Si aprobado: marca la lección como completada (progreso 100%).
+    - Retorna el intento con respuestas (sin revelar cuál era la correcta).
+    """
+    preguntas = quiz_data.get("preguntas", [])
+
+    # Construir mapa pregunta_id -> opcion_id correcta
+    correctas_map: dict[str, str] = {}
+    for p in preguntas:
+        for o in p.get("opciones", []):
+            if o.get("esCorrecta"):
+                correctas_map[p["id"]] = o["id"]
+                break
+
+    total = len(preguntas)
+    correctas_count = 0
+    respuestas_db: list[QuizRespuesta] = []
+
+    # Crear intento primero (necesitamos el id)
+    intento = QuizIntento(
+        inscripcion_id=inscripcion_id,
+        leccion_id=leccion_id,
+        total_preguntas=total,
+        correctas=0,
+        aprobado=False,
+    )
+    session.add(intento)
+    session.flush()  # genera el id sin commit
+
+    for r in respuestas_in:
+        pregunta_id = r["pregunta_id"]
+        opcion_id = r["opcion_id"]
+        es_correcta = correctas_map.get(pregunta_id) == opcion_id
+        if es_correcta:
+            correctas_count += 1
+        resp = QuizRespuesta(
+            intento_id=intento.id,
+            pregunta_id=pregunta_id,
+            opcion_id=opcion_id,
+            es_correcta=es_correcta,
+        )
+        respuestas_db.append(resp)
+        session.add(resp)
+
+    aprobado = (correctas_count == total) and total > 0
+    intento.correctas = correctas_count
+    intento.aprobado = aprobado
+    session.add(intento)
+
+    session.commit()
+    session.refresh(intento)
+    return intento
+
+
+def get_ultimo_intento(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+) -> QuizIntento | None:
+    """Devuelve el intento más reciente del alumno en esta lección."""
+    return session.exec(
+        select(QuizIntento)
+        .where(
+            QuizIntento.inscripcion_id == inscripcion_id,
+            QuizIntento.leccion_id == leccion_id,
+        )
+        .order_by(QuizIntento.creado_en.desc())  # type: ignore[arg-type]
+    ).first()
+
+
+def get_intentos_curso(
+    *,
+    session: Session,
+    curso_id: uuid.UUID,
+) -> list[tuple]:
+    """
+    Para instructor/admin: devuelve todos los últimos intentos de cada alumno
+    por lección de quiz en un curso.
+    Retorna tuplas (QuizIntento, User, Leccion).
+    """
+    from app.models.contenido import Modulo
+    stmt = (
+        select(QuizIntento, User, Leccion)
+        .join(Inscripcion, QuizIntento.inscripcion_id == Inscripcion.id)
+        .join(User, Inscripcion.usuario_id == User.id)
+        .join(Leccion, QuizIntento.leccion_id == Leccion.id)
+        .join(Modulo, Leccion.modulo_id == Modulo.id)
+        .where(Modulo.curso_id == curso_id)
+        .order_by(QuizIntento.creado_en.desc())  # type: ignore[arg-type]
+    )
+    return list(session.exec(stmt).all())
+
+
+# ── Invitaciones ─────────────────────────────────────────────────────────────
+
+
+def create_invitacion(
+    *,
+    session: Session,
+    curso_id: uuid.UUID,
+    email: str,
+    creado_por_id: uuid.UUID,
+) -> tuple["InvitacionCurso", str]:
+    """Genera un token de un solo uso para invitar un alumno al curso.
+    Devuelve (InvitacionCurso, raw_token). El raw_token solo se retorna aquí,
+    nunca se persiste."""
+    raw_token = secrets.token_urlsafe(32)
+    token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    db_inv = InvitacionCurso(
+        curso_id=curso_id,
+        email=email,
+        token_hash=token_hash,
+        expira_en=datetime.utcnow() + timedelta(days=INVITACION_EXPIRACION_DIAS),
+        creado_por=creado_por_id,
+    )
+    session.add(db_inv)
+    session.commit()
+    session.refresh(db_inv)
+    return db_inv, raw_token
+
+
+def get_invitaciones_por_curso(
+    *, session: Session, curso_id: uuid.UUID
+) -> list["InvitacionCurso"]:
+    stmt = (
+        select(InvitacionCurso)
+        .where(InvitacionCurso.curso_id == curso_id)
+        .order_by(InvitacionCurso.creado_en.desc())  # type: ignore[arg-type]
+    )
+    return list(session.exec(stmt).all())
+
+
+def get_invitacion_by_id(
+    *, session: Session, invitacion_id: uuid.UUID
+) -> "InvitacionCurso | None":
+    return session.get(InvitacionCurso, invitacion_id)
+
+
+def get_invitacion_by_token_hash(
+    *, session: Session, token_hash: str
+) -> "InvitacionCurso | None":
+    return session.exec(
+        select(InvitacionCurso).where(InvitacionCurso.token_hash == token_hash)
+    ).first()
+
+
+def canjear_invitacion(
+    *,
+    session: Session,
+    invitacion: "InvitacionCurso",
+    usuario_id: uuid.UUID,
+) -> Inscripcion:
+    """Marca la invitación como usada y crea la inscripción."""
+    invitacion.usado_en = datetime.utcnow()
+    session.add(invitacion)
+    inscripcion = create_inscripcion(
+        session=session, usuario_id=usuario_id, curso_id=invitacion.curso_id
+    )
+    return inscripcion
+
+
+def delete_invitacion(*, session: Session, invitacion_id: uuid.UUID) -> None:
+    db_inv = session.get(InvitacionCurso, invitacion_id)
+    if db_inv:
+        session.delete(db_inv)
+        session.commit()
+
+
+def get_or_create_user_by_email(
+    *, session: Session, email: str
+) -> tuple[User, bool, str | None]:
+    """Retorna (usuario, creado, contraseña_temporal).
+    contraseña_temporal solo tiene valor cuando creado=True; de lo contrario None."""
+    user = get_user_by_email(session=session, email=email)
+    if user:
+        return user, False, None
+    temp_password = secrets.token_urlsafe(12)
+    user_create = UserCreate(email=email, password=temp_password, rol=RolUsuario.ESTUDIANTE)
+    new_user = create_user(session=session, user_create=user_create)
+    return new_user, True, temp_password

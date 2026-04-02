@@ -113,6 +113,29 @@ def generate_password_reset_token(email: str) -> str:
     return encoded_jwt
 
 
+def generate_invitation_email(
+    email_to: str,
+    curso_titulo: str,
+    token: str,
+    password_temporal: str | None = None,
+) -> EmailData:
+    project_name = settings.PROJECT_NAME
+    subject = f"{project_name} - Invitación al curso: {curso_titulo}"
+    link = f"{settings.FRONTEND_HOST}/invitacion?token={token}"
+    html_content = render_email_template(
+        template_name="invitation_course.html",
+        context={
+            "project_name": project_name,
+            "curso_titulo": curso_titulo,
+            "email": email_to,
+            "link": link,
+            "valid_days": 7,
+            "password_temporal": password_temporal,
+        },
+    )
+    return EmailData(html_content=html_content, subject=subject)
+
+
 def verify_password_reset_token(token: str) -> str | None:
     try:
         decoded_token = jwt.decode(
