@@ -437,6 +437,27 @@
   flex-shrink: 0;
 }
 
+/* ── Quiz tab ──────────────────────────────────────────────────────── */
+.quizFilterRow {
+  margin-bottom: 1.25rem;
+}
+
+.quizSelect {
+  padding: 0.625rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-primary);
+  background-color: var(--color-primary-60);
+  cursor: pointer;
+  min-width: 280px;
+}
+
+.quizSelect:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+}
+
 /* ── Responsive ────────────────────────────────────────────────────── */
 @media (max-width: 900px) {
   .pageLayout { flex-direction: column; }
