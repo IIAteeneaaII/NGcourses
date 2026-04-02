@@ -83,6 +83,7 @@ class TipoNotificacion(str, enum.Enum):
     CERTIFICADO = "certificado"
     SOLICITUD = "solicitud"
     SISTEMA = "sistema"
+    INVITACION = "invitacion"
 
 
 class EstadoNotificacion(str, enum.Enum):
@@ -103,3 +104,9 @@ class CategoriaEvento(str, enum.Enum):
     CRUD = "crud"
     ADMIN = "admin"
     SISTEMA = "sistema"
+
+
+class EstadoInvitacion(str, enum.Enum):
+    PENDIENTE = "pendiente"
+    USADA = "usada"
+    EXPIRADA = "expirada"
