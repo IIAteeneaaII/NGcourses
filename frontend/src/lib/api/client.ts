@@ -182,6 +182,8 @@ export const cursosApi = {
   },
   deleteRecurso: (curso_id: string, modulo_id: string, leccion_id: string, recurso_id: string) =>
     apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/${recurso_id}`),
+  saveQuizData: (curso_id: string, modulo_id: string, leccion_id: string, quizData: unknown) =>
+    apiClient.patch(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`, { contenido: JSON.stringify(quizData) }),
 };
 
 export const inscripcionesApi = {
@@ -249,4 +251,27 @@ export const calificacionesApi = {
 export const certificadosApi = {
   mis: () => apiClient.get('/api/v1/certificados/me'),
   verificar: (folio: string) => apiClient.get(`/api/v1/certificados/verificar/${folio}`),
+};
+
+export const invitacionesApi = {
+  crear: (data: { curso_id: string; emails: string[] }) =>
+    apiClient.post('/api/v1/invitaciones/', data),
+  porCurso: (curso_id: string) =>
+    apiClient.get(`/api/v1/invitaciones/curso/${curso_id}`),
+  revocar: (id: string) =>
+    apiClient.delete(`/api/v1/invitaciones/${id}`),
+  canjear: (token: string) =>
+    apiClient.post('/api/v1/invitaciones/canjear', { token }),
+};
+
+export const quizApi = {
+  /** El alumno envía sus respuestas y obtiene resultado inmediato. */
+  enviar: (leccion_id: string, data: { inscripcion_id: string; respuestas: { pregunta_id: string; opcion_id: string }[] }) =>
+    apiClient.post(`/api/v1/quiz/lecciones/${leccion_id}/enviar`, data),
+  /** Último intento del alumno en esta lección. */
+  ultimoIntento: (leccion_id: string, inscripcion_id: string) =>
+    apiClient.get(`/api/v1/quiz/lecciones/${leccion_id}/ultimo-intento?inscripcion_id=${inscripcion_id}`),
+  /** Instructor/admin: todos los resultados de quiz en un curso. */
+  resultadosCurso: (curso_id: string) =>
+    apiClient.get(`/api/v1/quiz/cursos/${curso_id}/resultados`),
 };

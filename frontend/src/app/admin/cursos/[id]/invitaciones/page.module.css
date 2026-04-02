@@ -1,0 +1,209 @@
+/* ── Contenedor principal ──────────────────────────────────────────── */
+.pageContainer {
+  padding: 0;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.pageTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0;
+  flex: 1;
+}
+
+.backButton {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.1rem;
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  color: var(--color-text-white);
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: 0 4px 10px rgba(0, 71, 119, 0.3);
+  transition: opacity 0.2s;
+}
+.backButton:hover { opacity: 0.88; }
+
+/* ── Tarjeta ───────────────────────────────────────────────────────── */
+.card {
+  background: var(--color-text-white);
+  border-radius: 0.9375rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.cardTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 0 0 1rem 0;
+}
+
+/* ── Formulario de envío ───────────────────────────────────────────── */
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.labelHint {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: var(--color-text-secondary);
+}
+
+.textarea {
+  width: 100%;
+  min-height: 7rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 0.625rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  color: var(--color-text-primary);
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+.textarea:focus {
+  outline: none;
+  border-color: var(--color-secondary-30);
+}
+.textarea::placeholder { color: var(--color-text-secondary); }
+
+.sendButton {
+  align-self: flex-start;
+  padding: 0.625rem 1.5rem;
+  background: var(--color-accent-10);
+  color: #fff;
+  border: none;
+  border-radius: 0.625rem;
+  font-size: 0.9375rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.sendButton:hover:not(:disabled) { opacity: 0.88; }
+.sendButton:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Resultados de envío ───────────────────────────────────────────── */
+.resultsList {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+}
+
+.resultItem {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.resultEmail {
+  font-weight: 600;
+  flex: 1;
+}
+
+.resultEnviada { background: #dcfce7; color: #15803d; }
+.resultYaInscrito { background: #fef9c3; color: #854d0e; }
+.resultError { background: #fee2e2; color: #b91c1c; }
+
+/* ── Tabla de historial ────────────────────────────────────────────── */
+.tableWrapper {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.table th {
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-primary-60);
+  border-bottom: 1px solid #e2e8f0;
+}
+.table th:first-child { border-radius: 0.5rem 0 0 0.5rem; }
+.table th:last-child { border-radius: 0 0.5rem 0.5rem 0; }
+
+.table td {
+  padding: 0.875rem 1rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: var(--color-text-primary);
+  vertical-align: middle;
+}
+.table tr:last-child td { border-bottom: none; }
+.table tr:hover td { background: #f8fafc; }
+
+/* ── Badges de estado ──────────────────────────────────────────────── */
+.badge {
+  display: inline-block;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  padding: 0.2rem 0.6rem;
+  border-radius: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badgePendiente { background: #dbeafe; color: #1d4ed8; }
+.badgeUsada { background: #dcfce7; color: #15803d; }
+.badgeExpirada { background: #f1f5f9; color: #64748b; }
+
+/* ── Botón revocar ─────────────────────────────────────────────────── */
+.revocarBtn {
+  padding: 0.35rem 0.875rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.revocarBtn:hover:not(:disabled) { background: #fecaca; }
+.revocarBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* ── Estado vacío / cargando ───────────────────────────────────────── */
+.emptyMsg {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.9375rem;
+}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .pageHeader { flex-direction: column; align-items: flex-start; }
+}

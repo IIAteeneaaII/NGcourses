@@ -1,0 +1,207 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #e8f0fe 0%, #f0f7ff 50%, #fef3e8 100%);
+  padding: 2rem 1rem;
+}
+
+/* ── Tarjeta principal ─────────────────────────────────────────────── */
+.card {
+  background: #fff;
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 71, 119, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
+  width: 100%;
+  max-width: 460px;
+  overflow: hidden;
+}
+
+/* ── Cabecera de color ─────────────────────────────────────────────── */
+.cardHeader {
+  background: linear-gradient(135deg, var(--color-secondary-30, #004777) 0%, #0066aa 100%);
+  padding: 2rem 2rem 1.75rem;
+  text-align: center;
+}
+
+.brand {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.65);
+  margin: 0 0 1.25rem;
+}
+
+/* ── Ícono SVG ─────────────────────────────────────────────────────── */
+.iconWrap {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.iconWrapSuccess { background: rgba(255, 255, 255, 0.18); }
+.iconWrapWarning { background: rgba(249, 180, 45, 0.22); }
+.iconWrapError   { background: rgba(239, 68, 68, 0.18); }
+
+.iconWrap svg {
+  width: 2rem;
+  height: 2rem;
+}
+
+/* ── Cuerpo ────────────────────────────────────────────────────────── */
+.cardBody {
+  padding: 1.75rem 2rem 2rem;
+  text-align: center;
+}
+
+.title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1a202c);
+  margin: 0 0 0.5rem;
+  line-height: 1.25;
+}
+
+.subtitle {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #64748b);
+  margin: 0 0 1.25rem;
+  line-height: 1.55;
+}
+
+/* ── Nombre del curso ──────────────────────────────────────────────── */
+.coursePill {
+  display: inline-block;
+  background: #f0f7ff;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 2rem;
+  padding: 0.5rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-secondary-30, #004777);
+  margin-bottom: 1.5rem;
+}
+
+/* ── Caja de contraseña ────────────────────────────────────────────── */
+.passwordBox {
+  background: #fffbeb;
+  border: 1.5px solid #fcd34d;
+  border-radius: 0.875rem;
+  padding: 1.125rem 1.25rem;
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.passwordLabel {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #92400e;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+}
+
+.passwordEmail {
+  font-size: 0.875rem;
+  color: #78350f;
+  margin-bottom: 0.875rem;
+}
+
+.passwordValue {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1.5px solid #fcd34d;
+  border-radius: 0.625rem;
+  padding: 0.625rem 0.875rem;
+  margin-bottom: 0.75rem;
+}
+
+.passwordText {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.0625rem;
+  font-weight: 700;
+  color: var(--color-secondary-30, #004777);
+  letter-spacing: 0.05em;
+  flex: 1;
+  word-break: break-all;
+}
+
+.copyBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #92400e;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+.copyBtn:hover { background: #fef3c7; }
+
+.passwordWarning {
+  font-size: 0.8rem;
+  color: #92400e;
+  font-weight: 500;
+}
+
+/* ── Botón principal ───────────────────────────────────────────────── */
+.primaryBtn {
+  display: block;
+  width: 100%;
+  padding: 0.875rem 1.5rem;
+  background: linear-gradient(135deg, var(--color-accent-10, #f97316) 0%, #ea6c0a 100%);
+  color: #fff;
+  border: none;
+  border-radius: 0.875rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+  transition: opacity 0.2s, transform 0.15s;
+}
+.primaryBtn:hover {
+  opacity: 0.93;
+  transform: translateY(-1px);
+}
+
+/* ── Spinner ───────────────────────────────────────────────────────── */
+.spinnerWrap {
+  padding: 3rem 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid #e2e8f0;
+  border-top-color: var(--color-secondary-30, #004777);
+  border-radius: 50%;
+  animation: spin 0.75s linear infinite;
+}
+
+.spinnerText {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary, #64748b);
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media (max-width: 480px) {
+  .cardHeader { padding: 1.5rem 1.25rem 1.25rem; }
+  .cardBody   { padding: 1.25rem 1.25rem 1.5rem; }
+}
