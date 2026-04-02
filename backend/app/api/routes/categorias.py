@@ -5,7 +5,7 @@ from typing import Any
 from fastapi import APIRouter, Depends, HTTPException
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import AdminOrSuperuser, CurrentUser, SessionDep, require_admin_or_superuser
 from app.models.contenido import CategoriaCreate, CategoriaPublic, CategoriaUpdate
 from app.models.schemas import Message
 
@@ -32,17 +32,17 @@ def get_categoria(
     "/",
     response_model=CategoriaPublic,
     status_code=201,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def create_categoria(*, session: SessionDep, categoria_in: CategoriaCreate) -> Any:
-    """Crea una categoría. Solo admins."""
+    """Crea una categoría. Admins y superusuarios."""
     return crud.create_categoria(session=session, categoria_in=categoria_in)
 
 
 @router.patch(
     "/{categoria_id}",
     response_model=CategoriaPublic,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def update_categoria(
     *, categoria_id: uuid.UUID, session: SessionDep, categoria_in: CategoriaUpdate
@@ -56,7 +56,7 @@ def update_categoria(
 @router.delete(
     "/{categoria_id}",
     response_model=Message,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def delete_categoria(*, categoria_id: uuid.UUID, session: SessionDep) -> Any:
     db = crud.get_categoria(session=session, categoria_id=categoria_id)

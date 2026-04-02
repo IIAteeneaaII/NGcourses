@@ -127,6 +127,7 @@ class Leccion(SQLModel, table=True):
     bunny_video_id: str | None = Field(default=None, max_length=255)
     hls_url: str | None = Field(default=None)
     thumbnail_url: str | None = Field(default=None)
+    contenido: str | None = Field(default=None)  # JSON string con QuizData para lecciones tipo quiz
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime | None = Field(default=None)
@@ -172,7 +173,7 @@ class CategoriaPublic(SQLModel):
 
 class CategoriaCreate(SQLModel):
     nombre: str
-    slug: str
+    slug: str | None = None  # auto-generado desde nombre si no se provee
     descripcion: str | None = None
     orden: int = 0
     activa: bool = True
@@ -234,6 +235,7 @@ class LeccionPublic(SQLModel):
     bunny_video_id: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None
+    contenido: str | None = None
     creado_en: datetime
     actualizado_en: datetime | None = None
     recursos: list[RecursoLeccionPublic] = []
@@ -259,6 +261,7 @@ class LeccionUpdate(SQLModel):
     bunny_video_id: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None
+    contenido: str | None = None  # JSON string con QuizData
 
 
 # -- Módulo --
@@ -305,10 +308,14 @@ class CursoPublic(SQLModel):
     publicado_en: datetime | None = None
     creado_en: datetime
     actualizado_en: datetime | None = None
+    nivel: str | None = None
+    lo_que_aprenderas: list[str] = []
+    requisitos: str | None = None
 
 
 class CursoDetalle(CursoPublic):
     modulos: list[ModuloPublic] = []
+    instructor_nombre: str | None = None
 
 
 class CursosPublic(SQLModel):
@@ -324,6 +331,9 @@ class CursoCreate(SQLModel):
     estado: EstadoCurso = EstadoCurso.BORRADOR
     es_gratis: bool = False
     bunny_library_id: str | None = None
+    nivel: str | None = None
+    lo_que_aprenderas: list[str] = []
+    requisitos: str | None = None
 
 
 class CursoUpdate(SQLModel):
@@ -335,6 +345,9 @@ class CursoUpdate(SQLModel):
     es_gratis: bool | None = None
     portada_url: str | None = None
     bunny_library_id: str | None = None
+    nivel: str | None = None
+    lo_que_aprenderas: list[str] | None = None
+    requisitos: str | None = None
 
 
 # -- Bunny.net Video Upload --
