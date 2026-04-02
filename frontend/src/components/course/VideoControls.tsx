@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import type { Resource } from '@/types/course';
 import { calificacionesApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './VideoControls.module.css';
 
 interface CalificacionPublic {
@@ -59,7 +60,7 @@ export default function VideoControls({
       setLoadingComentarios(true);
       (calificacionesApi.list(courseId) as Promise<CalificacionesResp>)
         .then((resp) => setComentarios(resp.data ?? []))
-        .catch(() => {})
+        .catch((e) => logError('VideoControls/calificaciones', e))
         .finally(() => setLoadingComentarios(false));
     }
   }, [activeTab, courseId]);

@@ -21,6 +21,10 @@ interface ApiCurso {
   calificacion_prom: number;
   modulos: ApiModulo[];
   portada_url: string | null;
+  nivel: string | null;
+  lo_que_aprenderas: string[];
+  requisitos: string | null;
+  instructor_nombre: string | null;
 }
 
 interface ApiInscripcionesResp {
@@ -53,17 +57,23 @@ export default function CursoInfoPage() {
 
         const duracionHoras = Math.round((cursoRaw.duracion_seg ?? 0) / 3600);
 
+        const nivelLabel: Record<string, string> = {
+          principiante: 'Principiante',
+          intermedio: 'Intermedio',
+          avanzado: 'Avanzado',
+        };
+
         const courseInfo: CourseInfo = {
           id: cursoRaw.id,
           title: cursoRaw.titulo,
-          instructor: '',
+          instructor: cursoRaw.instructor_nombre || '',
           rating: cursoRaw.calificacion_prom ?? 0,
-          level: 'Todos los niveles',
+          level: (cursoRaw.nivel && nivelLabel[cursoRaw.nivel]) || 'Todos los niveles',
           duration: `${duracionHoras}h`,
           lessonsCount: totalLecciones,
           description: cursoRaw.descripcion || '',
-          learningOutcomes: [],
-          requirements: '',
+          learningOutcomes: cursoRaw.lo_que_aprenderas ?? [],
+          requirements: cursoRaw.requisitos || '',
           syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
         };
