@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { cursosApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
 interface ApiCurso {
@@ -41,7 +42,7 @@ export default function InstructorDashboardPage() {
       const r = resp as ApiCursosResp;
       setCursos(r.data);
       setCount(r.count);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => logError('instructor/page/load', e)).finally(() => setLoading(false));
   }, []);
 
   const published = cursos.filter((c) => c.estado === 'publicado').length;

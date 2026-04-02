@@ -1,10 +1,16 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { cursosApi } from '@/lib/api/client';
+import { cursosApi, categoriasApi } from '@/lib/api/client';
 import VideoUploadButton from '@/components/video/VideoUploadButton';
+import LessonTypeSelector from '@/components/course/LessonTypeSelector';
+import QuizBuilder from '@/components/course/QuizBuilder';
+import type { QuizData } from '@/types/course';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
+
+interface ApiCategoria { id: string; nombre: string }
 
 interface ApiLeccionRecurso {
   id: string;
@@ -20,6 +26,7 @@ interface ApiLeccion {
   bunny_video_id: string | null;
   duracion_seg: number;
   es_visible: boolean;
+  contenido?: string | null;
   recursos?: ApiLeccionRecurso[];
 }
 
@@ -34,6 +41,7 @@ interface ApiCurso {
   id: string;
   titulo: string;
   descripcion: string | null;
+  categoria_id?: string;
   modulos: ApiModulo[];
 }
 
@@ -47,11 +55,13 @@ interface RecursoItem {
 interface Lesson {
   id: string;
   title: string;
+  tipo: 'video' | 'quiz';
   bunnyVideoId: string | null;
   isVisible: boolean;
   recursos: RecursoItem[];
   showRecursos: boolean;
   newRecursoTitulo: string;
+  quizData: QuizData;
 }
 
 interface Module {
@@ -69,15 +79,31 @@ export default function EditarCursoInstructorPage() {
 
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
+  const [category, setCategory] = useState('');
+  const [categories, setCategories] = useState<ApiCategoria[]>([]);
+  const [showNewCatInput, setShowNewCatInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
   const [modules, setModules] = useState<Module[]>([]);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const notify = React.useCallback((type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  }, []);
 
   useEffect(() => {
-    cursosApi.get(courseId).then((raw) => {
+    Promise.all([
+      categoriasApi.list(),
+      cursosApi.get(courseId),
+    ]).then(([cats, raw]) => {
+      setCategories(cats as ApiCategoria[]);
       const curso = raw as ApiCurso;
       setCourseTitle(curso.titulo);
       setCourseDescription(curso.descripcion || '');
+      setCategory(curso.categoria_id || '');
       setModules(
         (curso.modulos || []).map((m) => ({
           id: m.id,
@@ -87,16 +113,44 @@ export default function EditarCursoInstructorPage() {
           lessons: (m.lecciones || []).map((l) => ({
             id: l.id,
             title: l.titulo,
+            tipo: (l.tipo === 'quiz' ? 'quiz' : 'video') as 'video' | 'quiz',
             bunnyVideoId: l.bunny_video_id,
             isVisible: l.es_visible,
             recursos: l.recursos || [],
             showRecursos: false,
             newRecursoTitulo: '',
+            quizData: l.contenido ? (() => { try { return JSON.parse(l.contenido!); } catch { return { preguntas: [] }; } })() : { preguntas: [] },
           })),
         }))
       );
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => logError('instructor/cursos/editar/autoSave', e)).finally(() => setLoading(false));
   }, [courseId]);
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === '__new__') {
+      setShowNewCatInput(true);
+      setCategory('');
+    } else {
+      setCategory(e.target.value);
+      setShowNewCatInput(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setIsCreatingCategory(true);
+    try {
+      const newCat = await categoriasApi.create({ nombre: newCategoryName.trim() }) as ApiCategoria;
+      setCategories((prev) => [...prev, newCat]);
+      setCategory(newCat.id);
+      setNewCategoryName('');
+      setShowNewCatInput(false);
+    } catch (e) {
+      logError('instructor/cursos/editar/createCategory', e);
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
 
   const addModule = async () => {
     try {
@@ -113,7 +167,7 @@ export default function EditarCursoInstructorPage() {
         isExpanded: true,
       }]);
     } catch {
-      alert('Error al crear el modulo');
+      notify('error', 'Error al crear el módulo');
     }
   };
 
@@ -127,7 +181,7 @@ export default function EditarCursoInstructorPage() {
       await cursosApi.deleteModulo(courseId, moduleId);
       setModules((prev) => prev.filter((m) => m.id !== moduleId));
     } catch {
-      alert('Error al eliminar el modulo');
+      notify('error', 'Error al eliminar el módulo');
     }
   };
 
@@ -137,13 +191,14 @@ export default function EditarCursoInstructorPage() {
     ));
   };
 
-  const addLesson = async (moduleId: string) => {
+  const confirmAddLesson = async (moduleId: string, tipo: 'video' | 'quiz') => {
     const mod = modules.find((m) => m.id === moduleId);
     if (!mod) return;
+    setChoosingForModule(null);
     try {
       const resp = await cursosApi.createLeccion(courseId, moduleId, {
-        titulo: 'Nueva leccion',
-        tipo: 'video',
+        titulo: tipo === 'quiz' ? 'Nueva lección - Quiz' : 'Nueva lección',
+        tipo,
         orden: mod.lessons.length + 1,
         es_visible: true,
         duracion_seg: 0,
@@ -154,18 +209,18 @@ export default function EditarCursoInstructorPage() {
           lessons: [...m.lessons, {
             id: resp.id,
             title: resp.titulo,
+            tipo,
             bunnyVideoId: resp.bunny_video_id,
             isVisible: resp.es_visible,
             recursos: [],
             showRecursos: false,
             newRecursoTitulo: '',
-            newRecursoUrl: '',
-            newRecursoTipo: 'pdf',
+            quizData: { preguntas: [] },
           }],
         } : m
       ));
     } catch {
-      alert('Error al crear la leccion');
+      notify('error', 'Error al crear la lección');
     }
   };
 
@@ -186,7 +241,7 @@ export default function EditarCursoInstructorPage() {
         m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m
       ));
     } catch {
-      alert('Error al eliminar la leccion');
+      notify('error', 'Error al eliminar la lección');
     }
   };
 
@@ -200,6 +255,7 @@ export default function EditarCursoInstructorPage() {
   };
 
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
+  const [choosingForModule, setChoosingForModule] = useState<string | null>(null);
 
   const handleRecursoFileSelect = (lessonId: string, files: FileList) => {
     setPendingRecursoFiles((prev) => ({ ...prev, [lessonId]: Array.from(files) }));
@@ -233,7 +289,7 @@ export default function EditarCursoInstructorPage() {
         return next;
       });
     } catch {
-      alert('Error al agregar el recurso');
+      notify('error', 'Error al agregar el recurso');
     }
   }, [courseId, pendingRecursoFiles]);
 
@@ -250,23 +306,23 @@ export default function EditarCursoInstructorPage() {
         } : m
       ));
     } catch {
-      alert('Error al eliminar el recurso');
+      notify('error', 'Error al eliminar el recurso');
     }
   }, [courseId]);
 
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await cursosApi.update(courseId, { titulo: courseTitle, descripcion: courseDescription });
+      await cursosApi.update(courseId, { titulo: courseTitle, descripcion: courseDescription, ...(category ? { categoria_id: category } : {}) });
       await Promise.all(modules.map(async (m) => {
         await cursosApi.updateModulo(courseId, m.id, { titulo: m.title, descripcion: m.description });
         await Promise.all(m.lessons.map((l) =>
           cursosApi.updateLeccion(courseId, m.id, l.id, { titulo: l.title, es_visible: l.isVisible })
         ));
       }));
-      alert('Cambios guardados correctamente');
+      notify('success', 'Cambios guardados correctamente');
     } catch {
-      alert('Error al guardar los cambios');
+      notify('error', 'Error al guardar los cambios');
     } finally {
       setIsSaving(false);
     }
@@ -280,6 +336,17 @@ export default function EditarCursoInstructorPage() {
 
   return (
     <div className={styles.pageContainer}>
+      {notification && (
+        <div style={{
+          position: 'fixed', top: '1rem', right: '1rem', zIndex: 1000,
+          padding: '0.75rem 1.25rem', borderRadius: '0.5rem', fontWeight: 500,
+          background: notification.type === 'success' ? '#d4edda' : '#f8d7da',
+          color: notification.type === 'success' ? '#155724' : '#721c24',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        }}>
+          {notification.message}
+        </div>
+      )}
       <div className={styles.headerBar}>
         <button className={styles.backButton} onClick={() => router.push('/instructor/cursos')}>
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -309,6 +376,49 @@ export default function EditarCursoInstructorPage() {
               placeholder="Descripcion del curso"
               rows={2}
             />
+            <div className={styles.categoryGroup}>
+              <label className={styles.categoryLabel}>Categoría</label>
+              {!showNewCatInput ? (
+                <select value={category} onChange={handleCategoryChange} className={styles.categorySelect}>
+                  <option value="">Sin categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                  ))}
+                  <option value="__new__">+ Crear nueva categoría...</option>
+                </select>
+              ) : (
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    className={styles.categoryInput}
+                    placeholder="Nombre de la nueva categoría"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
+                    autoFocus
+                    disabled={isCreatingCategory}
+                    aria-label="Nombre de la nueva categoría"
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleCreateCategory}
+                    disabled={!newCategoryName.trim() || isCreatingCategory}
+                    style={{ padding: '0.5rem 1rem', background: 'var(--color-secondary-30)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                  >
+                    {isCreatingCategory ? 'Creando...' : 'Crear'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
+                    style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
+                    aria-label="Cancelar crear categoría"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
           <div className={styles.courseStats}>
             <div className={styles.statItem}>
@@ -390,13 +500,21 @@ export default function EditarCursoInstructorPage() {
                           </button>
                         </div>
                         <div className={styles.lessonInputs}>
-                          <VideoUploadButton
-                            cursoId={courseId}
-                            moduloId={module.id}
-                            leccionId={lesson.id}
-                            currentBunnyVideoId={lesson.bunnyVideoId}
-                            onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
-                          />
+                          {lesson.tipo === 'video' ? (
+                            <VideoUploadButton
+                              cursoId={courseId}
+                              moduloId={module.id}
+                              leccionId={lesson.id}
+                              currentBunnyVideoId={lesson.bunnyVideoId}
+                              onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
+                            />
+                          ) : (
+                            <QuizBuilder
+                              quizData={lesson.quizData}
+                              onChange={(qd) => updateLessonLocal(module.id, lesson.id, { quizData: qd })}
+                              onSave={(data) => cursosApi.saveQuizData(courseId, module.id, lesson.id, data).catch((e) => logError('instructor/cursos/editar/autoSave', e))}
+                            />
+                          )}
                           {/* Recursos adicionales */}
                           <button
                             type="button"
@@ -457,9 +575,16 @@ export default function EditarCursoInstructorPage() {
                       </div>
                     ))}
 
-                    <button className={styles.addLessonButton} onClick={() => addLesson(module.id)}>
-                      + Agregar leccion
+                    {choosingForModule === module.id ? (
+                      <LessonTypeSelector
+                        onSelect={(tipo) => confirmAddLesson(module.id, tipo)}
+                        onCancel={() => setChoosingForModule(null)}
+                      />
+                    ) : (
+                    <button className={styles.addLessonButton} onClick={() => setChoosingForModule(module.id)}>
+                      + Agregar lección
                     </button>
+                    )}
                   </div>
                 </div>
               )}
