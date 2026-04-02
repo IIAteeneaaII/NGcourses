@@ -219,10 +219,14 @@ def build_thumbnail_url(video_id: str, cdn_hostname: str | None = None) -> str:
 def verify_webhook_signature(payload: bytes, received_signature: str) -> bool:
     """
     Valida la firma HMAC-SHA256 del webhook de Bunny.net.
-    Si BUNNY_WEBHOOK_SECRET no está configurado, acepta todo (dev mode).
+
+    Falla cerrado (fail-closed): si BUNNY_WEBHOOK_SECRET no está configurado,
+    rechaza la petición para evitar que cualquier actor externo pueda inyectar
+    datos falsos de video. Configure siempre BUNNY_WEBHOOK_SECRET en producción.
     """
     if not settings.BUNNY_WEBHOOK_SECRET:
-        return True
+        # ISO 25010 §6.7 — Seguridad: fail-closed, nunca fail-open en webhooks
+        return False
 
     expected = hmac.new(
         settings.BUNNY_WEBHOOK_SECRET.encode(),
