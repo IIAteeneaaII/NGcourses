@@ -5,8 +5,10 @@ import Link from 'next/link';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import LessonsSidebar from '@/components/course/LessonsSidebar';
 import VideoControls from '@/components/course/VideoControls';
-import type { Course, Lesson } from '@/types/course';
+import QuizPlayer from '@/components/course/QuizPlayer';
+import type { Course, Lesson, QuizData } from '@/types/course';
 import { progresoApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './CourseVideoContent.module.css';
 
 interface CourseVideoContentProps {
@@ -27,9 +29,10 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   const lastSentTime = useRef<number>(0);
   const videoDuration = useRef<number>(0);
 
-  const bunnyConfig = currentLesson && !currentLesson.videoUrl && currentLesson.videoId
+  const resolvedLibraryId = bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '';
+  const bunnyConfig = currentLesson && !currentLesson.videoUrl && currentLesson.videoId && resolvedLibraryId
     ? {
-        libraryId: bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '',
+        libraryId: resolvedLibraryId,
         videoId: currentLesson.videoId,
       }
     : undefined;
@@ -53,7 +56,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       leccion_id: currentLesson.id,
       visto_seg: Math.round(currentTime),
       progreso_pct: pct,
-    }).catch(() => {}); // Fire & forget
+    }).catch((e) => logError('CourseVideoContent/handleTimeUpdate', e));
   }, [inscripcionId, currentLesson]);
 
   const handleMarkComplete = async () => {
@@ -65,7 +68,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         leccion_id: currentLesson.id,
         visto_seg: videoDuration.current || 0,
         progreso_pct: 100,
-      }).catch(() => {});
+      }).catch((e) => logError('CourseVideoContent/handleMarkComplete', e));
     }
 
     const updatedModules = course.modules.map((module) => ({
@@ -131,22 +134,37 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
 
         <div className={styles.contentGrid}>
           <div className={styles.videoSection}>
-            <VideoPlayer
-              config={bunnyConfig}
-              videoUrl={currentLesson.videoUrl}
-              onTimeUpdate={handleTimeUpdate}
-              onEnded={() => {
-                handleTimeUpdate(videoDuration.current);
-                handleMarkComplete();
-              }}
-            />
-            <VideoControls
-              progress={progress}
-              onMarkComplete={handleMarkComplete}
-              resources={currentLesson.resources}
-              courseId={course.id}
-              lessonId={currentLesson.id}
-            />
+            {currentLesson.tipo === 'quiz' ? (
+              <QuizPlayer
+                leccionId={currentLesson.id}
+                inscripcionId={inscripcionId ?? null}
+                quizData={(() => {
+                  try { return currentLesson.contenido ? JSON.parse(currentLesson.contenido) as QuizData : { preguntas: [] }; }
+                  catch { return { preguntas: [] }; }
+                })()}
+                onAprobado={handleMarkComplete}
+              />
+            ) : (
+              <>
+                <VideoPlayer
+                  key={currentLesson.id}
+                  config={bunnyConfig}
+                  videoUrl={currentLesson.videoUrl}
+                  onTimeUpdate={handleTimeUpdate}
+                  onEnded={() => {
+                    handleTimeUpdate(videoDuration.current);
+                    handleMarkComplete();
+                  }}
+                />
+                <VideoControls
+                  progress={progress}
+                  onMarkComplete={handleMarkComplete}
+                  resources={currentLesson.resources}
+                  courseId={course.id}
+                  lessonId={currentLesson.id}
+                />
+              </>
+            )}
           </div>
 
           <LessonsSidebar

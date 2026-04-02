@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, notFound } from 'next/navigation';
 import CourseVideoContent from '@/components/course/CourseVideoContent';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { cursosApi, inscripcionesApi, progresoApi } from '@/lib/api/client';
 import type { Course, Module, Lesson } from '@/types/course';
 
@@ -23,6 +24,7 @@ interface ApiLeccion {
   duracion_seg: number;
   bunny_video_id: string | null;
   hls_url: string | null;
+  contenido?: string | null;
   recursos?: ApiRecurso[];
 }
 
@@ -98,11 +100,13 @@ export default function CursoVideosPage() {
           lessons: m.lecciones.map((l: ApiLeccion): Lesson => ({
             id: l.id,
             name: l.titulo,
+            tipo: (l.tipo === 'quiz' ? 'quiz' : l.tipo === 'lectura' ? 'lectura' : 'video') as Lesson['tipo'],
             videoId: l.bunny_video_id || undefined,
             videoUrl: l.hls_url || undefined,
             duration: l.duracion_seg,
             completed: completadoMap[l.id] ?? false,
             order: l.orden,
+            contenido: l.contenido ?? null,
             resources: (l.recursos || []).map((r) => ({
               id: r.id,
               name: r.titulo,
@@ -146,11 +150,13 @@ export default function CursoVideosPage() {
   if (hasError || !course) return notFound();
 
   return (
-    <CourseVideoContent
-      initialCourse={course}
-      inscripcionId={inscripcionId}
-      bunnyLibraryId={bunnyLibraryId}
-      backHref={fromAdmin ? `/admin/cursos/${id}/preview` : undefined}
-    />
+    <ErrorBoundary context="CourseVideoPage" fallback={<p style={{ padding: '2rem' }}>Error al cargar el contenido del curso. Recarga la página.</p>}>
+      <CourseVideoContent
+        initialCourse={course}
+        inscripcionId={inscripcionId}
+        bunnyLibraryId={bunnyLibraryId}
+        backHref={fromAdmin ? `/admin/cursos/${id}/preview` : undefined}
+      />
+    </ErrorBoundary>
   );
 }
