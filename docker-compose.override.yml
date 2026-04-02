@@ -86,10 +86,14 @@ services:
       - ./backend/htmlcov:/app/htmlcov
       - ./backend/app/media:/app/app/media
     environment:
-      SMTP_HOST: "mailcatcher"
-      SMTP_PORT: "1025"
-      SMTP_TLS: "false"
-      EMAILS_FROM_EMAIL: "noreply@example.com"
+      SMTP_HOST: "smtp.gmail.com"
+      SMTP_PORT: "587"
+      SMTP_TLS: "true"
+      SMTP_SSL: "false"
+      SMTP_USER: "tickets.simod@gmail.com"
+      SMTP_PASSWORD: "xgjhftrafdsvbrkw"
+      EMAILS_FROM_EMAIL: "tickets.simod@gmail.com"
+      EMAILS_FROM_NAME: "Sistema de Tickets RAM Electronics"
 
   mailcatcher:
     image: schickling/mailcatcher
