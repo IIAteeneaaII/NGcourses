@@ -7,10 +7,12 @@ from app.api.routes import (
     cursos,
     etiquetas,
     inscripciones,
+    invitaciones,
     items,
     login,
     private,
     progreso,
+    quiz,
     users,
     utils,
     webhooks,
@@ -26,7 +28,9 @@ api_router.include_router(categorias.router)
 api_router.include_router(etiquetas.router)
 api_router.include_router(cursos.router)
 api_router.include_router(inscripciones.router)
+api_router.include_router(invitaciones.router)
 api_router.include_router(progreso.router)
+api_router.include_router(quiz.router)
 api_router.include_router(calificaciones.router)
 api_router.include_router(certificados.router)
 api_router.include_router(webhooks.router)
