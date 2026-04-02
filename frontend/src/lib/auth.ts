@@ -19,8 +19,12 @@ export function getToken(): string | null {
 }
 
 export function setToken(token: string): void {
+  // SECURITY TODO (ISO 25010 §6.7): localStorage es vulnerable a XSS.
+  // Migrar a HttpOnly cookies requiere que el backend emita la cookie directamente
+  // en el endpoint /login/access-token. Mientras tanto, se mitiga con CSP estricto.
   localStorage.setItem(TOKEN_KEY, token);
   // Sincronizar a cookie para que el middleware de Next.js pueda leerlo
+  // SECURITY TODO: agregar flag Secure en producción (requiere HTTPS)
   document.cookie = `${TOKEN_KEY}=${token}; path=/; SameSite=Lax`;
 }
 

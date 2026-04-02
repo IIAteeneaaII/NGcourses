@@ -1,12 +1,14 @@
 export interface Lesson {
   id: string;
   name: string;
+  tipo?: 'video' | 'quiz' | 'lectura';
   videoId?: string;
   videoUrl?: string;
   duration?: number;
   completed: boolean;
   order: number;
   resources?: Resource[];
+  contenido?: string | null;  // JSON string con QuizData para lecciones tipo quiz
 }
 
 export interface Resource {
@@ -60,6 +62,31 @@ export interface CourseInfo {
   syllabus: string[];
   image: string;
 }
+
+// ── Quiz / Lección tipos (editor de cursos) ──────────────────────────────────
+
+export type LeccionTipo = 'video' | 'quiz';
+export type QuestionType = 'multiple_choice' | 'true_false';
+
+export interface QuizOption {
+  id: string;
+  texto: string;
+  esCorrecta: boolean;
+}
+
+export interface QuizQuestion {
+  id: string;
+  tipo: QuestionType;
+  enunciado: string;
+  opciones: QuizOption[];
+  orden: number;
+}
+
+export interface QuizData {
+  preguntas: QuizQuestion[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export type CourseTag = 'Nuevo' | 'Popular' | 'Destacado';
 
