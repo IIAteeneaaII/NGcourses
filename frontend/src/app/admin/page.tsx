@@ -26,7 +26,7 @@ export default function AdminDashboardPage() {
       try {
         const [allResp, pendingResp] = await Promise.allSettled([
           cursosApi.list({ limit: 200 }) as Promise<ApiResponse>,
-          cursosApi.list({ limit: 100, estado: 'pendiente' }) as Promise<ApiResponse>,
+          cursosApi.list({ limit: 100, estado: 'revision' }) as Promise<ApiResponse>,
         ]);
         if (allResp.status === 'fulfilled') {
           const sorted = [...(allResp.value.data ?? [])].sort((a, b) =>

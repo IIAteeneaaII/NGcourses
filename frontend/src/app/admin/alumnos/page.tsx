@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
-import { usersApi, cursosApi, inscripcionesApi } from '@/lib/api/client';
+import { usersApi, cursosApi, inscripcionesApi, quizApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -33,6 +34,19 @@ interface ApiInscripcionesResp { data: ApiInscripcion[]; count: number }
 
 interface CursoConConteo extends ApiCurso { total: number }
 
+interface QuizResultadoAlumno {
+  intento_id: string;
+  usuario_id: string;
+  usuario_nombre: string;
+  usuario_email: string;
+  leccion_id: string;
+  leccion_titulo: string;
+  aprobado: boolean;
+  total_preguntas: number;
+  correctas: number;
+  creado_en: string;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 const ITEMS_PER_PAGE = 10;
@@ -48,8 +62,10 @@ function getNombre(alumno: ApiAlumno) {
 
 // ── Componente ─────────────────────────────────────────────────────────────────
 
+const QUIZ_ITEMS_PER_PAGE = 10;
+
 export default function AlumnosAdminPage() {
-  const [activeTab, setActiveTab] = useState<'lista' | 'estadisticas'>('lista');
+  const [activeTab, setActiveTab] = useState<'lista' | 'estadisticas' | 'quiz'>('lista');
 
   // Datos base (cargados al montar)
   const [alumnos, setAlumnos] = useState<ApiAlumno[]>([]);
@@ -77,6 +93,12 @@ export default function AlumnosAdminPage() {
   const [loadingStats, setLoadingStats] = useState(false);
   const [statsLoaded, setStatsLoaded] = useState(false);
 
+  // Tab Quiz
+  const [quizResults, setQuizResults] = useState<QuizResultadoAlumno[]>([]);
+  const [quizCursoId, setQuizCursoId] = useState('');
+  const [quizLoading, setQuizLoading] = useState(false);
+  const [quizPage, setQuizPage] = useState(1);
+
   // ── Carga inicial ────────────────────────────────────────────────────────────
 
   useEffect(() => {
@@ -93,8 +115,8 @@ export default function AlumnosAdminPage() {
         setAlumnosMap(Object.fromEntries(listaAlumnos.map((a) => [a.id, a])));
         setCursos(listaCursos);
         setCursosMap(Object.fromEntries(listaCursos.map((c) => [c.id, c.titulo])));
-      } catch {
-        // fallo silencioso
+      } catch (e) {
+        logError('admin/alumnos/fetchBase', e);
       } finally {
         setLoadingBase(false);
       }
@@ -121,8 +143,8 @@ export default function AlumnosAdminPage() {
         .sort((a, b) => b.total - a.total);
       setCursosConConteo(conteos);
       setStatsLoaded(true);
-    } catch {
-      // fallo silencioso
+    } catch (e) {
+      logError('admin/alumnos/fetchStats', e);
     } finally {
       setLoadingStats(false);
     }
@@ -131,6 +153,20 @@ export default function AlumnosAdminPage() {
   useEffect(() => {
     if (activeTab === 'estadisticas') fetchStats();
   }, [activeTab, fetchStats]);
+
+  // Fetch quiz results when curso changes
+  useEffect(() => {
+    if (activeTab !== 'quiz' || !quizCursoId) {
+      setQuizResults([]);
+      return;
+    }
+    setQuizLoading(true);
+    quizApi.resultadosCurso(quizCursoId)
+      .then((res) => setQuizResults(res as QuizResultadoAlumno[]))
+      .catch((e) => { logError('admin/alumnos/quizResultados', e); setQuizResults([]); })
+      .finally(() => setQuizLoading(false));
+    setQuizPage(1);
+  }, [activeTab, quizCursoId]);
 
   // ── Handlers panel ───────────────────────────────────────────────────────────
 
@@ -173,19 +209,23 @@ export default function AlumnosAdminPage() {
   };
 
   // ── Tab Lista: filtrado y paginación ─────────────────────────────────────────
+  // ISO 25010 §6.1 Eficiencia de rendimiento: useMemo evita recalcular en cada render
 
-  const filtrados = alumnos.filter((a) => {
+  const filtrados = useMemo(() => alumnos.filter((a) => {
     const q = search.toLowerCase();
     return !q || (a.full_name ?? '').toLowerCase().includes(q) || a.email.toLowerCase().includes(q);
-  });
+  }), [alumnos, search]);
 
-  const totalPages = Math.ceil(filtrados.length / ITEMS_PER_PAGE);
-  const paginated = filtrados.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const totalPages = useMemo(() => Math.ceil(filtrados.length / ITEMS_PER_PAGE), [filtrados]);
+  const paginated = useMemo(
+    () => filtrados.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE),
+    [filtrados, currentPage]
+  );
 
-  const handleSearch = (val: string) => {
+  const handleSearch = useCallback((val: string) => {
     setSearch(val);
     setCurrentPage(1);
-  };
+  }, []);
 
   // ── Render panel derecho ─────────────────────────────────────────────────────
 
@@ -315,6 +355,12 @@ export default function AlumnosAdminPage() {
           onClick={() => { setActiveTab('estadisticas'); setPanel(null); }}
         >
           Estadísticas
+        </button>
+        <button
+          className={`${styles.tab} ${activeTab === 'quiz' ? styles.tabActive : ''}`}
+          onClick={() => { setActiveTab('quiz'); setPanel(null); }}
+        >
+          Resultados Quiz
         </button>
       </div>
 
@@ -462,6 +508,86 @@ export default function AlumnosAdminPage() {
                     })}
                   </div>
                 </>
+              )}
+            </div>
+          )}
+          {/* ── TAB QUIZ ── */}
+          {activeTab === 'quiz' && (
+            <div className={styles.card}>
+              <div className={styles.cardHeader}>
+                <h2 className={styles.cardTitle}>Resultados de Quiz por Curso</h2>
+              </div>
+
+              <div className={styles.quizFilterRow}>
+                <select
+                  value={quizCursoId}
+                  onChange={(e) => setQuizCursoId(e.target.value)}
+                  className={styles.quizSelect}
+                >
+                  <option value="">Selecciona un curso</option>
+                  {cursos.map((c) => <option key={c.id} value={c.id}>{c.titulo}</option>)}
+                </select>
+              </div>
+
+              <div className={styles.tableWrapper}>
+                <table className={styles.table}>
+                  <thead>
+                    <tr>
+                      <th>Alumno</th>
+                      <th>Email</th>
+                      <th>Lección</th>
+                      <th>Resultado</th>
+                      <th>Correctas</th>
+                      <th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {!quizCursoId ? (
+                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Selecciona un curso para ver resultados.</td></tr>
+                    ) : quizLoading ? (
+                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Cargando...</td></tr>
+                    ) : quizResults.length === 0 ? (
+                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>No hay intentos de quiz en este curso.</td></tr>
+                    ) : (
+                      quizResults
+                        .slice((quizPage - 1) * QUIZ_ITEMS_PER_PAGE, quizPage * QUIZ_ITEMS_PER_PAGE)
+                        .map((r) => (
+                          <tr key={r.intento_id}>
+                            <td>{r.usuario_nombre}</td>
+                            <td className={styles.alumnoEmail}>{r.usuario_email}</td>
+                            <td>{r.leccion_titulo}</td>
+                            <td>
+                              <span className={`${styles.badge} ${r.aprobado ? styles.badgeActiva : styles.badgeCancelado}`}>
+                                {r.aprobado ? '✓ Aprobado' : '✗ Reprobado'}
+                              </span>
+                            </td>
+                            <td>{r.correctas}/{r.total_preguntas}</td>
+                            <td>{r.creado_en ? r.creado_en.slice(0, 10) : '—'}</td>
+                          </tr>
+                        ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE) > 1 && (
+                <div className={styles.pagination}>
+                  <button
+                    className={styles.pageBtn}
+                    onClick={() => setQuizPage((p) => Math.max(1, p - 1))}
+                    disabled={quizPage === 1}
+                  >
+                    ← Anterior
+                  </button>
+                  <span className={styles.pageInfo}>{quizPage} / {Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE)}</span>
+                  <button
+                    className={styles.pageBtn}
+                    onClick={() => setQuizPage((p) => Math.min(Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE), p + 1))}
+                    disabled={quizPage >= Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE)}
+                  >
+                    Siguiente →
+                  </button>
+                </div>
               )}
             </div>
           )}

@@ -4,6 +4,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cursosApi, categoriasApi } from '@/lib/api/client';
 import VideoUploadButton from '@/components/video/VideoUploadButton';
+import LessonTypeSelector from '@/components/course/LessonTypeSelector';
+import QuizBuilder from '@/components/course/QuizBuilder';
+import type { QuizData } from '@/types/course';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
 function slugify(text: string): string {
@@ -44,11 +48,13 @@ interface Module {
 interface Lesson {
   id: string;
   title: string;
+  tipo: 'video' | 'quiz';
   isVisible: boolean;
   bunnyVideoId: string | null;
   recursos: RecursoItem[];
   showRecursos: boolean;
   newRecursoTitulo: string;
+  quizData: QuizData;
 }
 
 const STEPS = [
@@ -70,6 +76,8 @@ export default function CrearCursoPage() {
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
   const [level, setLevel] = useState('');
+  const [loQueAprenderas, setLoQueAprenderas] = useState('');
+  const [requisitos, setRequisitos] = useState('');
 
   // Portada
   const [coverImagePreview, setCoverImagePreview] = useState('');
@@ -87,14 +95,55 @@ export default function CrearCursoPage() {
   // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
 
+  // Selector de tipo de lección (moduleId o null)
+  const [choosingForModule, setChoosingForModule] = useState<string | null>(null);
+
   // UI state
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
+  const [publishError, setPublishError] = useState('');
+  const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  const notify = React.useCallback((type: 'success' | 'error', message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => setNotification(null), 3000);
+  }, []);
+
+  // Creación inline de categoría
+  const [showNewCatInput, setShowNewCatInput] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   useEffect(() => {
-    categoriasApi.list().then((data) => setCategories(data as ApiCategoria[])).catch(() => {});
+    categoriasApi.list().then((data) => setCategories(data as ApiCategoria[])).catch((e) => logError('admin/cursos/crear/loadCategories', e));
   }, []);
+
+  const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    if (e.target.value === '__new__') {
+      setShowNewCatInput(true);
+      setCategory('');
+    } else {
+      setCategory(e.target.value);
+      setShowNewCatInput(false);
+    }
+  };
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName.trim()) return;
+    setIsCreatingCategory(true);
+    try {
+      const newCat = await categoriasApi.create({ nombre: newCategoryName.trim() }) as ApiCategoria;
+      setCategories((prev) => [...prev, newCat]);
+      setCategory(newCat.id);
+      setNewCategoryName('');
+      setShowNewCatInput(false);
+    } catch (e) {
+      logError('admin/cursos/crear/createCategory', e);
+    } finally {
+      setIsCreatingCategory(false);
+    }
+  };
 
   // Avanzar paso — al ir de step 1 a step 2, crear el curso en backend
   const handleNext = async () => {
@@ -113,6 +162,9 @@ export default function CrearCursoPage() {
           ...(category ? { categoria_id: category } : {}),
           estado: 'borrador',
           es_gratis: true,
+          nivel: level || undefined,
+          lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
+          requisitos: requisitos.trim() || undefined,
         }) as { id: string };
         setCursoId(resp.id);
         setCurrentStep(2);
@@ -155,7 +207,7 @@ export default function CrearCursoPage() {
         isExpanded: true,
       }]);
     } catch {
-      alert('Error al crear el módulo');
+      notify('error', 'Error al crear el módulo');
     }
   };
 
@@ -169,19 +221,20 @@ export default function CrearCursoPage() {
       await cursosApi.deleteModulo(cursoId, moduleId);
       setModules((prev) => prev.filter((m) => m.id !== moduleId));
     } catch {
-      alert('Error al eliminar el módulo');
+      notify('error', 'Error al eliminar el módulo');
     }
   };
 
   // Lecciones
-  const addLesson = async (moduleId: string) => {
+  const confirmAddLesson = async (moduleId: string, tipo: 'video' | 'quiz') => {
     if (!cursoId) return;
     const mod = modules.find((m) => m.id === moduleId);
     if (!mod) return;
+    setChoosingForModule(null);
     try {
       const resp = await cursosApi.createLeccion(cursoId, moduleId, {
-        titulo: 'Nueva lección',
-        tipo: 'video',
+        titulo: tipo === 'quiz' ? 'Nueva lección - Quiz' : 'Nueva lección',
+        tipo,
         orden: mod.lessons.length + 1,
         es_visible: true,
         duracion_seg: 0,
@@ -192,16 +245,18 @@ export default function CrearCursoPage() {
           lessons: [...m.lessons, {
             id: resp.id,
             title: resp.titulo,
+            tipo,
             isVisible: resp.es_visible,
             bunnyVideoId: resp.bunny_video_id,
             recursos: [],
             showRecursos: false,
             newRecursoTitulo: '',
+            quizData: { preguntas: [] },
           }],
         } : m
       ));
     } catch {
-      alert('Error al crear la lección');
+      notify('error', 'Error al crear la lección');
     }
   };
 
@@ -222,7 +277,7 @@ export default function CrearCursoPage() {
         m.id === moduleId ? { ...m, lessons: m.lessons.filter((l) => l.id !== lessonId) } : m
       ));
     } catch {
-      alert('Error al eliminar la lección');
+      notify('error', 'Error al eliminar la lección');
     }
   };
 
@@ -268,7 +323,7 @@ export default function CrearCursoPage() {
         return next;
       });
     } catch {
-      alert('Error al agregar el recurso');
+      notify('error', 'Error al agregar el recurso');
     }
   }, [cursoId, pendingRecursoFiles]);
 
@@ -286,7 +341,7 @@ export default function CrearCursoPage() {
         } : m
       ));
     } catch {
-      alert('Error al eliminar el recurso');
+      notify('error', 'Error al eliminar el recurso');
     }
   }, [cursoId]);
 
@@ -304,11 +359,19 @@ export default function CrearCursoPage() {
   const handlePublish = async () => {
     if (!cursoId) return;
     setIsPublishing(true);
+    setPublishError('');
     try {
-      await cursosApi.update(cursoId, { estado: 'publicado', titulo: title, descripcion: description });
+      await cursosApi.update(cursoId, {
+        estado: 'publicado',
+        titulo: title,
+        descripcion: description,
+        nivel: level || undefined,
+        lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
+        requisitos: requisitos.trim() || undefined,
+      });
       router.push(`/admin/cursos/${cursoId}/editar`);
     } catch {
-      alert('Error al publicar el curso');
+      setPublishError('Error al publicar el curso. Intenta de nuevo.');
     } finally {
       setIsPublishing(false);
     }
@@ -329,6 +392,17 @@ export default function CrearCursoPage() {
 
   return (
     <div className={styles.pageContainer}>
+      {notification && (
+        <div style={{
+          position: 'fixed', top: '1rem', right: '1rem', zIndex: 1000,
+          padding: '0.75rem 1.25rem', borderRadius: '0.5rem', fontWeight: 500,
+          background: notification.type === 'success' ? '#d4edda' : '#f8d7da',
+          color: notification.type === 'success' ? '#155724' : '#721c24',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+        }}>
+          {notification.message}
+        </div>
+      )}
       <div className={styles.pageHeader}>
         <div className={styles.headerLeft}>
           <button className={styles.returnButton} onClick={() => router.push('/admin/cursos')}>
@@ -389,16 +463,45 @@ export default function CrearCursoPage() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label className={styles.label}>Categoría</label>
-                    <select value={category} onChange={(e) => setCategory(e.target.value)} className={styles.select}>
-                      <option value="">Sin categoría</option>
-                      {categories.map((cat) => (
-                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                      ))}
-                    </select>
-                    {categories.length === 0 && (
-                      <p style={{ color: '#e53e3e', fontSize: '0.8rem', marginTop: '0.25rem' }}>
-                        No hay categorías. Crea una en la sección de categorías primero.
-                      </p>
+                    {!showNewCatInput ? (
+                      <select value={category} onChange={handleCategoryChange} className={styles.select}>
+                        <option value="">Sin categoría</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                        ))}
+                        <option value="__new__">+ Crear nueva categoría...</option>
+                      </select>
+                    ) : (
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          placeholder="Nombre de la nueva categoría"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
+                          autoFocus
+                          disabled={isCreatingCategory}
+                          aria-label="Nombre de la nueva categoría"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateCategory}
+                          disabled={!newCategoryName.trim() || isCreatingCategory}
+                          style={{ padding: '0.5rem 1rem', background: 'var(--color-secondary-30)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                        >
+                          {isCreatingCategory ? 'Creando...' : 'Crear'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
+                          style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
+                          aria-label="Cancelar crear categoría"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     )}
                   </div>
                   <div className={styles.formGroup}>
@@ -410,6 +513,29 @@ export default function CrearCursoPage() {
                       <option value="avanzado">Avanzado</option>
                     </select>
                   </div>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Lo que aprenderás</label>
+                  <textarea
+                    value={loQueAprenderas}
+                    onChange={(e) => setLoQueAprenderas(e.target.value)}
+                    className={styles.textarea}
+                    rows={4}
+                    placeholder={'Escribe un punto por línea, por ejemplo:\nIdentificar procesos de facturación\nUsar herramientas de gestión'}
+                  />
+                  <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>Un elemento por línea</small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Requisitos previos</label>
+                  <textarea
+                    value={requisitos}
+                    onChange={(e) => setRequisitos(e.target.value)}
+                    className={styles.textarea}
+                    rows={3}
+                    placeholder="Ej: Conocimientos básicos de computación, acceso a internet..."
+                  />
                 </div>
 
                 {createError && (
@@ -480,7 +606,7 @@ export default function CrearCursoPage() {
                           type="text"
                           value={module.title}
                           onChange={(e) => updateModuleLocal(module.id, { title: e.target.value })}
-                          onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch(() => {})}
+                          onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch((e) => logError('admin/cursos/crear/autoSave', e))}
                           className={styles.moduleTitleInput}
                           placeholder="Título del módulo"
                         />
@@ -498,7 +624,7 @@ export default function CrearCursoPage() {
                             <textarea
                               value={module.description}
                               onChange={(e) => updateModuleLocal(module.id, { description: e.target.value })}
-                              onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch(() => {})}
+                              onBlur={() => cursosApi.updateModulo(cursoId, module.id, { titulo: module.title, descripcion: module.description }).catch((e) => logError('admin/cursos/crear/autoSave', e))}
                               className={styles.moduleDescriptionInput}
                               placeholder="Descripción del módulo (opcional)"
                               rows={2}
@@ -514,7 +640,7 @@ export default function CrearCursoPage() {
                                     type="text"
                                     value={lesson.title}
                                     onChange={(e) => updateLessonLocal(module.id, lesson.id, { title: e.target.value })}
-                                    onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: lesson.isVisible }).catch(() => {})}
+                                    onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: lesson.isVisible }).catch((e) => logError('admin/cursos/crear/autoSave', e))}
                                     className={styles.lessonTitleInput}
                                     placeholder="Título de la lección"
                                   />
@@ -524,7 +650,7 @@ export default function CrearCursoPage() {
                                       checked={lesson.isVisible}
                                       onChange={(e) => {
                                         updateLessonLocal(module.id, lesson.id, { isVisible: e.target.checked });
-                                        cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: e.target.checked }).catch(() => {});
+                                        cursosApi.updateLeccion(cursoId, module.id, lesson.id, { titulo: lesson.title, es_visible: e.target.checked }).catch((e) => logError('admin/cursos/crear/autoSave', e));
                                       }}
                                       className={styles.toggleInput}
                                     />
@@ -537,13 +663,21 @@ export default function CrearCursoPage() {
                                   </button>
                                 </div>
                                 <div className={styles.lessonInputs}>
-                                  <VideoUploadButton
-                                    cursoId={cursoId}
-                                    moduloId={module.id}
-                                    leccionId={lesson.id}
-                                    currentBunnyVideoId={lesson.bunnyVideoId}
-                                    onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
-                                  />
+                                  {lesson.tipo === 'video' ? (
+                                    <VideoUploadButton
+                                      cursoId={cursoId}
+                                      moduloId={module.id}
+                                      leccionId={lesson.id}
+                                      currentBunnyVideoId={lesson.bunnyVideoId}
+                                      onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
+                                    />
+                                  ) : (
+                                    <QuizBuilder
+                                      quizData={lesson.quizData}
+                                      onChange={(qd) => updateLessonLocal(module.id, lesson.id, { quizData: qd })}
+                                      onSave={(data) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, data).catch((e) => logError('admin/cursos/crear/autoSave', e))}
+                                    />
+                                  )}
                                   {/* Recursos adicionales */}
                                   <button
                                     type="button"
@@ -604,9 +738,16 @@ export default function CrearCursoPage() {
                               </div>
                             ))}
 
-                            <button className={styles.addLessonButton} onClick={() => addLesson(module.id)}>
-                              + Agregar lección
-                            </button>
+                            {choosingForModule === module.id ? (
+                              <LessonTypeSelector
+                                onSelect={(tipo) => confirmAddLesson(module.id, tipo)}
+                                onCancel={() => setChoosingForModule(null)}
+                              />
+                            ) : (
+                              <button className={styles.addLessonButton} onClick={() => setChoosingForModule(module.id)}>
+                                + Agregar lección
+                              </button>
+                            )}
                           </div>
                         </div>
                       )}
@@ -709,9 +850,16 @@ export default function CrearCursoPage() {
                   {isCreating ? 'Creando borrador...' : 'Siguiente'}
                 </button>
               ) : (
-                <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing}>
-                  {isPublishing ? 'Publicando...' : 'Publicar curso'}
-                </button>
+                <>
+                  {publishError && (
+                    <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
+                      {publishError}
+                    </p>
+                  )}
+                  <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing}>
+                    {isPublishing ? 'Publicando...' : 'Publicar curso'}
+                  </button>
+                </>
               )}
             </div>
           </div>
