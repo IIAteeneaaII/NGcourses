@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { cursosApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
 interface ApiCurso {
@@ -28,7 +29,7 @@ export default function InstructorCursosPage() {
   useEffect(() => {
     cursosApi.list({ limit: 200 }).then((resp) => {
       setCursos((resp as ApiCursosResp).data);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch((e) => logError('instructor/cursos/page/load', e)).finally(() => setLoading(false));
   }, []);
 
   const filtered = useMemo(() =>

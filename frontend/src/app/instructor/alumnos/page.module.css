@@ -69,6 +69,77 @@
   white-space: nowrap;
 }
 
+/* Tabs */
+.tabsRow {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1.5rem;
+  border-bottom: 2px solid var(--color-primary-60);
+}
+
+.tabBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.tabBtn:hover {
+  color: var(--color-secondary-30);
+}
+
+.tabBtnActive {
+  color: var(--color-secondary-30);
+  border-bottom-color: var(--color-secondary-30);
+  font-weight: 700;
+}
+
+.tabCount {
+  background: var(--color-primary-60);
+  color: var(--color-text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+}
+
+.tabBtnActive .tabCount {
+  background: var(--color-secondary-30);
+  color: var(--color-text-white);
+}
+
+/* Badges */
+.badgeAprobado {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: #c6f6d5;
+  color: #22543d;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.badgeReprobado {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  background: #fed7d7;
+  color: #742a2a;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
 /* Filters */
 .filtersRow {
   display: flex;
