@@ -208,3 +208,50 @@
   border-radius: 0.5rem;
   border: 1px solid #c6f6d5;
 }
+
+@media (max-width: 768px) {
+  .banner {
+    padding: 1.25rem;
+    gap: 0.875rem;
+  }
+
+  .bannerTitle {
+    font-size: 1.125rem;
+  }
+
+  .reviewList {
+    padding: 1rem;
+  }
+
+  .actions {
+    padding: 0.875rem 1rem 1.25rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner {
+    flex-wrap: wrap;
+    padding: 1rem;
+  }
+
+  .score {
+    text-align: left;
+  }
+
+  .scoreNum {
+    font-size: 1.375rem;
+  }
+
+  .bannerTitle {
+    font-size: 1rem;
+  }
+
+  .bannerSubtitle {
+    font-size: 0.8125rem;
+  }
+
+  .retryBtn {
+    width: 100%;
+    justify-content: center;
+  }
+}

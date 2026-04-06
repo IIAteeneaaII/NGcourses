@@ -136,3 +136,23 @@
 
 .saveBtn:hover:not(:disabled) { opacity: 0.88; }
 .saveBtn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1.25rem 1rem;
+  }
+
+  .row {
+    grid-template-columns: 1fr;
+  }
+
+  .actions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelBtn,
+  .saveBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

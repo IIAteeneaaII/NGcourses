@@ -154,3 +154,24 @@
   color: var(--color-secondary-30);
   margin: 0 0 0.25rem;
 }
+
+@media (max-width: 480px) {
+  .modal {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+  }
+
+  .modalTitle {
+    font-size: 1.0625rem;
+  }
+
+  .modalActions {
+    flex-direction: column-reverse;
+  }
+
+  .cancelBtn,
+  .saveBtn {
+    width: 100%;
+    text-align: center;
+  }
+}

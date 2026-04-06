@@ -257,3 +257,28 @@
 .addQuestionBtn:hover {
   opacity: 0.88;
 }
+
+@media (max-width: 640px) {
+  .questionList {
+    padding: 0.5rem;
+  }
+
+  .questionHeader {
+    padding: 0.5rem 0.625rem;
+  }
+
+  .addQuestionBar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .typeSelect,
+  .addQuestionBtn {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .addQuestionBtn {
+    text-align: center;
+  }
+}
