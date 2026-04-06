@@ -78,7 +78,7 @@ def _draw_logo(c: rl_canvas.Canvas, marca: str) -> None:
         return
     img = ImageReader(str(logo_path))
     iw, ih = img.getSize()
-    max_w, max_h = 110.0, 80.0
+    max_w, max_h = 200.0, 140.0
     scale = min(max_w / iw, max_h / ih)
     dw, dh = iw * scale, ih * scale
     x = CX - dw / 2
@@ -93,7 +93,7 @@ def _draw_seal(c: rl_canvas.Canvas, marca: str) -> None:
     if not seal_path.exists():
         return
     img = ImageReader(str(seal_path))
-    size = 88
+    size = 280
     x = PAGE_W - 50 - size       # esquina inferior derecha
     y = 38
     c.drawImage(img, x, y, width=size, height=size, mask="auto")
@@ -112,7 +112,7 @@ def _draw_signatures(c: rl_canvas.Canvas, instructor_name: str) -> None:
 
     c.setFillColor(TEXT_DARK)
     c.setFont("Times-Bold", 10)
-    c.drawCentredString(cx_sig, y1_line - 14, "Instructor Signature")
+    c.drawCentredString(cx_sig, y1_line - 14, "Firma del Instructor")
 
     c.setFillColor(TEXT_GRAY)
     c.setFont("Helvetica", 9)
@@ -124,11 +124,11 @@ def _draw_signatures(c: rl_canvas.Canvas, instructor_name: str) -> None:
 
     c.setFillColor(TEXT_DARK)
     c.setFont("Times-Bold", 10)
-    c.drawCentredString(cx_sig, y2_line - 14, "Director Signature")
+    c.drawCentredString(cx_sig, y2_line - 14, "Firma del Director")
 
     c.setFillColor(TEXT_GRAY)
     c.setFont("Helvetica", 9)
-    c.drawCentredString(cx_sig, y2_line - 26, "NGcourses")
+    c.drawCentredString(cx_sig, y2_line - 26, "Ing. Rodrigo Ojeda Santillán")
 
 
 # ── Cuerpo del certificado ───────────────────────────────────────────────────
@@ -139,7 +139,7 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     # ── Título ────────────────────────────────────────────────────────────────
     c.setFillColor(TEAL_DARK)
     c.setFont("Times-Bold", 30)
-    _cx_text(c, "CERTIFICATE OF COMPLETION", 428)
+    _cx_text(c, "CERTIFICADO DE FINALIZACIÓN", 428)
 
     # Divisor decorativo delgado bajo el título
     _hline(c, CX - 130, CX + 130, 419, width=0.7)
@@ -147,7 +147,7 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     # ── "This is to certify that" ─────────────────────────────────────────────
     c.setFillColor(TEXT_GRAY)
     c.setFont("Helvetica-Oblique", 12)
-    _cx_text(c, "This is to certify that", 395)
+    _cx_text(c, "Se certifica que", 395)
 
     # ── Nombre del alumno ─────────────────────────────────────────────────────
     c.setFillColor(TEXT_DARK)
@@ -162,7 +162,7 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     # ── "has successfully completed the course in:" ───────────────────────────
     c.setFillColor(TEXT_GRAY)
     c.setFont("Helvetica", 12)
-    _cx_text(c, "has successfully completed the course in:", 318)
+    _cx_text(c, "ha completado satisfactoriamente el curso:", 318)
 
     # ── Título del curso ──────────────────────────────────────────────────────
     max_chars = 58
@@ -180,7 +180,7 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     # ── Fecha ─────────────────────────────────────────────────────────────────
     months_es = ["", "enero", "febrero", "marzo", "abril", "mayo", "junio",
                  "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
-    date_str = (f"On this day of {issued_date.day} de "
+    date_str = (f"A los {issued_date.day} días del mes de "
                 f"{months_es[issued_date.month]} de {issued_date.year}")
     c.setFillColor(TEXT_GRAY)
     c.setFont("Helvetica", 11)
@@ -189,7 +189,7 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     # ── Folio ─────────────────────────────────────────────────────────────────
     c.setFont("Helvetica", 8)
     c.setFillColor(TEXT_LIGHT)
-    _cx_text(c, f"Certificate No. {folio}", 240)
+    _cx_text(c, f"Certificado No. {folio}", 240)
 
 
 # ── Función principal ─────────────────────────────────────────────────────────
