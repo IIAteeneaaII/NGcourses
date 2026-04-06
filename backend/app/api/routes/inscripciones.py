@@ -134,6 +134,33 @@ def get_inscripcion(
     return InscripcionPublic.model_validate(db, from_attributes=True)
 
 
+@router.patch("/{inscripcion_id}/cancelar", response_model=InscripcionPublic)
+def cancelar_inscripcion(
+    inscripcion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> Any:
+    """Da de baja a un alumno de un curso. Solo admin o instructor propietario."""
+    db = crud.get_inscripcion(session=session, inscripcion_id=inscripcion_id)
+    if not db:
+        raise HTTPException(status_code=404, detail="Inscripción no encontrada")
+
+    if db.estado == EstadoInscripcion.CANCELADO:
+        raise HTTPException(status_code=409, detail="La inscripción ya está cancelada")
+
+    is_admin = current_user.is_superuser or current_user.rol in {
+        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+    }
+
+    if not is_admin:
+        db_curso = crud.get_curso(session=session, curso_id=db.curso_id)
+        if not db_curso or current_user.id != db_curso.instructor_id:
+            raise HTTPException(status_code=403, detail="Sin permiso")
+
+    updated = crud.cancelar_inscripcion(session=session, inscripcion=db)
+    return InscripcionPublic.model_validate(updated, from_attributes=True)
+
+
 @router.get("/curso/{curso_id}", response_model=InscripcionesPublic)
 def inscripciones_por_curso(
     curso_id: uuid.UUID,

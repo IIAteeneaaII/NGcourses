@@ -88,6 +88,11 @@ export default function AlumnosAdminPage() {
   const [panel, setPanel] = useState<PanelMode>(null);
   const [panelLoading, setPanelLoading] = useState(false);
 
+  // Modal dar de baja
+  const [bajaModal, setBajaModal] = useState<{ insc: ApiInscripcion; cursoNombre: string } | null>(null);
+  const [bajaLoading, setBajaLoading] = useState(false);
+  const [bajaError, setBajaError] = useState<string | null>(null);
+
   // Tab Estadísticas
   const [cursosConConteo, setCursosConConteo] = useState<CursoConConteo[]>([]);
   const [loadingStats, setLoadingStats] = useState(false);
@@ -208,6 +213,37 @@ export default function AlumnosAdminPage() {
     }
   };
 
+  // ── Dar de baja ──────────────────────────────────────────────────────────────
+
+  const handleConfirmarBaja = async () => {
+    if (!bajaModal) return;
+    setBajaLoading(true);
+    setBajaError(null);
+    try {
+      await inscripcionesApi.cancelar(bajaModal.insc.id);
+      // Actualizar estado local en el panel
+      setPanel((prev) => {
+        if (!prev) return prev;
+        if (prev.type === 'alumno-cursos' || prev.type === 'alumno-en-stats') {
+          return {
+            ...prev,
+            inscripciones: prev.inscripciones.map((i) =>
+              i.id === bajaModal.insc.id ? { ...i, estado: 'cancelado' as const } : i
+            ),
+          };
+        }
+        return prev;
+      });
+      setBajaModal(null);
+    } catch (e: unknown) {
+      const msg = (e as { detail?: string })?.detail ?? 'Error al dar de baja';
+      setBajaError(msg);
+      logError('admin/alumnos/darDeBaja', e);
+    } finally {
+      setBajaLoading(false);
+    }
+  };
+
   // ── Tab Lista: filtrado y paginación ─────────────────────────────────────────
   // ISO 25010 §6.1 Eficiencia de rendimiento: useMemo evita recalcular en cada render
 
@@ -255,21 +291,33 @@ export default function AlumnosAdminPage() {
             {inscripciones.length === 0 && (
               <li className={styles.panelLoading}>Sin inscripciones</li>
             )}
-            {inscripciones.map((insc) => (
-              <li key={insc.id} className={styles.panelItem}>
-                <div>
-                  <div className={styles.panelItemName}>
-                    {cursosMap[insc.curso_id] ?? 'Curso desconocido'}
+            {inscripciones.map((insc) => {
+              const cursoNombre = cursosMap[insc.curso_id] ?? 'Curso desconocido';
+              return (
+                <li key={insc.id} className={styles.panelItem}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className={styles.panelItemName}>{cursoNombre}</div>
+                    <div className={styles.panelItemSub}>
+                      {new Date(insc.inscrito_en).toLocaleDateString('es-MX')}
+                    </div>
                   </div>
-                  <div className={styles.panelItemSub}>
-                    {new Date(insc.inscrito_en).toLocaleDateString('es-MX')}
+                  <div className={styles.panelItemActions}>
+                    <span className={`${styles.badge} ${badgeClass(insc.estado)}`}>
+                      {insc.estado}
+                    </span>
+                    {insc.estado === 'activa' && (
+                      <button
+                        className={styles.bajaBtn}
+                        title="Dar de baja"
+                        onClick={() => { setBajaError(null); setBajaModal({ insc, cursoNombre }); }}
+                      >
+                        Dar de baja
+                      </button>
+                    )}
                   </div>
-                </div>
-                <span className={`${styles.badge} ${badgeClass(insc.estado)}`}>
-                  {insc.estado}
-                </span>
-              </li>
-            ))}
+                </li>
+              );
+            })}
           </ul>
           {alumno && <p className={styles.panelItemSub} style={{ marginTop: '1rem' }}>{alumno.email}</p>}
         </>
@@ -604,6 +652,36 @@ export default function AlumnosAdminPage() {
           </aside>
         )}
       </div>
+
+      {/* Modal: confirmar dar de baja */}
+      {bajaModal && (
+        <div className={styles.modalOverlay} onClick={() => !bajaLoading && setBajaModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <h3 className={styles.modalTitle}>Dar de baja</h3>
+            <p className={styles.modalBody}>
+              ¿Confirmas dar de baja al alumno del curso <strong>&ldquo;{bajaModal.cursoNombre}&rdquo;</strong>?
+              Esta acción cambiará su inscripción a <em>cancelado</em>.
+            </p>
+            {bajaError && <p className={styles.modalError}>{bajaError}</p>}
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalCancelBtn}
+                onClick={() => setBajaModal(null)}
+                disabled={bajaLoading}
+              >
+                Cancelar
+              </button>
+              <button
+                className={styles.modalConfirmBtn}
+                onClick={handleConfirmarBaja}
+                disabled={bajaLoading}
+              >
+                {bajaLoading ? 'Procesando...' : 'Confirmar baja'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
