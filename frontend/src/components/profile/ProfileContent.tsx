@@ -8,9 +8,12 @@ interface ProfileContentProps {
   profile: UserProfile;
   statistics: UserStatistics;
   coursesInProgress: CourseInProgress[];
+  avatarUrl?: string | null;
+  onEditClick?: () => void;
+  onAvatarClick?: () => void;
 }
 
-export default function ProfileContent({ profile, statistics, coursesInProgress }: ProfileContentProps) {
+export default function ProfileContent({ profile, statistics, coursesInProgress, avatarUrl, onEditClick, onAvatarClick }: ProfileContentProps) {
   return (
     <div className={styles.container}>
       <header className={styles.header}>
@@ -27,11 +30,26 @@ export default function ProfileContent({ profile, statistics, coursesInProgress 
 
         <div className={styles.profileCard}>
           <div className={styles.profileHeader}>
-            <div className={styles.avatar}>{profile.initials}</div>
+            <div className={styles.avatarWrapper}>
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt={profile.name} className={styles.avatarImg} />
+              ) : (
+                <div className={styles.avatar}>{profile.initials}</div>
+              )}
+              {onAvatarClick && (
+                <button className={styles.changeAvatarBtn} onClick={onAvatarClick} title="Cambiar foto de perfil">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" />
+                    <circle cx="12" cy="13" r="4" />
+                  </svg>
+                </button>
+              )}
+            </div>
             <div className={styles.profileInfo}>
               <h2 className={styles.profileName}>{profile.name}</h2>
               <p className={styles.profileEmail}>{profile.email}</p>
-              <button className={styles.editButton}>Editar Perfil</button>
+              <button className={styles.editButton} onClick={onEditClick}>Editar Perfil</button>
             </div>
           </div>
         </div>
@@ -67,19 +85,7 @@ export default function ProfileContent({ profile, statistics, coursesInProgress 
             </div>
             <div className={styles.infoItem}>
               <span className={styles.infoLabel}>Teléfono</span>
-              <span className={styles.infoValue}>{profile.phone}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Departamento</span>
-              <span className={styles.infoValue}>{profile.department}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Puesto</span>
-              <span className={styles.infoValue}>{profile.position}</span>
-            </div>
-            <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Fecha de Registro</span>
-              <span className={styles.infoValue}>{profile.registrationDate}</span>
+              <span className={styles.infoValue}>{profile.phone || '—'}</span>
             </div>
           </div>
         </div>

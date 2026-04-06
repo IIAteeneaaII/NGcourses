@@ -31,8 +31,12 @@ export default function PerfilInstructorPage() {
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [editForm, setEditForm] = useState({ email: '', telefono: '' });
+  const [pwdForm, setPwdForm] = useState({ current: '', nueva: '', confirmar: '' });
   const [saving, setSaving] = useState(false);
+  const [savingPwd, setSavingPwd] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [pwdError, setPwdError] = useState('');
+  const [pwdOk, setPwdOk] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -45,7 +49,6 @@ export default function PerfilInstructorPage() {
         ]);
         setUser(userRaw);
         setCursos(cursosResp.data);
-        // Cargar avatar local
         const stored = localStorage.getItem(`avatar_${userRaw.id}`);
         if (stored) setAvatarUrl(stored);
       } catch {
@@ -60,7 +63,10 @@ export default function PerfilInstructorPage() {
   const handleOpenEdit = () => {
     if (!user) return;
     setEditForm({ email: user.email, telefono: user.telefono ?? '' });
+    setPwdForm({ current: '', nueva: '', confirmar: '' });
     setSaveError('');
+    setPwdError('');
+    setPwdOk('');
     setEditOpen(true);
   };
 
@@ -81,6 +87,25 @@ export default function PerfilInstructorPage() {
       setSaveError(apiErr?.detail || 'Error al guardar los cambios.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPwdError('');
+    setPwdOk('');
+    if (!pwdForm.nueva || !pwdForm.current) { setPwdError('Completa todos los campos.'); return; }
+    if (pwdForm.nueva !== pwdForm.confirmar) { setPwdError('Las contraseñas no coinciden.'); return; }
+    if (pwdForm.nueva.length < 8) { setPwdError('La contraseña debe tener al menos 8 caracteres.'); return; }
+    setSavingPwd(true);
+    try {
+      await usersApi.changePassword({ current_password: pwdForm.current, new_password: pwdForm.nueva });
+      setPwdOk('Contraseña actualizada correctamente.');
+      setPwdForm({ current: '', nueva: '', confirmar: '' });
+    } catch (err: unknown) {
+      const apiErr = err as { detail?: string };
+      setPwdError(apiErr?.detail || 'Error al cambiar la contraseña.');
+    } finally {
+      setSavingPwd(false);
     }
   };
 
@@ -118,7 +143,6 @@ export default function PerfilInstructorPage() {
 
       <div className={styles.profileContainer}>
         <div className={styles.profileHeader}>
-          {/* Avatar con opción de cambiar foto */}
           <div className={styles.avatarWrapper}>
             {avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -199,7 +223,6 @@ export default function PerfilInstructorPage() {
         </div>
       </div>
 
-      {/* Modal de edición */}
       {editOpen && (
         <div className={styles.modalOverlay} onClick={() => setEditOpen(false)}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
@@ -207,6 +230,8 @@ export default function PerfilInstructorPage() {
               <h2 className={styles.modalTitle}>Editar perfil</h2>
               <button className={styles.modalClose} onClick={() => setEditOpen(false)}>✕</button>
             </div>
+
+            {/* ── Información personal ── */}
             <form onSubmit={handleSaveEdit} className={styles.editForm}>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Correo electrónico *</label>
@@ -238,6 +263,49 @@ export default function PerfilInstructorPage() {
                 </button>
               </div>
             </form>
+
+            {/* ── Cambiar contraseña ── */}
+            <div className={styles.modalDivider} />
+            <div className={styles.pwdSection}>
+              <h3 className={styles.pwdTitle}>Cambiar contraseña</h3>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Contraseña actual</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={pwdForm.current}
+                  onChange={(e) => setPwdForm((f) => ({ ...f, current: e.target.value }))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nueva contraseña</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={pwdForm.nueva}
+                  onChange={(e) => setPwdForm((f) => ({ ...f, nueva: e.target.value }))}
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Confirmar nueva contraseña</label>
+                <input
+                  type="password"
+                  className={styles.formInput}
+                  value={pwdForm.confirmar}
+                  onChange={(e) => setPwdForm((f) => ({ ...f, confirmar: e.target.value }))}
+                />
+              </div>
+              {pwdError && <p className={styles.formError}>{pwdError}</p>}
+              {pwdOk && <p className={styles.formSuccess}>{pwdOk}</p>}
+              <button
+                className={styles.saveBtn}
+                onClick={handleChangePassword}
+                disabled={savingPwd}
+                style={{ marginTop: '0.5rem' }}
+              >
+                {savingPwd ? 'Cambiando...' : 'Cambiar contraseña'}
+              </button>
+            </div>
           </div>
         </div>
       )}
