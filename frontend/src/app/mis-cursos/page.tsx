@@ -17,11 +17,16 @@ interface ApiInscripcionesResp {
   count: number;
 }
 
+interface ApiModulo {
+  lecciones: unknown[];
+}
+
 interface ApiCurso {
   id: string;
   titulo: string;
   instructor_id: string;
   duracion_seg: number;
+  modulos?: ApiModulo[];
 }
 
 interface ApiCertificado {
@@ -73,7 +78,7 @@ export default function MisCursosPage() {
             id: insc.curso_id,
             title: curso?.titulo || 'Curso',
             instructor: '',
-            lessonsCount: 0,
+            lessonsCount: curso?.modulos?.reduce((acc, m) => acc + m.lecciones.length, 0) ?? 0,
             image: '/placeholder-course.jpg',
             status: isCompleted ? 'completed' : 'in_progress',
             progress: isCompleted ? 100 : undefined,
