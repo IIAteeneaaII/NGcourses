@@ -120,18 +120,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   const handleDescargarCert = async (folio: string) => {
     setDownloading(true);
     try {
-      const token = localStorage.getItem('access_token');
-      const res = await fetch(`/api/v1/certificados/descargar/${folio}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `certificado-${folio}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      await certificadosApi.descargar(folio);
     } catch (e) {
       logError('CourseVideoContent/handleDescargarCert', e);
     } finally {
