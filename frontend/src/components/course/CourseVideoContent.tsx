@@ -70,15 +70,6 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
 
   const handleMarkComplete = async () => {
     if (!currentLesson) return;
-    // Enviar 100% al backend si hay inscripción
-    if (inscripcionId) {
-      progresoApi.registrar({
-        inscripcion_id: inscripcionId,
-        leccion_id: currentLesson.id,
-        visto_seg: videoDuration.current || 0,
-        progreso_pct: 100,
-      }).catch((e) => logError('CourseVideoContent/handleMarkComplete', e));
-    }
 
     const updatedModules = course.modules.map((module) => ({
       ...module,
@@ -97,11 +88,18 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
     setCourse({ ...course, modules: updatedModules, progress: newProgress });
     setProgress(newProgress);
 
-    if (newProgress === 100) {
+    if (newProgress === 100 && inscripcionId) {
+      // Mostrar modal y ESPERAR a que el backend procese el certificado
       setCompletionModal({ folio: null, loading: true });
       try {
-        // Esperar un momento para que el backend procese el certificado
-        await new Promise((r) => setTimeout(r, 1500));
+        await progresoApi.registrar({
+          inscripcion_id: inscripcionId,
+          leccion_id: currentLesson.id,
+          visto_seg: videoDuration.current || 0,
+          progreso_pct: 100,
+        });
+        // Pequeña pausa extra para que el PDF termine de generarse
+        await new Promise((r) => setTimeout(r, 800));
         const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>);
         const cert = resp.data.find((c) => c.curso_id === course.id && c.url_pdf);
         setCompletionModal({ folio: cert?.folio ?? null, loading: false });
@@ -109,6 +107,13 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         logError('CourseVideoContent/completionModal', e);
         setCompletionModal({ folio: null, loading: false });
       }
+    } else if (inscripcionId) {
+      progresoApi.registrar({
+        inscripcion_id: inscripcionId,
+        leccion_id: currentLesson.id,
+        visto_seg: videoDuration.current || 0,
+        progreso_pct: 100,
+      }).catch((e) => logError('CourseVideoContent/handleMarkComplete', e));
     }
   };
 
