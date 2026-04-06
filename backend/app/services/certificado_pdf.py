@@ -27,6 +27,7 @@ BG_COLOR   = HexColor("#f4f8f7")   # fondo muy suave
 
 STATIC_LOGOS = Path(__file__).parent.parent / "static" / "logos"
 CERT_DIR     = Path(__file__).parent.parent / "media" / "certificados"
+MARCO_PATH   = STATIC_LOGOS / "marco.png"
 
 PAGE_W, PAGE_H = landscape(letter)   # 792 × 612 pt
 CX = PAGE_W / 2                       # centro horizontal
@@ -49,77 +50,24 @@ def _hline(c: rl_canvas.Canvas, x1: float, x2: float, y: float,
     c.line(x1, y, x2, y)
 
 
-# ── Fondo ─────────────────────────────────────────────────────────────────────
+# ── Fondo + Marco ─────────────────────────────────────────────────────────────
 
 def _draw_background(c: rl_canvas.Canvas) -> None:
-    c.setFillColor(BG_COLOR)
-    c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
+    """Dibuja el marco PNG a página completa. Fallback a fondo de color si no existe."""
+    if MARCO_PATH.exists():
+        img = ImageReader(str(MARCO_PATH))
+        c.drawImage(img, 0, 0, width=PAGE_W, height=PAGE_H, mask="auto")
+    else:
+        c.setFillColor(BG_COLOR)
+        c.rect(0, 0, PAGE_W, PAGE_H, fill=1, stroke=0)
 
-
-# ── Bordes ────────────────────────────────────────────────────────────────────
 
 def _draw_borders(c: rl_canvas.Canvas) -> None:
-    margin = 18
-    # Borde exterior fino
-    c.setStrokeColor(TEAL)
-    c.setLineWidth(1.5)
-    c.rect(margin, margin, PAGE_W - 2*margin, PAGE_H - 2*margin, fill=0, stroke=1)
-    # Borde interior más fino
-    inner = margin + 7
-    c.setLineWidth(0.5)
-    c.rect(inner, inner, PAGE_W - 2*inner, PAGE_H - 2*inner, fill=0, stroke=1)
-
-
-def _draw_corner_ornament(c: rl_canvas.Canvas, ox: float, oy: float,
-                          flip_x: bool, flip_y: bool) -> None:
-    """Ornamento de esquina tipo fret/geométrico, similar al de la referencia."""
-    sx = -1 if flip_x else 1
-    sy = -1 if flip_y else 1
-    size = 52
-
-    c.saveState()
-    c.translate(ox, oy)
-    c.scale(sx, sy)
-
-    c.setStrokeColor(TEAL)
-    c.setFillColor(TEAL)
-
-    # Marco exterior en L
-    c.setLineWidth(2.5)
-    c.line(0, 0, size, 0)
-    c.line(0, 0, 0, size)
-
-    # Línea interior en L (inset)
-    pad = 9
-    c.setLineWidth(1.0)
-    c.line(pad, pad, size - 4, pad)
-    c.line(pad, pad, pad, size - 4)
-
-    # Cuadrado relleno en la esquina interior
-    sq = 7
-    c.setFillColor(TEAL)
-    c.rect(pad, pad, sq, sq, fill=1, stroke=0)
-
-    # Pequeños cuadrados decorativos a lo largo de los brazos
-    dot = 4
-    gap = 13
-    for i in range(1, 4):
-        xd = pad + sq + i * gap
-        if xd + dot < size - 2:
-            c.rect(xd, pad + (sq - dot) // 2, dot, dot, fill=1, stroke=0)
-        yd = pad + sq + i * gap
-        if yd + dot < size - 2:
-            c.rect(pad + (sq - dot) // 2, yd, dot, dot, fill=1, stroke=0)
-
-    c.restoreState()
+    pass  # El marco PNG ya incluye los bordes
 
 
 def _draw_all_corners(c: rl_canvas.Canvas) -> None:
-    m = 18
-    _draw_corner_ornament(c, m, m, False, False)                           # bottom-left
-    _draw_corner_ornament(c, PAGE_W - m, m, True, False)                   # bottom-right
-    _draw_corner_ornament(c, m, PAGE_H - m, False, True)                   # top-left
-    _draw_corner_ornament(c, PAGE_W - m, PAGE_H - m, True, True)           # top-right
+    pass  # El marco PNG ya incluye los ornamentos
 
 
 # ── Logo ──────────────────────────────────────────────────────────────────────
