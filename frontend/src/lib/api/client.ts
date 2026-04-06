@@ -191,6 +191,7 @@ export const inscripcionesApi = {
   inscribirse: (curso_id: string) => apiClient.post('/api/v1/inscripciones/', { curso_id }),
   porCurso: (curso_id: string) => apiClient.get(`/api/v1/inscripciones/curso/${curso_id}`),
   porUsuario: (usuario_id: string) => apiClient.get(`/api/v1/inscripciones/usuario/${usuario_id}`),
+  cancelar: (inscripcion_id: string) => apiClient.patch(`/api/v1/inscripciones/${inscripcion_id}/cancelar`, {}),
 };
 
 export const categoriasApi = {

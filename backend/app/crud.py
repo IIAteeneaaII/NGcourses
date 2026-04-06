@@ -453,6 +453,16 @@ def update_ultimo_acceso(*, session: Session, inscripcion: Inscripcion) -> None:
     session.commit()
 
 
+def cancelar_inscripcion(*, session: Session, inscripcion: Inscripcion) -> Inscripcion:
+    """Cambia el estado de una inscripción a CANCELADO."""
+    from app.models._enums import EstadoInscripcion
+    inscripcion.estado = EstadoInscripcion.CANCELADO
+    session.add(inscripcion)
+    session.commit()
+    session.refresh(inscripcion)
+    return inscripcion
+
+
 # ── Progreso ──────────────────────────────────────────────────────────────────
 
 def get_progreso(
