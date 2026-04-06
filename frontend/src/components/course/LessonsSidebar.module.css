@@ -119,3 +119,23 @@
 .moduleLessonItem:hover {
   background-color: var(--color-secondary-30-lighter);
 }
+
+@media (max-width: 768px) {
+  .container {
+    max-height: none;
+    border-radius: 0.75rem;
+    padding: 1rem;
+  }
+
+  .tabs {
+    gap: 0.75rem;
+  }
+
+  .lessonItem {
+    padding: 0.75rem;
+  }
+
+  .moduleLessonItem {
+    padding: 0.625rem;
+  }
+}

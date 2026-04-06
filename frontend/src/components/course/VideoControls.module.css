@@ -243,3 +243,42 @@
   margin: 0;
   line-height: 1.5;
 }
+
+@media (max-width: 768px) {
+  .tabs {
+    gap: 0.5rem;
+    overflow-x: auto;
+  }
+
+  .tab {
+    font-size: 0.875rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .resourceItem {
+    padding: 0.625rem 0.75rem;
+  }
+
+  .downloadButton {
+    padding: 0.3rem 0.625rem;
+    font-size: 0.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .tabs {
+    gap: 0.25rem;
+  }
+
+  .tab {
+    font-size: 0.8125rem;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+  }
+
+  .resourceName {
+    font-size: 0.875rem;
+  }
+}

@@ -28,9 +28,12 @@ app = FastAPI(
 if settings.all_cors_origins:
     # ISO 25010 §6.7 — Seguridad: métodos HTTP explícitos en lugar de "*"
     # allow_headers="*" se mantiene por compatibilidad con tus-js-client y otros clientes
+    # En local se permite también dominios de túnel de desarrollo (loca.lt, ngrok)
+    origin_regex = r"https://.*\.(loca\.lt|ngrok(-free)?\.app)$" if settings.ENVIRONMENT == "local" else None
     app.add_middleware(
         CORSMiddleware,
         allow_origins=settings.all_cors_origins,
+        allow_origin_regex=origin_regex,
         allow_credentials=True,
         allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=["*"],

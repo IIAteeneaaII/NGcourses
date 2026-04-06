@@ -11,6 +11,7 @@ interface InstructorHeaderProps {
     initials: string;
     role: string;
   };
+  onMenuClick?: () => void;
 }
 
 export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
@@ -19,6 +20,7 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
     initials: 'LS',
     role: 'Instructor',
   },
+  onMenuClick,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
@@ -36,6 +38,11 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
     <header className={styles.header}>
       <div>
         <div className={styles.left}>
+          <button className={styles.menuButton} onClick={onMenuClick} aria-label="Abrir menú">
+            <span />
+            <span />
+            <span />
+          </button>
           <Link href="/instructor" className={styles.logo}>
             <h1 className={styles.logoText}>Cursos Online</h1>
             <span className={styles.adminBadge}>Instructor</span>

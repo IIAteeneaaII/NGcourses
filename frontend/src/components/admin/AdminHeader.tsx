@@ -11,6 +11,7 @@ interface AdminHeaderProps {
     initials: string;
     role: string;
   };
+  onMenuClick?: () => void;
 }
 
 export const AdminHeader: React.FC<AdminHeaderProps> = ({
@@ -19,6 +20,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     initials: 'S',
     role: 'Admin',
   },
+  onMenuClick,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
@@ -37,6 +39,11 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
     <header className={styles.header}>
       <div>
         <div className={styles.left}>
+          <button className={styles.menuButton} onClick={onMenuClick} aria-label="Abrir menú">
+            <span />
+            <span />
+            <span />
+          </button>
           {/* Logo/Title */}
           <Link href="/admin" className={styles.logo}>
             <h1 className={styles.logoText}>Cursos Online</h1>
