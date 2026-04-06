@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { UserCourse, MyCoursesStatistics } from '@/types/course';
+import { certificadosApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import styles from './MyCoursesContent.module.css';
 
 type FilterType = 'all' | 'in_progress' | 'completed';
@@ -15,6 +17,18 @@ interface MyCoursesContentProps {
 
 export default function MyCoursesContent({ courses, statistics }: MyCoursesContentProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDescargar = async (folio: string) => {
+    setDownloading(folio);
+    try {
+      await certificadosApi.descargar(folio);
+    } catch (e) {
+      logError('MyCoursesContent/descargarCertificado', e);
+    } finally {
+      setDownloading(null);
+    }
+  };
 
   const filteredCourses = courses.filter((course) => {
     if (activeFilter === 'all') return true;
@@ -143,9 +157,19 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
                     <button className={styles.reviewButton}>
                       Revisar
                     </button>
-                    <button className={styles.certificateButton}>
-                      Certificado
-                    </button>
+                    {course.certificadoFolio ? (
+                      <button
+                        className={styles.certificateButton}
+                        onClick={() => handleDescargar(course.certificadoFolio!)}
+                        disabled={downloading === course.certificadoFolio}
+                      >
+                        {downloading === course.certificadoFolio ? 'Descargando...' : 'Descargar Certificado'}
+                      </button>
+                    ) : (
+                      <button className={styles.certificateButton} disabled>
+                        Sin certificado
+                      </button>
+                    )}
                   </div>
                 </div>
               ))}

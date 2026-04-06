@@ -110,3 +110,8 @@ class EstadoInvitacion(str, enum.Enum):
     PENDIENTE = "pendiente"
     USADA = "usada"
     EXPIRADA = "expirada"
+
+
+class MarcaCurso(str, enum.Enum):
+    RAM = "ram"
+    NEXTGEN = "nextgen"

@@ -91,6 +91,7 @@ export default function CrearCursoPage() {
   const [allowComments, setAllowComments] = useState(true);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
+  const [marca, setMarca] = useState<'ram' | 'nextgen'>('ram');
 
   // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
@@ -161,6 +162,7 @@ export default function CrearCursoPage() {
           descripcion: description,
           ...(category ? { categoria_id: category } : {}),
           estado: 'borrador',
+          marca,
           es_gratis: true,
           nivel: level || undefined,
           lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
@@ -458,6 +460,24 @@ export default function CrearCursoPage() {
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Descripción <span className={styles.required}>*</span></label>
                   <textarea value={description} onChange={(e) => setDescription(e.target.value)} className={styles.textarea} rows={5} placeholder="Describe el contenido y objetivos del curso..." />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Marca del certificado <span className={styles.required}>*</span></label>
+                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.375rem' }}>
+                    {(['ram', 'nextgen'] as const).map((m) => (
+                      <label key={m} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: marca === m ? 700 : 400 }}>
+                        <input
+                          type="radio"
+                          name="marca"
+                          value={m}
+                          checked={marca === m}
+                          onChange={() => setMarca(m)}
+                        />
+                        {m === 'ram' ? 'RAM Electronics' : 'NextGen'}
+                      </label>
+                    ))}
+                  </div>
                 </div>
 
                 <div className={styles.formRow}>

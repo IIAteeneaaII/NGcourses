@@ -252,6 +252,27 @@ export const calificacionesApi = {
 export const certificadosApi = {
   mis: () => apiClient.get('/api/v1/certificados/me'),
   verificar: (folio: string) => apiClient.get(`/api/v1/certificados/verificar/${folio}`),
+  descargar: async (folio: string): Promise<void> => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
+    const url = `${API_URL}/api/v1/certificados/descargar/${folio}`;
+    const response = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!response.ok) {
+      let detail = 'Error al descargar el certificado';
+      try { const b = await response.json(); detail = b.detail ?? detail; } catch { /* noop */ }
+      throw { detail, status: response.status } as ApiError;
+    }
+    const blob = await response.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = `certificado-${folio.toUpperCase()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  },
 };
 
 export const invitacionesApi = {

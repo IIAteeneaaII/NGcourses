@@ -142,6 +142,7 @@ export interface UserCourse {
   status: CourseStatus;
   progress?: number;
   completedDate?: string;
+  certificadoFolio?: string;
 }
 
 export interface MyCoursesStatistics {

@@ -575,6 +575,45 @@ def check_and_emit_certificate(
 
     session.commit()
     session.refresh(certificado)
+
+    # Generar PDF del certificado (no-fatal: el registro ya está guardado)
+    try:
+        from pathlib import Path
+        from app.models._enums import MarcaCurso
+        from app.models import User
+        from app.services.certificado_pdf import generate_certificate_pdf
+
+        usuario = session.get(User, inscripcion.usuario_id)
+        curso = session.get(Curso, inscripcion.curso_id)
+        instructor = session.get(User, curso.instructor_id) if curso else None
+
+        student_name = (usuario.full_name or usuario.email) if usuario else "Alumno"
+        course_title = curso.titulo if curso else ""
+        instructor_name = (instructor.full_name or instructor.email) if instructor else "Instructor"
+        marca = curso.marca if curso else MarcaCurso.RAM
+
+        cert_dir = Path(__file__).parent / "media" / "certificados"
+        cert_dir.mkdir(parents=True, exist_ok=True)
+        output_path = str(cert_dir / f"{folio}.pdf")
+
+        generate_certificate_pdf(
+            folio=folio,
+            student_name=student_name,
+            course_title=course_title,
+            instructor_name=instructor_name,
+            issued_date=certificado.emitido_en,
+            marca=marca,
+            output_path=output_path,
+        )
+
+        certificado.url_pdf = f"/media/certificados/{folio}.pdf"
+        session.add(certificado)
+        session.commit()
+        session.refresh(certificado)
+    except Exception as exc:  # noqa: BLE001
+        import logging
+        logging.getLogger(__name__).warning("PDF generation failed for %s: %s", folio, exc)
+
     return certificado
 
 

@@ -1,11 +1,11 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import Column, UniqueConstraint
+from sqlalchemy import Column, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models._enums import EstadoCurso, TipoLeccion, TipoRecurso
+from app.models._enums import EstadoCurso, MarcaCurso, TipoLeccion, TipoRecurso
 
 
 # ── Categorias ──────────────────────────────────────────────────────────────
@@ -71,6 +71,10 @@ class Curso(SQLModel, table=True):
     slug: str = Field(max_length=255, unique=True, index=True)
     descripcion: str | None = Field(default=None)
     estado: EstadoCurso = Field(default=EstadoCurso.BORRADOR)
+    marca: MarcaCurso = Field(
+        default=MarcaCurso.RAM,
+        sa_column=Column("marca", String(20), nullable=False, server_default="ram"),
+    )
     duracion_seg: int = Field(default=0)
     calificacion_prom: float = Field(default=0.0)
     total_resenas: int = Field(default=0)
@@ -298,6 +302,7 @@ class CursoPublic(SQLModel):
     slug: str
     descripcion: str | None = None
     estado: EstadoCurso
+    marca: MarcaCurso
     duracion_seg: int
     calificacion_prom: float
     total_resenas: int
@@ -329,6 +334,7 @@ class CursoCreate(SQLModel):
     categoria_id: uuid.UUID | None = None
     descripcion: str | None = None
     estado: EstadoCurso = EstadoCurso.BORRADOR
+    marca: MarcaCurso = MarcaCurso.RAM
     es_gratis: bool = False
     bunny_library_id: str | None = None
     nivel: str | None = None
@@ -342,6 +348,7 @@ class CursoUpdate(SQLModel):
     categoria_id: uuid.UUID | None = None
     descripcion: str | None = None
     estado: EstadoCurso | None = None
+    marca: MarcaCurso | None = None
     es_gratis: bool | None = None
     portada_url: str | None = None
     bunny_library_id: str | None = None
