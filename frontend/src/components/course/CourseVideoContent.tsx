@@ -2,12 +2,13 @@
 
 import { useCallback, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import VideoPlayer from '@/components/video/VideoPlayer';
 import LessonsSidebar from '@/components/course/LessonsSidebar';
 import VideoControls from '@/components/course/VideoControls';
 import QuizPlayer from '@/components/course/QuizPlayer';
 import type { Course, Lesson, QuizData } from '@/types/course';
-import { progresoApi } from '@/lib/api/client';
+import { progresoApi, certificadosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './CourseVideoContent.module.css';
 
@@ -18,12 +19,20 @@ interface CourseVideoContentProps {
   backHref?: string;
 }
 
+interface CompletionModal {
+  folio: string | null;
+  loading: boolean;
+}
+
 export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref }: CourseVideoContentProps) {
+  const router = useRouter();
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(
     course.modules.flatMap((m) => m.lessons)[0] ?? null
   );
   const [progress, setProgress] = useState(course.progress);
+  const [completionModal, setCompletionModal] = useState<CompletionModal | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   // Para throttle del tracking: cada 10 segundos
   const lastSentTime = useRef<number>(0);
@@ -87,6 +96,42 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
 
     setCourse({ ...course, modules: updatedModules, progress: newProgress });
     setProgress(newProgress);
+
+    if (newProgress === 100) {
+      setCompletionModal({ folio: null, loading: true });
+      try {
+        // Esperar un momento para que el backend procese el certificado
+        await new Promise((r) => setTimeout(r, 1500));
+        const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>);
+        const cert = resp.data.find((c) => c.curso_id === course.id && c.url_pdf);
+        setCompletionModal({ folio: cert?.folio ?? null, loading: false });
+      } catch (e) {
+        logError('CourseVideoContent/completionModal', e);
+        setCompletionModal({ folio: null, loading: false });
+      }
+    }
+  };
+
+  const handleDescargarCert = async (folio: string) => {
+    setDownloading(true);
+    try {
+      const token = localStorage.getItem('access_token');
+      const res = await fetch(`/api/v1/certificados/descargar/${folio}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `certificado-${folio}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      logError('CourseVideoContent/handleDescargarCert', e);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   if (!currentLesson) {
@@ -174,6 +219,38 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
           />
         </div>
       </div>
+
+      {completionModal && (
+        <div className={styles.modalOverlay} onClick={() => setCompletionModal(null)}>
+          <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+            <button className={styles.modalClose} onClick={() => setCompletionModal(null)}>×</button>
+            <div className={styles.modalIcon}>✓</div>
+            <h2 className={styles.modalTitle}>¡Felicidades!</h2>
+            <p className={styles.modalSubtitle}>Has completado el curso exitosamente.</p>
+            <div className={styles.modalActions}>
+              <button
+                className={styles.modalBtnPrimary}
+                disabled={completionModal.loading || !completionModal.folio || downloading}
+                onClick={() => completionModal.folio && handleDescargarCert(completionModal.folio)}
+              >
+                {completionModal.loading
+                  ? 'Generando certificado...'
+                  : downloading
+                  ? 'Descargando...'
+                  : completionModal.folio
+                  ? 'Descargar Certificado'
+                  : 'Certificado no disponible'}
+              </button>
+              <button
+                className={styles.modalBtnSecondary}
+                onClick={() => router.push('/mis-cursos')}
+              >
+                Ir a Mis Cursos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
