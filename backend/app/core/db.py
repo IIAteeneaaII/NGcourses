@@ -4,7 +4,15 @@ from app import crud
 from app.core.config import settings
 from app.models import RolUsuario, User, UserCreate
 
-engine = create_engine(str(settings.SQLALCHEMY_DATABASE_URI))
+# pool_size=20: conexiones activas por worker (4 workers × 20 = 80 total)
+# max_overflow=10: conexiones extra en pico (hasta 120 total)
+# pool_pre_ping=True: descarta conexiones muertas automáticamente
+engine = create_engine(
+    str(settings.SQLALCHEMY_DATABASE_URI),
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True,
+)
 
 
 # make sure all SQLModel models are imported (app.models) before initializing DB

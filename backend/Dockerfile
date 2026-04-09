@@ -41,4 +41,4 @@ COPY ./tests /app/tests
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
-CMD ["fastapi", "run", "--workers", "4", "app/main.py"]
+CMD ["sh", "-c", "fastapi run --workers ${WEB_CONCURRENCY:-4} app/main.py"]

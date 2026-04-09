@@ -86,7 +86,7 @@ export default function VideoUploadButton({
       const upload = new tus.Upload(file, {
         endpoint: 'https://video.bunnycdn.com/tusupload',
         retryDelays: [0, 3000, 5000, 10000],
-        chunkSize: 5 * 1024 * 1024, // 5 MB por chunk
+        chunkSize: 50 * 1024 * 1024, // 50 MB por chunk — menos requests, upload más rápido
         headers: tusHeaders,
         metadata: {
           filename: file.name,

@@ -42,5 +42,8 @@ if settings.all_cors_origins:
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # Serve uploaded media files (course covers, etc.)
+# En producción AWS, servir /media con nginx o S3+CloudFront y
+# setear SERVE_MEDIA=false para no desperdiciar workers de FastAPI.
 os.makedirs(MEDIA_DIR, exist_ok=True)
-app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+if os.getenv("SERVE_MEDIA", "true").lower() != "false":
+    app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")

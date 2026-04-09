@@ -1,0 +1,40 @@
+services:
+
+  prestart:
+    image: '314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-backend:latest'
+    command: bash scripts/prestart.sh
+    env_file:
+      - .env.prod
+    environment:
+      - POSTGRES_SERVER=ngcourses-db.cri26yqcirpz.us-west-2.rds.amazonaws.com
+
+  backend:
+    image: '314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-backend:latest'
+    restart: always
+    depends_on:
+      prestart:
+        condition: service_completed_successfully
+    env_file:
+      - .env.prod
+    environment:
+      - POSTGRES_SERVER=ngcourses-db.cri26yqcirpz.us-west-2.rds.amazonaws.com
+      - WEB_CONCURRENCY=2
+      - SERVE_MEDIA=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - media_data:/app/app/media
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  frontend:
+    image: '314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:latest'
+    restart: always
+    ports:
+      - "80:3000"
+
+volumes:
+  media_data:

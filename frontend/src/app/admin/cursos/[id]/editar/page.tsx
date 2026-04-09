@@ -120,6 +120,8 @@ export default function EditarCursoAdminPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [cursoEstado, setCursoEstado] = useState<string>('borrador');
+  const [isPublishing, setIsPublishing] = useState(false);
 
   const notify = React.useCallback((type: 'success' | 'error', message: string) => {
     setNotification({ type, message });
@@ -142,6 +144,7 @@ export default function EditarCursoAdminPage() {
       setDescription(curso.descripcion || '');
       setLevel(curso.nivel || '');
       setCategory(curso.categoria_id || '');
+      if (curso.estado) setCursoEstado(curso.estado);
       if (curso.marca === 'nextgen') setMarca('nextgen');
       if (curso.portada_url) {
         setCoverImagePreview(`${API_URL}${curso.portada_url}`);
@@ -216,8 +219,9 @@ export default function EditarCursoAdminPage() {
     if (currentStep === 2 && coverFile) {
       try {
         await cursosApi.uploadCover(cursoId, coverFile);
-      } catch {
-        // No bloqueamos si falla la portada
+      } catch (e) {
+        notify('error', 'No se pudo guardar la portada');
+        logError('admin/cursos/editar/uploadCover', e);
       }
     }
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
@@ -230,12 +234,34 @@ export default function EditarCursoAdminPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      if (coverFile) {
+        try {
+          await cursosApi.uploadCover(cursoId, coverFile);
+        } catch (e) {
+          notify('error', 'No se pudo guardar la portada');
+          logError('admin/cursos/editar/uploadCover', e);
+        }
+      }
       await cursosApi.update(cursoId, { titulo: title, descripcion: description });
       router.push('/admin/cursos');
     } catch {
       notify('error', 'Error al guardar los cambios');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleTogglePublish = async () => {
+    setIsPublishing(true);
+    const nuevoEstado = cursoEstado === 'publicado' ? 'borrador' : 'publicado';
+    try {
+      await cursosApi.update(cursoId, { estado: nuevoEstado });
+      setCursoEstado(nuevoEstado);
+      notify('success', nuevoEstado === 'publicado' ? 'Curso publicado' : 'Curso regresado a borrador');
+    } catch {
+      notify('error', 'Error al cambiar el estado del curso');
+    } finally {
+      setIsPublishing(false);
     }
   };
 
@@ -861,9 +887,19 @@ export default function EditarCursoAdminPage() {
                   {isSaving ? 'Guardando...' : 'Siguiente'}
                 </button>
               ) : (
-                <button className={styles.publishButton} onClick={handleSave} disabled={isSaving}>
-                  {isSaving ? 'Guardando...' : 'Guardar cambios'}
-                </button>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                  <button
+                    className={styles.publishButton}
+                    onClick={handleTogglePublish}
+                    disabled={isPublishing}
+                    style={{ background: cursoEstado === 'publicado' ? '#6b7280' : '#16a34a' }}
+                  >
+                    {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Despublicar' : 'Publicar curso'}
+                  </button>
+                  <button className={styles.publishButton} onClick={handleSave} disabled={isSaving}>
+                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                </div>
               )}
             </div>
           </div>
