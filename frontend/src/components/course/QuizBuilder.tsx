@@ -4,6 +4,17 @@ import React, { useState } from 'react';
 import type { QuizData, QuizQuestion, QuizOption, QuestionType } from '@/types/course';
 import styles from './QuizBuilder.module.css';
 
+// generateId() solo funciona en HTTPS — este fallback funciona en HTTP también
+function generateId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return generateId();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
 interface Props {
   quizData: QuizData;
   onChange: (quizData: QuizData) => void;
@@ -13,26 +24,26 @@ interface Props {
 function createEmptyQuestion(tipo: QuestionType, orden: number): QuizQuestion {
   if (tipo === 'true_false') {
     return {
-      id: crypto.randomUUID(),
+      id: generateId(),
       tipo,
       enunciado: '',
       orden,
       opciones: [
-        { id: crypto.randomUUID(), texto: 'Verdadero', esCorrecta: false },
-        { id: crypto.randomUUID(), texto: 'Falso', esCorrecta: false },
+        { id: generateId(), texto: 'Verdadero', esCorrecta: false },
+        { id: generateId(), texto: 'Falso', esCorrecta: false },
       ],
     };
   }
   return {
-    id: crypto.randomUUID(),
+    id: generateId(),
     tipo,
     enunciado: '',
     orden,
     opciones: [
-      { id: crypto.randomUUID(), texto: '', esCorrecta: false },
-      { id: crypto.randomUUID(), texto: '', esCorrecta: false },
-      { id: crypto.randomUUID(), texto: '', esCorrecta: false },
-      { id: crypto.randomUUID(), texto: '', esCorrecta: false },
+      { id: generateId(), texto: '', esCorrecta: false },
+      { id: generateId(), texto: '', esCorrecta: false },
+      { id: generateId(), texto: '', esCorrecta: false },
+      { id: generateId(), texto: '', esCorrecta: false },
     ],
   };
 }

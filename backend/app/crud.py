@@ -908,7 +908,7 @@ def get_or_create_user_by_email(
     user = get_user_by_email(session=session, email=email)
     if user:
         return user, False, None
-    temp_password = secrets.token_urlsafe(12)
+    temp_password = email  # La contraseña inicial es el propio email del usuario
     user_create = UserCreate(email=email, password=temp_password, rol=RolUsuario.ESTUDIANTE)
     new_user = create_user(session=session, user_create=user_create)
     return new_user, True, temp_password

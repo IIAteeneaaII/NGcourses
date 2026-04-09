@@ -223,7 +223,7 @@ export const usersApi = {
   get: (id: string) => apiClient.get(`/api/v1/users/${id}`),
   create: (data: unknown) => apiClient.post('/api/v1/users/', data),
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/users/${id}`, data),
-  updateMe: (data: { email?: string; telefono?: string | null }) => apiClient.patch('/api/v1/users/me', data),
+  updateMe: (data: { email?: string; telefono?: string | null; full_name?: string }) => apiClient.patch('/api/v1/users/me', data),
   changePassword: (data: { current_password: string; new_password: string }) =>
     apiClient.patch('/api/v1/users/me/password', data),
   delete: (id: string) => apiClient.delete(`/api/v1/users/${id}`),

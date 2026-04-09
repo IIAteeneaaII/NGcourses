@@ -91,7 +91,7 @@
   backdrop-filter: blur(8px);
   box-shadow: 0 10px 25px rgba(0,0,0,.12);
   font-weight: 800;
-  font-size: 1.25rem;
+  font-size: 0.95rem;
   letter-spacing: 0.5px;
 }
 
@@ -118,22 +118,39 @@
   font-size: 15.5px;
 }
 
-/* Chips/Tags */
-.features {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+/* Carrusel de cursos */
+.carouselWrapper {
+  overflow: hidden;
   margin-top: 18px;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 8%, black 92%, transparent);
 }
 
-.featureTag {
+.carouselTrack {
+  display: flex;
+  gap: 10px;
+  width: max-content;
+  animation: carouselSlide 30s linear infinite;
+}
+
+.carouselTrack:hover {
+  animation-play-state: paused;
+}
+
+.carouselItem {
   font-size: 12.5px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 999px;
   background: rgba(255,255,255,.14);
   border: 1px solid rgba(255,255,255,.18);
   backdrop-filter: blur(10px);
   white-space: nowrap;
+  color: white;
+}
+
+@keyframes carouselSlide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
 }
 
 /* Panel derecho - Card de login */
@@ -269,20 +286,6 @@
   cursor: pointer;
 }
 
-.forgotPassword {
-  color: #024B89;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 13px;
-  background: none;
-  border: none;
-  cursor: pointer;
-}
-
-.forgotPassword:hover {
-  text-decoration: underline;
-}
-
 /* Botón de submit - Usamos naranja para 60-30-10 */
 .submitButton {
   border: 0;
@@ -305,28 +308,6 @@
 
 .submitButton:active {
   transform: translateY(1px);
-}
-
-/* Texto de registro */
-.registerText {
-  margin-top: 14px;
-  text-align: center;
-  font-size: 12.5px;
-  color: rgba(11,27,43,.65);
-}
-
-.registerLink {
-  color: #024B89;
-  text-decoration: none;
-  font-weight: 600;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 12.5px;
-}
-
-.registerLink:hover {
-  text-decoration: underline;
 }
 
 /* Responsive */

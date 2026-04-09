@@ -1,0 +1,889 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Pre-Deploy — NGcourses</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    color: #1c2b3a;
+    background: #fff;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  /* ── Colores NextGenIA ──────────────────────────────────────
+     Teal principal : #2DBBB3
+     Teal oscuro    : #1A9E97
+     Gris oscuro    : #3D3D50
+     Gris medio     : #5A5A6E
+     Fondo claro    : #F2FAFA
+  ──────────────────────────────────────────────────────────── */
+
+  /* ── Portada ───────────────────────────────────────────────── */
+  .cover {
+    height: 297mm;
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .cover-top-bar {
+    background: #2DBBB3;
+    height: 10px;
+    flex-shrink: 0;
+  }
+  .cover-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 52px 64px 52px;
+  }
+
+  /* Logo block — top */
+  .cover-logo-block {
+    display: flex;
+    align-items: stretch;
+    background: #F2FAFA;
+    border: 1px solid #C8E8E6;
+    border-radius: 8px;
+    height: 210px;
+    overflow: hidden;
+  }
+  .cover-logo-img-wrap {
+    width: 420px;
+    flex-shrink: 0;
+    background: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 12px;
+  }
+  .cover-logo {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+  .cover-logo-divider {
+    width: 1px;
+    background: #C8E8E6;
+    flex-shrink: 0;
+  }
+  .cover-logo-text {
+    font-size: 0.85rem;
+    color: #5A5A6E;
+    line-height: 1.9;
+    letter-spacing: 0.3px;
+    align-self: center;
+    padding: 28px 36px;
+  }
+  .cover-logo-text strong {
+    display: block;
+    font-size: 1.15rem;
+    color: #3D3D50;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  /* Center block — main title */
+  .cover-center {
+    text-align: center;
+  }
+  .cover-tag {
+    display: inline-block;
+    background: #E8F7F6;
+    color: #1A9E97;
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 2px;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-size: 3.8rem;
+    font-weight: 800;
+    color: #3D3D50;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin-bottom: 16px;
+  }
+  .cover h1 span { color: #2DBBB3; }
+  .cover-rule {
+    width: 64px;
+    height: 3px;
+    background: #2DBBB3;
+    margin: 0 auto 20px;
+    border-radius: 2px;
+  }
+  .cover-sub {
+    font-size: 0.88rem;
+    color: #5A5A6E;
+    line-height: 1.7;
+  }
+
+  /* Bottom block — metadata */
+  .cover-meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 1px solid #C8E8E6;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #F2FAFA;
+  }
+  .cover-meta-cell {
+    padding: 28px 28px;
+    border-right: 1px solid #C8E8E6;
+  }
+  .cover-meta-cell:last-child { border-right: none; }
+  .cover-meta-cell .mk {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #2DBBB3;
+    margin-bottom: 8px;
+  }
+  .cover-meta-cell .mv {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #3D3D50;
+  }
+  .cover-bottom-bar {
+    height: 6px;
+    background: #3D3D50;
+    flex-shrink: 0;
+  }
+
+  /* ── Layout ───────────────────────────────────────────────── */
+  .page { padding: 36px 56px; }
+
+  /* ── Section headings ─────────────────────────────────────── */
+  .section-label {
+    font-size: 0.62rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #2DBBB3;
+    margin-bottom: 4px;
+  }
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #3D3D50;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #2DBBB3;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  h3 {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #1A9E97;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    margin: 28px 0 10px;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  p { color: #3d5166; margin-bottom: 14px; font-size: 0.85rem; }
+
+  /* ── Tables ───────────────────────────────────────────────── */
+  table { width: 100%; border-collapse: collapse; margin: 0 0 20px; font-size: 0.82rem; break-inside: auto; }
+  thead th {
+    background: #3D3D50;
+    color: white;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.76rem;
+    letter-spacing: 0.3px;
+  }
+  tbody td { padding: 8px 14px; border-bottom: 1px solid #edf0f0; color: #2d3f50; vertical-align: top; }
+  tbody tr:nth-child(even) td { background: #F2FAFA; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+
+  /* ── Code ─────────────────────────────────────────────────── */
+  code {
+    background: #E8F7F6;
+    color: #1A9E97;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.76rem;
+    font-family: 'Consolas', monospace;
+  }
+
+  /* ── Boxes ────────────────────────────────────────────────── */
+  .panel {
+    background: #F2FAFA;
+    border: 1px solid #C8E8E6;
+    border-radius: 6px;
+    padding: 22px;
+    margin: 10px 0 22px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .note {
+    background: #E8F7F6;
+    border-left: 3px solid #2DBBB3;
+    padding: 10px 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 0.8rem;
+    color: #3d5166;
+    margin: 0 0 18px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* ── Architecture diagram ─────────────────────────────────── */
+  .arch-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .arch-box {
+    background: white;
+    border: 1.5px solid #99D4D1;
+    border-radius: 4px;
+    padding: 9px 32px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #3D3D50;
+    letter-spacing: 0.5px;
+    text-align: center;
+  }
+  .arch-box.dark {
+    background: #3D3D50;
+    border-color: #3D3D50;
+    color: white;
+    font-size: 0.82rem;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+  }
+  .arch-box.dark .sub { font-weight: 400; font-size: 0.68rem; color: rgba(255,255,255,0.55); margin-left: 6px; }
+  .arch-box.accent { background: #E8F7F6; border-color: #2DBBB3; color: #3D3D50; }
+  .arch-line { width: 1px; height: 20px; background: #99D4D1; }
+  .arch-row { display: flex; gap: 12px; justify-content: center; align-items: flex-start; width: 100%; }
+  .arch-col { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 200px; }
+  .arch-deps { display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; margin-top: 8px; }
+  .arch-dep {
+    border: 1px solid #C8E8E6;
+    border-radius: 3px;
+    padding: 5px 8px;
+    font-size: 0.66rem;
+    color: #3D3D50;
+    background: white;
+    text-align: center;
+    min-width: 54px;
+  }
+  .arch-dep .dep-label { color: #99D4D1; display: block; margin-top: 1px; }
+  .docker-label {
+    margin-top: 18px;
+    border: 1px dashed #99D4D1;
+    border-radius: 3px;
+    padding: 4px 16px;
+    font-size: 0.68rem;
+    color: #99D4D1;
+    letter-spacing: 0.5px;
+  }
+
+  /* ── Roles pyramid ────────────────────────────────────────── */
+  .pyramid {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .pyramid-row {
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    border-radius: 3px;
+  }
+  .pyramid-row .sub { font-weight: 400; font-size: 0.68rem; color: rgba(255,255,255,0.6); margin-left: 8px; }
+
+  /* ── Steps flow ───────────────────────────────────────────── */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    flex-wrap: wrap;
+  }
+  .step {
+    flex: 1;
+    min-width: 90px;
+    border: 1px solid #C8E8E6;
+    border-radius: 4px;
+    padding: 14px 10px;
+    text-align: center;
+    background: white;
+  }
+  .step.last { background: #3D3D50; border-color: #3D3D50; }
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    font-size: 0.68rem;
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: white;
+  }
+  .step-title { font-weight: 700; font-size: 0.75rem; color: #3D3D50; }
+  .step.last .step-title { color: white; }
+  .step-sub { font-size: 0.62rem; color: #99D4D1; margin-top: 4px; line-height: 1.35; }
+  .step.last .step-sub { color: rgba(255,255,255,0.45); }
+  .step-arrow { display: flex; align-items: center; padding: 0 2px; color: #C8E8E6; font-size: 0.9rem; }
+
+  /* ── Certification flow ───────────────────────────────────── */
+  .flow-vert {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .flow-node {
+    border-radius: 4px;
+    padding: 10px 28px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    color: white;
+  }
+  .flow-node.dark { background: #3D3D50; }
+  .flow-node.mid { background: white; border: 1.5px solid #2DBBB3; color: #3D3D50; }
+  .flow-node.light { background: #E8F7F6; border: 1px solid #2DBBB3; color: #3D3D50; }
+  .flow-node.no { background: #f5f7fa; border: 1px solid #dde5ee; color: #4a5e70; font-weight: 500; }
+  .flow-node.final { background: #2DBBB3; }
+  .flow-conn { width: 1px; height: 16px; background: #99D4D1; }
+  .flow-branch {
+    display: flex;
+    gap: 80px;
+    align-items: flex-start;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .flow-branch-col { display: flex; flex-direction: column; align-items: center; }
+  .flow-label { font-size: 0.65rem; color: #99D4D1; font-weight: 700; margin-bottom: 3px; letter-spacing: 0.5px; }
+
+  /* ── Cost summary ─────────────────────────────────────────── */
+  .cost-table {
+    width: 100%;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #C8E8E6;
+    margin: 16px 0;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .cost-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid #edf0f0;
+    font-size: 0.83rem;
+  }
+  .cost-row .label { color: #3d5166; }
+  .cost-row .amount { font-weight: 700; color: #3D3D50; }
+  .cost-row .amount.free { color: #99D4D1; font-weight: 400; }
+  .cost-total {
+    background: #2DBBB3;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    padding: 13px 16px;
+    font-weight: 700;
+  }
+  .cost-total .big { font-size: 1.1rem; }
+  .cost-per {
+    background: #1A9E97;
+    color: rgba(255,255,255,0.75);
+    display: flex;
+    justify-content: space-between;
+    padding: 7px 16px;
+    font-size: 0.73rem;
+  }
+
+  /* ── Bar chart ────────────────────────────────────────────── */
+  .bar-wrap {
+    margin: 12px 0 24px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .bar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .bar-key { width: 100px; font-size: 0.76rem; font-weight: 600; color: #3D3D50; text-align: right; flex-shrink: 0; }
+  .bar-track { flex: 1; background: #E8F7F6; border-radius: 3px; height: 14px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 3px; }
+  .bar-val { width: 72px; font-size: 0.76rem; font-weight: 700; color: #3D3D50; flex-shrink: 0; }
+
+  /* ── Badges ───────────────────────────────────────────────── */
+  .badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 2px;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+  }
+  .b-red { background: #fce8e8; color: #a83232; }
+  .b-yel { background: #fef6e4; color: #996b00; }
+  .b-grn { background: #E8F7F6; color: #1A9E97; }
+  .b-blu { background: #E8F7F6; color: #1A9E97; }
+  .b-tl  { background: #E8F7F6; color: #1A9E97; }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     PORTADA
+══════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-top-bar"></div>
+  <div class="cover-body">
+
+    <!-- Logo + identificación -->
+    <div class="cover-logo-block">
+      <div class="cover-logo-img-wrap">
+        <img class="cover-logo"
+             src="file:///C:/Users/admin/Pictures/certificado/nextgen/logonextgen.png"
+             alt="NextGenIA">
+      </div>
+      <div class="cover-logo-divider"></div>
+      <div class="cover-logo-text">
+        <strong>NextGenIA</strong>
+        Artificial Intelligence Solutions<br>
+        Plataforma de Aprendizaje en Línea
+      </div>
+      </div>
+    </div>
+
+    <!-- Título central -->
+    <div class="cover-center">
+      <div class="cover-tag">Documento Técnico — Pre-Deploy</div>
+      <h1>NGcourses<br><span>Plataforma LMS</span></h1>
+      <div class="cover-rule"></div>
+      <p class="cover-sub">
+        Referencia técnica previa al lanzamiento a producción.<br>
+        Arquitectura &nbsp;·&nbsp; Happy Path &nbsp;·&nbsp; Errores &nbsp;·&nbsp; Costos &nbsp;·&nbsp; Backlog
+      </p>
+    </div>
+
+    <!-- Metadata -->
+    <div class="cover-meta-grid">
+      <div class="cover-meta-cell">
+        <div class="mk">Versión</div>
+        <div class="mv">2.0</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="mk">Fecha</div>
+        <div class="mv">09 Abril 2026</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="mk">Escenario</div>
+        <div class="mv">300 estudiantes</div>
+      </div>
+      <div class="cover-meta-cell">
+        <div class="mk">Estado</div>
+        <div class="mv">En revisión</div>
+      </div>
+    </div>
+
+  </div>
+  <div class="cover-bottom-bar"></div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     1. ARQUITECTURA
+══════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Sección 01</div>
+  <h2>Arquitectura del Proyecto</h2>
+
+  <h3>Stack Tecnológico</h3>
+  <table>
+    <thead><tr><th>Capa</th><th>Tecnología</th><th>Versión</th></tr></thead>
+    <tbody>
+      <tr><td>Frontend</td><td>Next.js App Router</td><td><code>16.1.4</code></td></tr>
+      <tr><td>UI</td><td>React</td><td><code>19.2.3</code></td></tr>
+      <tr><td>Lenguaje FE</td><td>TypeScript</td><td><code>^5</code></td></tr>
+      <tr><td>Backend</td><td>FastAPI</td><td><code>^0.114</code></td></tr>
+      <tr><td>Lenguaje BE</td><td>Python</td><td><code>3.10</code></td></tr>
+      <tr><td>ORM</td><td>SQLModel (SQLAlchemy + Pydantic)</td><td><code>^0.0.21</code></td></tr>
+      <tr><td>Base de Datos</td><td>PostgreSQL</td><td><code>17</code></td></tr>
+      <tr><td>Migraciones</td><td>Alembic</td><td><code>^1.12</code></td></tr>
+      <tr><td>Auth</td><td>JWT HS256 — 8 días</td><td><code>PyJWT ^2.8</code></td></tr>
+      <tr><td>Video CDN</td><td>Bunny.net — TUS resumable</td><td>—</td></tr>
+      <tr><td>Generación PDF</td><td>ReportLab</td><td><code>^4.2</code></td></tr>
+      <tr><td>Monitoreo</td><td>Sentry</td><td><code>^1.40</code></td></tr>
+      <tr><td>Reverse Proxy</td><td>Traefik + Let's Encrypt</td><td>—</td></tr>
+      <tr><td>Contenedores</td><td>Docker Compose</td><td>—</td></tr>
+      <tr><td>Gestor paquetes BE</td><td>uv</td><td>—</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Diagrama de Servicios</h3>
+  <div class="panel">
+    <div class="arch-container">
+      <div class="arch-box">INTERNET</div>
+      <div class="arch-line"></div>
+      <div class="arch-box dark">TRAEFIK <span class="sub">Reverse Proxy · SSL/TLS</span></div>
+      <div class="arch-line"></div>
+      <div class="arch-row">
+        <div class="arch-col">
+          <div class="arch-line"></div>
+          <div class="arch-box accent" style="width:100%;text-align:center;">
+            <div style="font-weight:700;font-size:0.8rem;">NEXT.JS</div>
+            <div style="font-size:0.66rem;color:#1A9E97;margin-top:2px;">dashboard.DOMAIN · :3000</div>
+          </div>
+        </div>
+        <div class="arch-col" style="max-width:280px;">
+          <div class="arch-line"></div>
+          <div class="arch-box accent" style="width:100%;text-align:center;">
+            <div style="font-weight:700;font-size:0.8rem;">FASTAPI</div>
+            <div style="font-size:0.66rem;color:#1A9E97;margin-top:2px;">api.DOMAIN · :8000</div>
+            <div class="arch-deps" style="margin-top:10px;">
+              <div class="arch-dep">PostgreSQL<span class="dep-label">Base de datos</span></div>
+              <div class="arch-dep">Bunny.net<span class="dep-label">Video CDN</span></div>
+              <div class="arch-dep">SMTP<span class="dep-label">Email</span></div>
+              <div class="arch-dep">Sentry<span class="dep-label">Errores</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="arch-col">
+          <div class="arch-line"></div>
+          <div class="arch-box accent" style="width:100%;text-align:center;">
+            <div style="font-weight:700;font-size:0.8rem;">ADMINER</div>
+            <div style="font-size:0.66rem;color:#1A9E97;margin-top:2px;">adminer.DOMAIN</div>
+          </div>
+        </div>
+      </div>
+      <div class="docker-label">Orquestado con Docker Compose</div>
+    </div>
+  </div>
+
+  <h3>Jerarquía de Roles</h3>
+  <div class="panel">
+    <div class="pyramid">
+      <div class="pyramid-row" style="background:#3D3D50;width:380px;">ADMINISTRADOR <span class="sub">máxima autoridad · gestión global del sistema</span></div>
+      <div class="pyramid-row" style="background:#2DBBB3;width:300px;">INSTRUCTOR <span class="sub">gestiona sus propios cursos</span></div>
+      <div class="pyramid-row" style="background:#1A9E97;width:220px;border-radius:0 0 3px 3px;">ESTUDIANTE <span class="sub">cursos inscritos</span></div>
+    </div>
+  </div>
+
+  <h3>Rutas del Sistema</h3>
+  <table>
+    <thead><tr><th>Panel</th><th>Rutas</th><th>Rol mínimo</th></tr></thead>
+    <tbody>
+      <tr><td>Público</td><td><code>/</code> &nbsp; <code>/invitacion</code></td><td>—</td></tr>
+      <tr><td>Alumno</td><td><code>/cursos</code> &nbsp; <code>/curso/[id]</code> &nbsp; <code>/curso/[id]/videos</code> &nbsp; <code>/mis-cursos</code> &nbsp; <code>/perfil</code></td><td>ESTUDIANTE</td></tr>
+      <tr><td>Instructor</td><td><code>/instructor/**</code></td><td>INSTRUCTOR</td></tr>
+      <tr><td>Admin</td><td><code>/admin/**</code></td><td>ADMINISTRADOR</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Integraciones Externas</h3>
+  <table>
+    <thead><tr><th>Servicio</th><th>Función</th><th>Variables requeridas</th></tr></thead>
+    <tbody>
+      <tr><td>Bunny.net</td><td>Storage + CDN de video (TUS resumable)</td><td><code>BUNNY_API_KEY</code> &nbsp;<code>BUNNY_TOKEN_KEY</code> &nbsp;<code>BUNNY_LIBRARY_ID</code></td></tr>
+      <tr><td>SMTP Gmail</td><td>Invitaciones + recuperación de contraseña</td><td><code>SMTP_HOST</code> &nbsp;<code>SMTP_USER</code> &nbsp;<code>SMTP_PASSWORD</code></td></tr>
+      <tr><td>Sentry</td><td>Error tracking en staging/producción</td><td><code>SENTRY_DSN</code></td></tr>
+      <tr><td>Let's Encrypt</td><td>SSL automático vía Traefik</td><td><code>DOMAIN</code></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     2. HAPPY PATH
+══════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Sección 02</div>
+  <h2>Happy Path</h2>
+
+  <h3>2.1 — Admin: Crear y publicar un curso</h3>
+  <div class="panel">
+    <div class="flow">
+      <div class="step">
+        <div class="step-num" style="background:#3D3D50;">1</div>
+        <div class="step-title">Login</div>
+        <div class="step-sub">POST<br>/login/access-token</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#2DBBB3;">2</div>
+        <div class="step-title">Crear Curso</div>
+        <div class="step-sub">POST /cursos/<br>estado borrador</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#2DBBB3;">3</div>
+        <div class="step-title">Portada + Módulos</div>
+        <div class="step-sub">POST /cover<br>POST /modulos</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#1A9E97;">4</div>
+        <div class="step-title">Subir Video</div>
+        <div class="step-sub">TUS → Bunny.net<br>webhook responde</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#1A9E97;">5</div>
+        <div class="step-title">Agregar Quiz</div>
+        <div class="step-sub">tipo=QUIZ<br>en lección</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step last">
+        <div class="step-num" style="background:rgba(255,255,255,0.2);">6</div>
+        <div class="step-title">Publicar + Invitar</div>
+        <div class="step-sub">estado=PUBLICADO<br>POST /invitaciones</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>2.2 — Alumno: Obtener certificado</h3>
+  <div class="panel">
+    <div class="flow">
+      <div class="step">
+        <div class="step-num" style="background:#3D3D50;">1</div>
+        <div class="step-title">Invitación</div>
+        <div class="step-sub">Token por email<br>/invitacion?token</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#2DBBB3;">2</div>
+        <div class="step-title">Registro</div>
+        <div class="step-sub">POST<br>/users/signup</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#2DBBB3;">3</div>
+        <div class="step-title">Inscribirse</div>
+        <div class="step-sub">POST<br>/inscripciones/</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#1A9E97;">4</div>
+        <div class="step-title">Ver Lecciones</div>
+        <div class="step-sub">HLS stream<br>Bunny.net CDN</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step">
+        <div class="step-num" style="background:#1A9E97;">5</div>
+        <div class="step-title">Quiz + Progreso</div>
+        <div class="step-sub">POST /progreso/<br>POST /quiz/</div>
+      </div>
+      <div class="step-arrow">›</div>
+      <div class="step last">
+        <div class="step-num" style="background:rgba(255,255,255,0.2);">6</div>
+        <div class="step-title">Certificado PDF</div>
+        <div class="step-sub">≥ 90% completado<br>auto-generado</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>2.3 — Flujo de Certificación Automática</h3>
+  <div class="panel">
+    <div class="flow-vert">
+      <div class="flow-node dark">Alumno completa lección — POST /progreso/</div>
+      <div class="flow-conn"></div>
+      <div class="flow-node mid">¿Progreso ≥ 90%?</div>
+      <div class="flow-branch">
+        <div class="flow-branch-col">
+          <div class="flow-conn"></div>
+          <div class="flow-label">NO</div>
+          <div class="flow-node no">Actualiza barra<br>de progreso</div>
+        </div>
+        <div class="flow-branch-col">
+          <div class="flow-conn"></div>
+          <div class="flow-label">SÍ</div>
+          <div class="flow-node light">check_and_emit_certificate</div>
+          <div class="flow-conn"></div>
+          <div class="flow-node" style="background:white;border:1px solid #C8E8E6;color:#3d5166;font-size:0.75rem;">
+            Genera PDF con ReportLab<br>
+            <span style="font-size:0.68rem;color:#99D4D1;">Guarda Certificado en DB</span>
+          </div>
+          <div class="flow-conn"></div>
+          <div class="flow-node final">GET /certificados/descargar/{folio}<br><span style="font-weight:400;font-size:0.68rem;color:rgba(255,255,255,0.6);">PDF descargable con folio único</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     3. ERRORES
+══════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Sección 03</div>
+  <h2>Errores Encontrados Durante el Desarrollo</h2>
+  <table>
+    <thead>
+      <tr><th>#</th><th>Área</th><th>Error</th><th>Causa</th><th>Solución</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><span class="badge b-tl">Backend</span></td><td>CORS bloqueaba todas las peticiones</td><td>Orígenes no configurados en FastAPI</td><td>Configurar <code>BACKEND_CORS_ORIGINS</code> + regex para tunnels locales</td></tr>
+      <tr><td>2</td><td><span class="badge b-tl">Backend</span></td><td>Eliminar curso dejaba registros huérfanos en DB</td><td>Cascada <code>ON DELETE</code> no definida en SQLModel</td><td>Cascada manual en <code>delete_curso</code> antes del DELETE padre</td></tr>
+      <tr><td>3</td><td><span class="badge b-tl">Backend</span></td><td>Certificado generaba antes de persistir el progreso</td><td><code>await</code> faltante en cadena async</td><td>Awaitar <code>upsert_progreso</code> antes de <code>check_and_emit_certificate</code></td></tr>
+      <tr><td>4</td><td><span class="badge b-grn">Frontend</span></td><td>Error de hidratación SSR</td><td>Diferencia HTML servidor/cliente por <code>localStorage</code></td><td><code>suppressHydrationWarning</code> en elemento <code>&lt;html&gt;</code></td></tr>
+      <tr><td>5</td><td><span class="badge b-grn">Frontend</span></td><td>Imágenes externas bloqueadas</td><td><code>remotePatterns</code> no configurado en next.config</td><td>Agregar patrones <code>localhost:8000</code> y <code>https://**/media/**</code></td></tr>
+      <tr><td>6</td><td><span class="badge b-grn">Frontend</span></td><td>Conflicto con middleware de Next.js</td><td>Archivo <code>middleware.ts</code> con nombre reservado</td><td>Renombrar a <code>proxy.ts</code></td></tr>
+      <tr><td>7</td><td><span class="badge b-grn">Frontend</span></td><td>Pantalla en blanco en curso sin lecciones</td><td><code>CourseVideoContent</code> sin guard para array vacío</td><td>Agregar condicional antes de renderizar el player</td></tr>
+      <tr><td>8</td><td><span class="badge b-grn">Frontend</span></td><td>Turbopack fallaba en modo dev</td><td>Root mal apuntado en configuración</td><td>Corregir <code>appDir</code> en next.config</td></tr>
+      <tr><td>9</td><td><span class="badge b-grn">Frontend</span></td><td>Certificado no descargaba en modal de finalización</td><td>Endpoint incorrecto invocado directamente</td><td>Usar <code>certificadosApi.descargar(folio)</code> del cliente API</td></tr>
+      <tr><td>10</td><td><span class="badge b-grn">Frontend</span></td><td>Logo y sello del PDF desproporcionados</td><td>Coordenadas hardcodeadas sin escala</td><td>Ajustar dimensiones relativas en ReportLab</td></tr>
+      <tr><td>11</td><td><span class="badge b-grn">Frontend</span></td><td>Cursos desordenados en dashboard instructor</td><td>Sin <code>ORDER BY fecha_creacion</code></td><td>Reordenar lista en el componente</td></tr>
+      <tr><td>12</td><td><span class="badge b-grn">Frontend</span></td><td>Imagen de curso rompía layout si fallaba</td><td><code>&lt;img&gt;</code> sin dimensiones fallback</td><td>Agregar <code>onError</code> con imagen placeholder</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     4. COSTOS
+══════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Sección 04</div>
+  <h2>Costos — 300 Estudiantes</h2>
+
+  <div class="note">
+    <strong>Supuestos del escenario:</strong> 20 cursos activos · 10 videos por curso · <strong>duración promedio 15 min</strong> (rango real: 10–20 min) ·
+    40% de alumnos activos por mes · cada alumno activo consume ~2 h de video al mes.
+  </div>
+
+  <h3>Cálculo de Almacenamiento y Tráfico — Bunny.net</h3>
+  <table>
+    <thead><tr><th>Concepto</th><th>Cálculo</th><th>Resultado</th></tr></thead>
+    <tbody>
+      <tr><td>Videos totales</td><td>20 cursos × 10 videos</td><td>200 videos</td></tr>
+      <tr><td>Tamaño por video (15 min a 720p · ~1.5 Mbps)</td><td>15 min × 1.5 Mbps = 1,350 Mb ÷ 8</td><td>~169 MB/video</td></tr>
+      <tr><td><strong>Storage total</strong></td><td>200 × 169 MB</td><td><strong>~34 GB</strong></td></tr>
+      <tr><td>Costo storage Bunny.net</td><td>34 GB × $0.005/GB</td><td><strong>$0.17/mes</strong></td></tr>
+      <tr><td>Alumnos activos/mes</td><td>300 × 40%</td><td>120 alumnos</td></tr>
+      <tr><td>Tráfico CDN estimado</td><td>120 alumnos × 2 h × 675 MB/h</td><td><strong>~162 GB/mes</strong></td></tr>
+      <tr><td>Costo CDN zona LATAM</td><td>162 GB × $0.045/GB</td><td><strong>$7.29/mes</strong></td></tr>
+      <tr><td>Costo CDN zona US/EU (referencia)</td><td>162 GB × $0.010/GB</td><td>$1.62/mes</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Comparativa de Proveedores de Servidor</h3>
+  <table>
+    <thead><tr><th>Proveedor</th><th>Plan</th><th>vCPU</th><th>RAM</th><th>SSD</th><th>Costo/mes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Hetzner</strong> <span class="badge b-grn">Recomendado</span></td><td>CX31</td><td>2</td><td>8 GB</td><td>80 GB</td><td><strong>$10</strong></td></tr>
+      <tr><td>Contabo</td><td>VPS S</td><td>4</td><td>8 GB</td><td>200 GB</td><td>~$7</td></tr>
+      <tr><td>DigitalOcean</td><td>Basic 2/8 GB</td><td>2</td><td>8 GB</td><td>100 GB</td><td>$36</td></tr>
+      <tr><td>AWS EC2</td><td>t3.medium</td><td>2</td><td>4 GB</td><td>—</td><td>~$30</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Resumen Mensual — 300 Estudiantes</h3>
+  <div class="cost-table">
+    <div class="cost-row"><span class="label">VPS Hetzner CX31</span><span class="amount">$10.00</span></div>
+    <div class="cost-row"><span class="label">Backups VPS (20%)</span><span class="amount">$2.00</span></div>
+    <div class="cost-row"><span class="label">Bunny.net Storage (~34 GB · videos 10–20 min)</span><span class="amount">$0.17</span></div>
+    <div class="cost-row"><span class="label">Bunny.net CDN (~162 GB, zona LATAM)</span><span class="amount">$7.29</span></div>
+    <div class="cost-row"><span class="label">Dominio (.com / .mx)</span><span class="amount">$1.00</span></div>
+    <div class="cost-row"><span class="label">Email (Gmail) + Sentry — free tier</span><span class="amount free">$0.00</span></div>
+    <div class="cost-total">
+      <span>Total mensual — 300 estudiantes</span>
+      <span class="big">~$20–21/mes</span>
+    </div>
+    <div class="cost-per">
+      <span>Costo por estudiante</span>
+      <span>~$0.07 USD / alumno / mes</span>
+    </div>
+  </div>
+
+  <h3>Proyección de Escalabilidad</h3>
+  <div class="bar-wrap">
+    <div class="bar-row">
+      <div class="bar-key">300 alumnos</div>
+      <div class="bar-track"><div class="bar-fill" style="width:8%;background:#3D3D50;"></div></div>
+      <div class="bar-val">~$21/mes</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-key">600 alumnos</div>
+      <div class="bar-track"><div class="bar-fill" style="width:18%;background:#2DBBB3;"></div></div>
+      <div class="bar-val">~$35/mes</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-key">1,500 alumnos</div>
+      <div class="bar-track"><div class="bar-fill" style="width:38%;background:#2DBBB3;"></div></div>
+      <div class="bar-val">~$70/mes</div>
+    </div>
+    <div class="bar-row">
+      <div class="bar-key">5,000 alumnos</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%;background:#1A9E97;"></div></div>
+      <div class="bar-val">~$200/mes</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     5. BACKLOG
+══════════════════════════════════════════════════════════ -->
+<div class="page">
+  <div class="section-label">Sección 05</div>
+  <h2>Backlog</h2>
+
+  <h3>Funcionalidades Pendientes</h3>
+  <table>
+    <thead><tr><th>#</th><th>Feature</th><th>Prioridad</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Route Guards completos</td><td><span class="badge b-red">Alta</span></td><td>Validar rol en cada página con redirect. Hoy solo protege rutas superficialmente.</td></tr>
+      <tr><td>2</td><td>Notas por lección</td><td><span class="badge b-yel">Media</span></td><td>UI creada en <code>VideoControls</code>. Falta endpoint de persistencia en backend.</td></tr>
+      <tr><td>3</td><td>Comentarios de curso</td><td><span class="badge b-yel">Media</span></td><td>UI iniciada pero sin endpoint conectado.</td></tr>
+      <tr><td>4</td><td>Recuperación de contraseña</td><td><span class="badge b-yel">Media</span></td><td>Backend + SMTP listos. Falta flujo completo en frontend.</td></tr>
+      <tr><td>5</td><td>Verificación pública de certificado</td><td><span class="badge b-yel">Media</span></td><td><code>GET /certificados/verificar/{folio}</code> existe en backend. Falta página pública.</td></tr>
+      <tr><td>6</td><td>Admin: Solicitudes</td><td><span class="badge b-grn">Baja</span></td><td>Página sin caso de uso de negocio definido. Requiere definición de flujo.</td></tr>
+      <tr><td>7</td><td>Filtros avanzados catálogo</td><td><span class="badge b-grn">Baja</span></td><td>No todos los parámetros de filtrado conectados al backend.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Deuda Técnica</h3>
+  <table>
+    <thead><tr><th>#</th><th>Área</th><th>Descripción</th><th>Impacto</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Certificados</td><td>PDF regenerado en cada descarga. Sin caché del archivo generado.</td><td><span class="badge b-red">Perf</span></td></tr>
+      <tr><td>2</td><td>Media en producción</td><td><code>SERVE_MEDIA=true</code> por defecto. FastAPI sirve estáticos y satura workers.</td><td><span class="badge b-red">Perf</span></td></tr>
+      <tr><td>3</td><td>JWT en localStorage</td><td>Vulnerable a XSS. Migrar a <code>httpOnly</code> cookie.</td><td><span class="badge b-red">Seg</span></td></tr>
+      <tr><td>4</td><td>Tests</td><td>pytest instalado sin cobertura conocida. Sin tests en frontend.</td><td><span class="badge b-yel">Conf</span></td></tr>
+      <tr><td>5</td><td>Paginación frontend</td><td>API soporta paginación pero UI no la implementa completamente.</td><td><span class="badge b-yel">Esc</span></td></tr>
+      <tr><td>6</td><td>Error Boundaries</td><td>Creado pero no envuelve todas las páginas críticas.</td><td><span class="badge b-yel">UX</span></td></tr>
+      <tr><td>7</td><td>WEB_CONCURRENCY</td><td>Hardcodeado en docker-compose. Extraer a <code>.env</code>.</td><td><span class="badge b-grn">Ops</span></td></tr>
+    </tbody>
+  </table>
+
+  <h3>Mejoras de Infraestructura</h3>
+  <table>
+    <thead><tr><th>#</th><th>Mejora</th><th>Descripción</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>CDN para imágenes</td><td>Portadas servidas desde VPS. Migrar a Bunny.net Storage o Cloudflare para mejor latencia.</td></tr>
+      <tr><td>2</td><td>Backups de DB</td><td><code>pg_dump</code> automatizado con retención de 7 días fuera del VPS.</td></tr>
+      <tr><td>3</td><td>Seguridad Adminer</td><td>Expuesto en subdominio público. Restringir por IP o añadir autenticación básica adicional.</td></tr>
+      <tr><td>4</td><td>Restart policies</td><td>Agregar <code>restart: unless-stopped</code> a backend y frontend en docker-compose.</td></tr>
+      <tr><td>5</td><td>Alertas Sentry</td><td>DSN configurado sin reglas activas. Configurar notificaciones a email o Slack.</td></tr>
+    </tbody>
+  </table>
+</div>
+
+</body>
+</html>

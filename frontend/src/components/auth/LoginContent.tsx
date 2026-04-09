@@ -43,32 +43,56 @@ export default function LoginContent() {
         {/* Panel izquierdo - Brand */}
         <section className={styles.leftPanel}>
           <div className={styles.brandContainer}>
-            <div className={styles.brandIcon}>P</div>
-            <div className={styles.brandText}>Plataforma interna</div>
+            <div className={styles.brandIcon}>NG</div>
+            <div className={styles.brandText}>NEXTGEN Training</div>
           </div>
 
           <h1 className={styles.title}>
-            Inicia sesión<br />
-            y continúa aprendiendo
+            Potencia tu carrera,<br />
+            domina lo que sigue.
           </h1>
 
           <p className={styles.description}>
-            Accede a tu plataforma de capacitación empresarial. Retoma tus cursos en progreso,
-            descubre nuevas capacitaciones y desarrolla tus habilidades profesionales.
+            Accede a programas diseñados para profesionales que no se conforman con el promedio.
+            Aprende a tu ritmo, certifícate y crece.
           </p>
 
-          <div className={styles.features}>
-            <span className={styles.featureTag}>Cursos empresariales</span>
-            <span className={styles.featureTag}>Certificaciones</span>
-            <span className={styles.featureTag}>Aprende a tu ritmo</span>
+          <div className={styles.carouselWrapper}>
+            <div className={styles.carouselTrack}>
+              {[
+                'Liderazgo y Gestión de Equipos de Alto Rendimiento',
+                'Excel Avanzado para Análisis Financiero',
+                'Inteligencia Artificial Aplicada a los Negocios',
+                'Ventas Consultivas y Negociación Estratégica',
+                'Ciberseguridad Empresarial desde Cero',
+                'Gestión de Proyectos con Metodologías Ágiles',
+                'Marketing Digital y Estrategia en Redes Sociales',
+                'Logística y Cadena de Suministro Moderna',
+                'Comunicación Efectiva y Presentaciones de Impacto',
+                'Finanzas para No Financieros',
+              ].concat([
+                'Liderazgo y Gestión de Equipos de Alto Rendimiento',
+                'Excel Avanzado para Análisis Financiero',
+                'Inteligencia Artificial Aplicada a los Negocios',
+                'Ventas Consultivas y Negociación Estratégica',
+                'Ciberseguridad Empresarial desde Cero',
+                'Gestión de Proyectos con Metodologías Ágiles',
+                'Marketing Digital y Estrategia en Redes Sociales',
+                'Logística y Cadena de Suministro Moderna',
+                'Comunicación Efectiva y Presentaciones de Impacto',
+                'Finanzas para No Financieros',
+              ]).map((curso, i) => (
+                <span key={i} className={styles.carouselItem}>{curso}</span>
+              ))}
+            </div>
           </div>
         </section>
 
         {/* Panel derecho - Login Card */}
         <section className={styles.rightPanel}>
           <div className={styles.loginCard}>
-            <h2 className={styles.loginTitle}>Bienvenido</h2>
-            <p className={styles.loginSubtitle}>Ingresa tus credenciales para continuar.</p>
+            <h2 className={styles.loginTitle}>Tu siguiente nivel te espera</h2>
+            <p className={styles.loginSubtitle}>El conocimiento que transforma carreras, a tu ritmo.</p>
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>
@@ -135,9 +159,6 @@ export default function LoginContent() {
                   />
                   <span>Recordarme</span>
                 </label>
-                <button type="button" className={styles.forgotPassword}>
-                  ¿Olvidaste tu contraseña?
-                </button>
               </div>
 
               {error && (
@@ -151,12 +172,6 @@ export default function LoginContent() {
               </button>
             </form>
 
-            <p className={styles.registerText}>
-              ¿No tienes cuenta?{' '}
-              <button type="button" className={styles.registerLink}>
-                Regístrate aquí
-              </button>
-            </p>
           </div>
         </section>
       </main>
