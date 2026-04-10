@@ -14,7 +14,7 @@ interface ApiRecurso {
   url: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = '';
 
 interface ApiLeccion {
   id: string;

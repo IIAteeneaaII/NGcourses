@@ -22,7 +22,7 @@ interface ApiCurso {
   estado: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = '';
 
 type ActionType = 'publicar' | 'solicitar_cambios' | 'rechazar';
 

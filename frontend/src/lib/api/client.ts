@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+// Rutas relativas → proxeadas por Next.js rewrites a BACKEND_URL (server-side)
+const API_URL = '';
 
 export interface ApiError {
   detail: string;
