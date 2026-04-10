@@ -7,7 +7,7 @@ import { cursosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = '';
 
 interface ApiCurso {
   id: string;

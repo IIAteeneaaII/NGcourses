@@ -37,12 +37,31 @@ def send_email(
     html_content: str = "",
 ) -> None:
     assert settings.emails_enabled, "no provided configuration for email variables"
+
+    if settings.RESEND_API_KEY:
+        import resend
+        resend.api_key = settings.RESEND_API_KEY
+        from_addr = (
+            f"{settings.EMAILS_FROM_NAME} <{settings.EMAILS_FROM_EMAIL}>"
+            if settings.EMAILS_FROM_NAME
+            else str(settings.EMAILS_FROM_EMAIL)
+        )
+        response = resend.Emails.send({
+            "from": from_addr,
+            "to": [email_to],
+            "subject": subject,
+            "html": html_content,
+        })
+        logger.info(f"resend email result: {response}")
+        return
+
+    # Fallback: SMTP clásico
     message = emails.Message(
         subject=subject,
         html=html_content,
         mail_from=(settings.EMAILS_FROM_NAME, settings.EMAILS_FROM_EMAIL),
     )
-    smtp_options = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
+    smtp_options: dict = {"host": settings.SMTP_HOST, "port": settings.SMTP_PORT}
     if settings.SMTP_TLS:
         smtp_options["tls"] = True
     elif settings.SMTP_SSL:

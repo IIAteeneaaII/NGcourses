@@ -1,4 +1,5 @@
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? '';
+// Rutas relativas → proxeadas por Next.js rewrites a BACKEND_URL (server-side)
+const API_URL = '';
 
 export interface ApiError {
   detail: string;
@@ -41,10 +42,15 @@ class ApiClient {
     if (!response.ok) {
       let detail = 'Error desconocido';
       try {
-        const body = await response.json();
-        detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body);
+        const text = await response.text();
+        try {
+          const body = JSON.parse(text);
+          detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body);
+        } catch {
+          detail = text || detail;
+        }
       } catch {
-        detail = await response.text();
+        // ignorar error al leer body
       }
       const error: ApiError = { detail, status: response.status };
       throw error;
