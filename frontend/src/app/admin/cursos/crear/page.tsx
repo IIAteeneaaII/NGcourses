@@ -102,6 +102,8 @@ export default function CrearCursoPage() {
   // UI state
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [isAddingModule, setIsAddingModule] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -179,10 +181,13 @@ export default function CrearCursoPage() {
     }
     // Al avanzar desde step 2, subir portada si hay un archivo seleccionado
     if (currentStep === 2 && cursoId && coverFile) {
+      setIsUploadingCover(true);
       try {
         await cursosApi.uploadCover(cursoId, coverFile);
       } catch {
         // No bloqueamos el avance si falla la portada
+      } finally {
+        setIsUploadingCover(false);
       }
     }
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
@@ -195,6 +200,7 @@ export default function CrearCursoPage() {
   // Módulos
   const addModule = async () => {
     if (!cursoId) return;
+    setIsAddingModule(true);
     try {
       const resp = await cursosApi.createModulo(cursoId, {
         titulo: 'Nuevo módulo',
@@ -210,6 +216,8 @@ export default function CrearCursoPage() {
       }]);
     } catch {
       notify('error', 'Error al crear el módulo');
+    } finally {
+      setIsAddingModule(false);
     }
   };
 
@@ -774,11 +782,11 @@ export default function CrearCursoPage() {
                     </div>
                   ))}
 
-                  <button className={styles.addModuleButton} onClick={addModule}>
+                  <button className={styles.addModuleButton} onClick={addModule} disabled={isAddingModule}>
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M12 5v14M5 12h14" />
                     </svg>
-                    Agregar módulo
+                    {isAddingModule ? 'Creando módulo...' : 'Agregar módulo'}
                   </button>
                 </div>
               </div>
@@ -865,9 +873,9 @@ export default function CrearCursoPage() {
                 <button
                   className={styles.nextButton}
                   onClick={handleNext}
-                  disabled={!isStepComplete(currentStep) || isCreating}
+                  disabled={!isStepComplete(currentStep) || isCreating || isUploadingCover}
                 >
-                  {isCreating ? 'Creando borrador...' : 'Siguiente'}
+                  {isCreating ? 'Creando borrador...' : isUploadingCover ? 'Subiendo imagen...' : 'Siguiente'}
                 </button>
               ) : (
                 <>
