@@ -35,6 +35,11 @@ services:
     restart: always
     ports:
       - "80:3000"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
 
 volumes:
   media_data:
