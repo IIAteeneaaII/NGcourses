@@ -6,7 +6,7 @@ import type { CourseCard, User } from '@/types/course';
 import { cursosApi } from '@/lib/api/client';
 import { getCurrentUser } from '@/lib/auth';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+const API_URL = '';
 
 interface ApiCurso {
   id: string;
