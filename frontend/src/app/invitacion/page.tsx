@@ -1,10 +1,10 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
-import { invitacionesApi } from '@/lib/api/client';
+import { authApi, invitacionesApi, usersApi } from '@/lib/api/client';
 
 import styles from './page.module.css';
 
@@ -74,10 +74,24 @@ function IconCopy() {
 // ── Contenido ─────────────────────────────────────────────────────────────────
 
 function InvitacionContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
   const [estado, setEstado] = useState<Estado>({ type: 'loading' });
   const [copied, setCopied] = useState(false);
+  const [showPw, setShowPw] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+
+  // Estado onboarding
+  const [onboardingForm, setOnboardingForm] = useState({
+    full_name: '',
+    telefono: '',
+    new_password: '',
+    confirm_password: '',
+  });
+  const [onboardingSaving, setOnboardingSaving] = useState(false);
+  const [onboardingError, setOnboardingError] = useState('');
+  const [onboardingDone, setOnboardingDone] = useState(false);
 
   useEffect(() => {
     if (!token) { setEstado({ type: 'no_token' }); return; }
@@ -89,11 +103,69 @@ function InvitacionContent() {
       });
   }, [token]);
 
-  function copyPassword(pw: string) {
-    navigator.clipboard.writeText(pw).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
+  async function copyPassword(pw: string) {
+    try {
+      await navigator.clipboard.writeText(pw);
+    } catch {
+      // Fallback para cuando el documento no tiene foco
+      const el = document.createElement('textarea');
+      el.value = pw;
+      el.style.cssText = 'position:fixed;opacity:0;top:0;left:0';
+      document.body.appendChild(el);
+      el.focus();
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleOnboarding(e: React.FormEvent) {
+    e.preventDefault();
+    setOnboardingError('');
+
+    const { full_name, telefono, new_password, confirm_password } = onboardingForm;
+
+    if (!full_name.trim()) {
+      setOnboardingError('El nombre completo es requerido.');
+      return;
+    }
+    if (new_password.length < 8) {
+      setOnboardingError('La nueva contraseña debe tener al menos 8 caracteres.');
+      return;
+    }
+    if (new_password !== confirm_password) {
+      setOnboardingError('Las contraseñas no coinciden.');
+      return;
+    }
+
+    const data = (estado as { type: 'success'; data: CanjearResponse }).data;
+
+    setOnboardingSaving(true);
+    try {
+      // 1. Autenticar con contraseña temporal para obtener token
+      const { access_token } = await authApi.login(data.email, data.password_temporal!);
+      localStorage.setItem('access_token', access_token);
+
+      // 2. Actualizar nombre y teléfono
+      await usersApi.updateMe({
+        full_name: full_name.trim(),
+        telefono: telefono.trim() || null,
+      });
+
+      // 3. Cambiar contraseña temporal por la nueva
+      await usersApi.changePassword({
+        current_password: data.password_temporal!,
+        new_password,
+      });
+
+      setOnboardingDone(true);
+    } catch (err: any) {
+      setOnboardingError(err?.detail ?? 'Ocurrió un error. Intenta de nuevo.');
+    } finally {
+      setOnboardingSaving(false);
+    }
   }
 
   if (estado.type === 'loading') {
@@ -112,9 +184,11 @@ function InvitacionContent() {
   // ── Éxito / ya inscrito ───────────────────────────────────────────────────
   if (estado.type === 'success' || estado.type === 'already') {
     const { data } = estado;
+    const esNuevoUsuario = data.usuario_creado && data.password_temporal;
+
     return (
       <div className={styles.page}>
-        <div className={styles.card}>
+        <div className={`${styles.card} ${esNuevoUsuario ? styles.cardWide : ''}`}>
           <div className={styles.cardHeader}>
             <p className={styles.brand}>NGcourses</p>
             <div className={`${styles.iconWrap} ${styles.iconWrapSuccess}`}>
@@ -130,12 +204,15 @@ function InvitacionContent() {
             </p>
             <span className={styles.coursePill}>{data.curso_titulo}</span>
 
-            {data.usuario_creado && data.password_temporal && (
+            {esNuevoUsuario && !onboardingDone && (
               <div className={styles.passwordBox}>
                 <p className={styles.passwordLabel}>Tu nueva cuenta</p>
                 <p className={styles.passwordEmail}>
                   Cuenta creada con <strong>{data.email}</strong>
                 </p>
+                <div className={styles.passwordWarningBanner}>
+                  ⚠️ Guarda estos datos ahora — la contraseña <strong>NO</strong> se volverá a mostrar.
+                </div>
                 <div className={styles.passwordValue}>
                   <span className={styles.passwordText}>{data.password_temporal}</span>
                   <button
@@ -143,18 +220,109 @@ function InvitacionContent() {
                     onClick={() => copyPassword(data.password_temporal!)}
                     title="Copiar contraseña"
                   >
-                    <IconCopy />
+                    {copied ? <span style={{ fontSize: '0.75rem', fontWeight: 700 }}>✓</span> : <IconCopy />}
                   </button>
                 </div>
-                <p className={styles.passwordWarning}>
-                  {copied ? 'Copiado al portapapeles.' : 'Guarda esta contrasena — no se volvera a mostrar.'}
-                </p>
+                {copied && <p className={styles.passwordCopied}>¡Copiado al portapapeles!</p>}
               </div>
             )}
 
-            <Link href={`/curso/${data.curso_id}`} className={styles.primaryBtn}>
-              Acceder al curso
-            </Link>
+            {/* Formulario de onboarding solo para usuarios nuevos */}
+            {esNuevoUsuario && !onboardingDone && (
+              <div className={styles.onboardingSection}>
+                <h2 className={styles.onboardingTitle}>Completa tu perfil</h2>
+                <p className={styles.onboardingSubtitle}>
+                  Necesitamos tu nombre para emitir tu certificado al completar el curso.
+                </p>
+                <form onSubmit={handleOnboarding} className={styles.onboardingForm}>
+                  <div className={styles.onboardingField}>
+                    <label className={styles.onboardingLabel}>
+                      Nombre completo <span className={styles.required}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      className={styles.onboardingInput}
+                      placeholder="Ej. María García López"
+                      value={onboardingForm.full_name}
+                      onChange={(e) => setOnboardingForm((f) => ({ ...f, full_name: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.onboardingField}>
+                    <label className={styles.onboardingLabel}>Teléfono <span className={styles.optional}>(opcional)</span></label>
+                    <input
+                      type="tel"
+                      className={styles.onboardingInput}
+                      placeholder="+52 55 0000 0000"
+                      value={onboardingForm.telefono}
+                      onChange={(e) => setOnboardingForm((f) => ({ ...f, telefono: e.target.value }))}
+                    />
+                  </div>
+                  <div className={styles.onboardingField}>
+                    <label className={styles.onboardingLabel}>
+                      Nueva contraseña <span className={styles.required}>*</span>
+                    </label>
+                    <div className={styles.passwordInputWrap}>
+                      <input
+                        type={showPw ? 'text' : 'password'}
+                        required
+                        className={styles.onboardingInput}
+                        placeholder="Mínimo 8 caracteres"
+                        value={onboardingForm.new_password}
+                        onChange={(e) => setOnboardingForm((f) => ({ ...f, new_password: e.target.value }))}
+                      />
+                      <button type="button" className={styles.eyeBtn} onClick={() => setShowPw((v) => !v)}>
+                        {showPw ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+                  <div className={styles.onboardingField}>
+                    <label className={styles.onboardingLabel}>
+                      Confirmar contraseña <span className={styles.required}>*</span>
+                    </label>
+                    <div className={styles.passwordInputWrap}>
+                      <input
+                        type={showConfirm ? 'text' : 'password'}
+                        required
+                        className={styles.onboardingInput}
+                        placeholder="Repite la nueva contraseña"
+                        value={onboardingForm.confirm_password}
+                        onChange={(e) => setOnboardingForm((f) => ({ ...f, confirm_password: e.target.value }))}
+                      />
+                      <button type="button" className={styles.eyeBtn} onClick={() => setShowConfirm((v) => !v)}>
+                        {showConfirm ? '🙈' : '👁️'}
+                      </button>
+                    </div>
+                  </div>
+                  {onboardingError && (
+                    <p className={styles.onboardingError}>{onboardingError}</p>
+                  )}
+                  <button
+                    type="submit"
+                    className={styles.onboardingBtn}
+                    disabled={onboardingSaving}
+                  >
+                    {onboardingSaving ? 'Guardando...' : 'Guardar y acceder al curso →'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* Botón directo si no es usuario nuevo o ya completó onboarding */}
+            {(!esNuevoUsuario || onboardingDone) && (
+              onboardingDone ? (
+                <button
+                  className={styles.primaryBtn}
+                  onClick={() => router.push(`/curso/${data.curso_id}`)}
+                >
+                  Acceder al curso →
+                </button>
+              ) : (
+                <a href={`/curso/${data.curso_id}`} className={styles.primaryBtn}>
+                  Acceder al curso
+                </a>
+              )
+            )}
           </div>
         </div>
       </div>
@@ -192,13 +360,8 @@ function InvitacionContent() {
 export default function InvitacionPage() {
   return (
     <Suspense fallback={
-      <div className={styles.page}>
-        <div className={styles.card}>
-          <div className={styles.spinnerWrap}>
-            <span className={styles.spinner} />
-            <span className={styles.spinnerText}>Cargando...</span>
-          </div>
-        </div>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span>Cargando...</span>
       </div>
     }>
       <InvitacionContent />
