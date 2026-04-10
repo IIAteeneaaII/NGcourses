@@ -1,10 +1,26 @@
 import type { NextConfig } from "next";
 import path from "path";
 
+// BACKEND_URL solo se usa en el servidor de Next.js (no se expone al cliente)
+// En develop: apunta al backend de AWS para el proxy local sin CORS
+const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
+
 const nextConfig: NextConfig = {
   allowedDevOrigins: ['*.loca.lt'],
   turbopack: {
     root: path.resolve(__dirname, ".."),
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${BACKEND_URL}/api/:path*`,
+      },
+      {
+        source: '/media/:path*',
+        destination: `${BACKEND_URL}/media/:path*`,
+      },
+    ];
   },
   images: {
     remotePatterns: [
