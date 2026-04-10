@@ -18,7 +18,17 @@ async function handler(
   });
 
   const hasBody = req.method !== 'GET' && req.method !== 'HEAD';
-  const body = hasBody ? await req.text() : undefined;
+  const contentType = req.headers.get('content-type') ?? '';
+  // Para multipart (uploads de archivo) conservar datos binarios con blob;
+  // para JSON y form-urlencoded usar texto plano.
+  let body: string | Blob | undefined;
+  if (!hasBody) {
+    body = undefined;
+  } else if (contentType.includes('multipart/form-data')) {
+    body = await req.blob();
+  } else {
+    body = await req.text();
+  }
 
   // No seguir redirects automáticamente — el backend redirige POST con 307
   // y Node.js pierde el body al seguirlo. Lo manejamos manualmente.

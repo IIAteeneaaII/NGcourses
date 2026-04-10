@@ -26,6 +26,7 @@ interface ApiCurso {
   titulo: string;
   instructor_id: string;
   duracion_seg: number;
+  portada_url?: string | null;
   modulos?: ApiModulo[];
 }
 
@@ -79,7 +80,7 @@ export default function MisCursosPage() {
             title: curso?.titulo || 'Curso',
             instructor: '',
             lessonsCount: curso?.modulos?.reduce((acc, m) => acc + m.lecciones.length, 0) ?? 0,
-            image: '/placeholder-course.jpg',
+            image: curso?.portada_url ?? '/placeholder-course.jpg',
             status: isCompleted ? 'completed' : 'in_progress',
             progress: isCompleted ? 100 : undefined,
             completedDate: isCompleted ? insc.inscrito_en.slice(0, 10) : undefined,
