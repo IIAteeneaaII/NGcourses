@@ -900,6 +900,24 @@ def delete_invitacion(*, session: Session, invitacion_id: uuid.UUID) -> None:
         session.commit()
 
 
+def reenviar_invitacion(
+    *, session: Session, invitacion_id: uuid.UUID
+) -> tuple[Any, str]:
+    """Genera un nuevo token y reinicia la expiración de una invitación existente.
+    Retorna (invitacion, raw_token)."""
+    import hashlib
+    import secrets
+
+    inv = get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    raw_token = secrets.token_urlsafe(32)
+    inv.token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    inv.expira_en = datetime.utcnow() + timedelta(days=INVITACION_EXPIRACION_DIAS)
+    session.add(inv)
+    session.commit()
+    session.refresh(inv)
+    return inv, raw_token
+
+
 def get_or_create_user_by_email(
     *, session: Session, email: str
 ) -> tuple[User, bool, str | None]:

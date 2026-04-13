@@ -43,6 +43,8 @@ export default function InvitacionesPage() {
   const [invitaciones, setInvitaciones] = useState<CourseInvitation[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
+  const [reenvying, setReenvying] = useState<string | null>(null);
+  const [reenvioMsg, setReenvioMsg] = useState<{ id: string; ok: boolean; text: string } | null>(null);
 
   const loadInvitaciones = useCallback(async () => {
     setLoadingList(true);
@@ -87,6 +89,21 @@ export default function InvitacionesPage() {
       setResultados([{ email: 'Error al enviar', estado: 'error', detalle }]);
     } finally {
       setSending(false);
+    }
+  }
+
+  async function handleReenviar(id: string) {
+    setReenvying(id);
+    setReenvioMsg(null);
+    try {
+      await invitacionesApi.reenviar(id);
+      setReenvioMsg({ id, ok: true, text: 'Invitación reenviada' });
+      await loadInvitaciones();
+    } catch {
+      setReenvioMsg({ id, ok: false, text: 'Error al reenviar' });
+    } finally {
+      setReenvying(null);
+      setTimeout(() => setReenvioMsg(null), 3000);
     }
   }
 
@@ -194,13 +211,27 @@ export default function InvitacionesPage() {
                     <td>{formatDate(inv.creado_en)}</td>
                     <td>{formatDate(inv.expira_en)}</td>
                     <td>
-                      <button
-                        className={styles.revocarBtn}
-                        disabled={inv.estado !== 'pendiente' || revoking === inv.id}
-                        onClick={() => handleRevocar(inv.id)}
-                      >
-                        {revoking === inv.id ? '...' : 'Revocar'}
-                      </button>
+                      <div className={styles.actionCell}>
+                        <button
+                          className={styles.reenviarBtn}
+                          disabled={inv.estado === 'usada' || reenvying === inv.id}
+                          onClick={() => handleReenviar(inv.id)}
+                          title={inv.estado === 'usada' ? 'No se puede reenviar una invitación ya usada' : 'Reenviar invitación'}
+                        >
+                          {reenvying === inv.id
+                            ? '...'
+                            : reenvioMsg?.id === inv.id
+                              ? (reenvioMsg.ok ? '✓' : '✗')
+                              : 'Reenviar'}
+                        </button>
+                        <button
+                          className={styles.revocarBtn}
+                          disabled={inv.estado !== 'pendiente' || revoking === inv.id}
+                          onClick={() => handleRevocar(inv.id)}
+                        >
+                          {revoking === inv.id ? '...' : 'Revocar'}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

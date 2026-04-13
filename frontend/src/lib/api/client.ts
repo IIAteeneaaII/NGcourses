@@ -292,6 +292,8 @@ export const invitacionesApi = {
     apiClient.delete(`/api/v1/invitaciones/${id}`),
   canjear: (token: string) =>
     apiClient.post('/api/v1/invitaciones/canjear', { token }),
+  reenviar: (id: string) =>
+    apiClient.post(`/api/v1/invitaciones/${id}/reenviar`, {}),
 };
 
 export const quizApi = {
