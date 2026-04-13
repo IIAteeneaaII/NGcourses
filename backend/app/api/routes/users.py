@@ -6,9 +6,10 @@ from sqlmodel import col, delete, func, select
 
 from app import crud
 from app.api.deps import (
+    AdminOrSuperuser,
     CurrentUser,
     SessionDep,
-    get_current_active_superuser,
+    require_admin_or_superuser,
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
@@ -32,7 +33,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 
 @router.get(
     "/",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
     response_model=UsersPublic,
 )
 def read_users(
@@ -67,13 +68,18 @@ def read_users(
     return UsersPublic(data=users, count=count)
 
 
-@router.post(
-    "/", dependencies=[Depends(get_current_active_superuser)], response_model=UserPublic
-)
-def create_user(*, session: SessionDep, user_in: UserCreate) -> Any:
+@router.post("/", response_model=UserPublic)
+def create_user(*, session: SessionDep, user_in: UserCreate, current_user: AdminOrSuperuser) -> Any:
     """
     Create new user.
     """
+    # Evitar escalada de privilegios: solo un superusuario puede crear otros superusuarios
+    if not current_user.is_superuser and user_in.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo el superusuario puede crear otros superusuarios",
+        )
+
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -184,7 +190,7 @@ def read_user_by_id(
     user = session.get(User, user_id)
     if user == current_user:
         return user
-    if not current_user.is_superuser:
+    if not current_user.is_superuser and current_user.rol != RolUsuario.ADMINISTRADOR:
         raise HTTPException(
             status_code=403,
             detail="The user doesn't have enough privileges",
@@ -194,7 +200,7 @@ def read_user_by_id(
 
 @router.patch(
     "/{user_id}",
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
     response_model=UserPublic,
 )
 def update_user(
@@ -224,7 +230,7 @@ def update_user(
     return db_user
 
 
-@router.delete("/{user_id}", dependencies=[Depends(get_current_active_superuser)])
+@router.delete("/{user_id}", dependencies=[Depends(require_admin_or_superuser)])
 def delete_user(
     session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
 ) -> Message:
