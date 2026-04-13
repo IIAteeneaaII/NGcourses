@@ -1,19 +1,8 @@
 import type { NextConfig } from "next";
 
-// BACKEND_URL solo se usa en el servidor de Next.js (no se expone al cliente)
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
-
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
   allowedDevOrigins: ['*.loca.lt', '192.168.202.42'],
-  async rewrites() {
-    return [
-      {
-        source: '/media/:path*',
-        destination: `${BACKEND_URL}/media/:path*`,
-      },
-    ];
-  },
   images: {
     remotePatterns: [
       {
