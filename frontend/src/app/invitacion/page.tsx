@@ -308,20 +308,29 @@ function InvitacionContent() {
               </div>
             )}
 
-            {/* Botón directo si no es usuario nuevo o ya completó onboarding */}
-            {(!esNuevoUsuario || onboardingDone) && (
-              onboardingDone ? (
+            {/* Usuario nuevo: botón después de completar onboarding */}
+            {esNuevoUsuario && onboardingDone && (
+              <button
+                className={styles.primaryBtn}
+                onClick={() => router.push(`/curso/${data.curso_id}`)}
+              >
+                Acceder al curso →
+              </button>
+            )}
+
+            {/* Cuenta existente: pedir que inicie sesión (no tocar localStorage/cookies) */}
+            {!esNuevoUsuario && (
+              <div className={styles.loginPrompt}>
+                <p className={styles.loginPromptText}>
+                  Tu cuenta ya existe. Inicia sesión para acceder al curso.
+                </p>
                 <button
                   className={styles.primaryBtn}
-                  onClick={() => router.push(`/curso/${data.curso_id}`)}
+                  onClick={() => router.push('/')}
                 >
-                  Acceder al curso →
+                  Ir al inicio de sesión →
                 </button>
-              ) : (
-                <a href={`/curso/${data.curso_id}`} className={styles.primaryBtn}>
-                  Acceder al curso
-                </a>
-              )
+              </div>
             )}
           </div>
         </div>

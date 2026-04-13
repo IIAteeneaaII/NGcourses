@@ -180,6 +180,30 @@
 .badgeUsada { background: #dcfce7; color: #15803d; }
 .badgeExpirada { background: #f1f5f9; color: #64748b; }
 
+/* ── Celda de acciones ─────────────────────────────────────────────── */
+.actionCell {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+/* ── Botón reenviar ────────────────────────────────────────────────── */
+.reenviarBtn {
+  padding: 0.35rem 0.875rem;
+  background: #dbeafe;
+  color: #1d4ed8;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+  white-space: nowrap;
+}
+.reenviarBtn:hover:not(:disabled) { background: #bfdbfe; }
+.reenviarBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
 /* ── Botón revocar ─────────────────────────────────────────────────── */
 .revocarBtn {
   padding: 0.35rem 0.875rem;
@@ -191,6 +215,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: background 0.2s;
+  white-space: nowrap;
 }
 .revocarBtn:hover:not(:disabled) { background: #fecaca; }
 .revocarBtn:disabled { opacity: 0.4; cursor: not-allowed; }

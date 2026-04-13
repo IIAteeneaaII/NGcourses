@@ -227,6 +227,45 @@ def listar_invitaciones_curso(
     )
 
 
+@router.post("/{invitacion_id}/reenviar", response_model=InvitacionEnvioResultado)
+def reenviar_invitacion(
+    *,
+    invitacion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: AdminOrSuperuser,
+) -> Any:
+    """Reenvía el email de invitación generando un nuevo token. Funciona para
+    invitaciones pendientes o expiradas. No permite reenviar invitaciones ya usadas."""
+    inv = crud.get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if inv.usado_en is not None:
+        raise HTTPException(
+            status_code=409, detail="No se puede reenviar una invitación ya utilizada"
+        )
+
+    db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
+    curso_titulo = db_curso.titulo if db_curso else ""
+
+    inv, raw_token = crud.reenviar_invitacion(session=session, invitacion_id=invitacion_id)
+
+    if settings.emails_enabled:
+        from app.utils import generate_invitation_email, send_email
+        email_data = generate_invitation_email(
+            email_to=inv.email,
+            curso_titulo=curso_titulo,
+            token=raw_token,
+            password_temporal=None,
+        )
+        send_email(
+            email_to=inv.email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
+    return InvitacionEnvioResultado(email=inv.email, estado="enviada")
+
+
 @router.delete("/{invitacion_id}", status_code=204)
 def revocar_invitacion(
     *,
