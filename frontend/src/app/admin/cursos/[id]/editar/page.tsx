@@ -118,6 +118,8 @@ export default function EditarCursoAdminPage() {
   const [marca, setMarca] = useState<'ram' | 'nextgen'>('ram');
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [saveError, setSaveError] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [cursoEstado, setCursoEstado] = useState<string>('borrador');
@@ -216,14 +218,6 @@ export default function EditarCursoAdminPage() {
       }
       return;
     }
-    if (currentStep === 2 && coverFile) {
-      try {
-        await cursosApi.uploadCover(cursoId, coverFile);
-      } catch (e) {
-        notify('error', 'No se pudo guardar la portada');
-        logError('admin/cursos/editar/uploadCover', e);
-      }
-    }
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
   };
 
@@ -234,14 +228,6 @@ export default function EditarCursoAdminPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      if (coverFile) {
-        try {
-          await cursosApi.uploadCover(cursoId, coverFile);
-        } catch (e) {
-          notify('error', 'No se pudo guardar la portada');
-          logError('admin/cursos/editar/uploadCover', e);
-        }
-      }
       await cursosApi.update(cursoId, { titulo: title, descripcion: description });
       router.push('/admin/cursos');
     } catch {
@@ -416,13 +402,26 @@ export default function EditarCursoAdminPage() {
     }
   }, [cursoId]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setCoverFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setCoverImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    setCoverFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setCoverImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    setIsUploadingCover(true);
+    setCoverUploadStatus('uploading');
+    try {
+      await cursosApi.uploadCover(cursoId, file);
+      setCoverUploadStatus('success');
+      notify('success', '¡Imagen cargada exitosamente!');
+    } catch (e) {
+      setCoverUploadStatus('error');
+      logError('admin/cursos/editar/uploadCover', e);
+      notify('error', 'No se pudo subir la imagen. Intenta de nuevo.');
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -608,12 +607,27 @@ export default function EditarCursoAdminPage() {
                   {coverImagePreview ? (
                     <div className={styles.imagePreview}>
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); }}>
+                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); setCoverUploadStatus('idle'); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                         </svg>
                         Cambiar imagen
                       </button>
+                      {coverUploadStatus === 'uploading' && (
+                        <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ⏳ Subiendo imagen al servidor...
+                        </p>
+                      )}
+                      {coverUploadStatus === 'success' && (
+                        <p style={{ marginTop: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ✓ Imagen guardada correctamente
+                        </p>
+                      )}
+                      {coverUploadStatus === 'error' && (
+                        <p style={{ marginTop: '0.5rem', color: '#dc2626', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ✗ Error al subir. Selecciona la imagen de nuevo para reintentar.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <label className={styles.uploadLabel}>
@@ -882,7 +896,7 @@ export default function EditarCursoAdminPage() {
                 <button
                   className={styles.nextButton}
                   onClick={handleNext}
-                  disabled={!isStepComplete(currentStep) || isSaving}
+                  disabled={!isStepComplete(currentStep) || isSaving || isUploadingCover}
                 >
                   {isSaving ? 'Guardando...' : 'Siguiente'}
                 </button>

@@ -103,6 +103,7 @@ export default function CrearCursoPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
   const [isUploadingCover, setIsUploadingCover] = useState(false);
+  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
@@ -178,17 +179,6 @@ export default function CrearCursoPage() {
         setIsCreating(false);
       }
       return;
-    }
-    // Al avanzar desde step 2, subir portada si hay un archivo seleccionado
-    if (currentStep === 2 && cursoId && coverFile) {
-      setIsUploadingCover(true);
-      try {
-        await cursosApi.uploadCover(cursoId, coverFile);
-      } catch {
-        // No bloqueamos el avance si falla la portada
-      } finally {
-        setIsUploadingCover(false);
-      }
     }
     if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
   };
@@ -355,13 +345,27 @@ export default function CrearCursoPage() {
     }
   }, [cursoId]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setCoverFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setCoverImagePreview(reader.result as string);
-      reader.readAsDataURL(file);
+    if (!file) return;
+    setCoverFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setCoverImagePreview(reader.result as string);
+    reader.readAsDataURL(file);
+
+    if (!cursoId) return;
+    setIsUploadingCover(true);
+    setCoverUploadStatus('uploading');
+    try {
+      await cursosApi.uploadCover(cursoId, file);
+      setCoverUploadStatus('success');
+      notify('success', '¡Imagen cargada exitosamente!');
+    } catch (e) {
+      setCoverUploadStatus('error');
+      logError('admin/cursos/crear/uploadCover', e);
+      notify('error', 'No se pudo subir la imagen. Intenta de nuevo.');
+    } finally {
+      setIsUploadingCover(false);
     }
   };
 
@@ -585,12 +589,27 @@ export default function CrearCursoPage() {
                     <div className={styles.imagePreview}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); }}>
+                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); setCoverUploadStatus('idle'); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                         </svg>
                         Eliminar imagen
                       </button>
+                      {coverUploadStatus === 'uploading' && (
+                        <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ⏳ Subiendo imagen al servidor...
+                        </p>
+                      )}
+                      {coverUploadStatus === 'success' && (
+                        <p style={{ marginTop: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ✓ Imagen guardada correctamente
+                        </p>
+                      )}
+                      {coverUploadStatus === 'error' && (
+                        <p style={{ marginTop: '0.5rem', color: '#dc2626', fontSize: '0.875rem', fontWeight: 500 }}>
+                          ✗ Error al subir. Selecciona la imagen de nuevo para reintentar.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <label className={styles.uploadLabel}>
@@ -873,9 +892,9 @@ export default function CrearCursoPage() {
                 <button
                   className={styles.nextButton}
                   onClick={handleNext}
-                  disabled={!isStepComplete(currentStep) || isCreating || isUploadingCover}
+                  disabled={!isStepComplete(currentStep) || isCreating || isUploadingCover || coverUploadStatus === 'uploading'}
                 >
-                  {isCreating ? 'Creando borrador...' : isUploadingCover ? 'Subiendo imagen...' : 'Siguiente'}
+                  {isCreating ? 'Creando borrador...' : 'Siguiente'}
                 </button>
               ) : (
                 <>

@@ -20,8 +20,11 @@ def db() -> Generator[Session, None, None]:
         statement = delete(Item)
         session.execute(statement)
         statement = delete(User)
-        session.execute(statement)
-        session.commit()
+        try:
+            session.execute(statement)
+            session.commit()
+        except Exception:
+            session.rollback()
 
 
 @pytest.fixture(scope="module")
