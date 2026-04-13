@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import SQLModel
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import CurrentUser, SessionDep, require_admin_or_superuser
 from app.models._enums import RolUsuario
 from app.models.contenido import EtiquetaCreate, EtiquetaPublic, EtiquetaUpdate
 from app.models.schemas import Message
@@ -26,7 +26,7 @@ def list_etiquetas(session: SessionDep, current_user: CurrentUser) -> Any:
     "/etiquetas/",
     response_model=EtiquetaPublic,
     status_code=201,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def create_etiqueta(*, session: SessionDep, etiqueta_in: EtiquetaCreate) -> Any:
     """Crea una etiqueta. Solo admins."""
@@ -36,7 +36,7 @@ def create_etiqueta(*, session: SessionDep, etiqueta_in: EtiquetaCreate) -> Any:
 @router.patch(
     "/etiquetas/{etiqueta_id}",
     response_model=EtiquetaPublic,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def update_etiqueta(
     *, etiqueta_id: uuid.UUID, session: SessionDep, etiqueta_in: EtiquetaUpdate
@@ -50,7 +50,7 @@ def update_etiqueta(
 @router.delete(
     "/etiquetas/{etiqueta_id}",
     response_model=Message,
-    dependencies=[Depends(get_current_active_superuser)],
+    dependencies=[Depends(require_admin_or_superuser)],
 )
 def delete_etiqueta(*, etiqueta_id: uuid.UUID, session: SessionDep) -> Any:
     db = crud.get_etiqueta(session=session, etiqueta_id=etiqueta_id)
