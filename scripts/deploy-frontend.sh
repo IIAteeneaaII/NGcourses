@@ -1,43 +1,61 @@
 #!/usr/bin/env bash
-# deploy-frontend.sh — Deploy rápido del frontend al servidor de producción
-# Uso: ./scripts/deploy-frontend.sh <usuario> <ip_servidor> [ruta_proyecto]
-# Ejemplo: ./scripts/deploy-frontend.sh ubuntu 44.250.178.54 /home/ubuntu/NGcourses
+# deploy-frontend.sh — Build, push a ECR y deploy al servidor
+# Uso: ./scripts/deploy-frontend.sh
+# Requiere: AWS CLI configurado, Docker corriendo, acceso SSH con ngcourses-key.pem
 
 set -euo pipefail
 
-SERVER_USER="${1:?Falta usuario SSH. Uso: $0 <usuario> <ip> [ruta]}"
-SERVER_IP="${2:?Falta IP del servidor. Uso: $0 <usuario> <ip> [ruta]}"
-PROJECT_PATH="${3:-/home/${SERVER_USER}/NGcourses}"
+AWS_REGION="us-west-2"
+AWS_ACCOUNT="314679576825"
+ECR_REPO="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/ngcourses-frontend"
+IMAGE_TAG="latest"
+SERVER="ec2-user@44.250.178.54"
+SSH_KEY="/c/Users/admin/ngcourses-key.pem"
+SSH_OPTS="-i ${SSH_KEY} -o StrictHostKeyChecking=no"
 
-echo "==> Haciendo push de los cambios locales..."
-git push
+echo "================================================"
+echo " Deploy Frontend — NGcourses"
+echo "================================================"
 
+# 1. Login a ECR
 echo ""
-echo "==> Conectando al servidor ${SERVER_USER}@${SERVER_IP}..."
-echo "    Proyecto en: ${PROJECT_PATH}"
-echo ""
+echo "[1/4] Login a ECR..."
+aws ecr get-login-password --region "$AWS_REGION" \
+  | docker login --username AWS --password-stdin "${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com"
 
-ssh -t "${SERVER_USER}@${SERVER_IP}" bash <<REMOTE
+# 2. Build imagen
+echo ""
+echo "[2/4] Buildeando imagen del frontend..."
+docker build -t "${ECR_REPO}:${IMAGE_TAG}" ./frontend
+
+# 3. Push a ECR
+echo ""
+echo "[3/4] Subiendo imagen a ECR..."
+docker push "${ECR_REPO}:${IMAGE_TAG}"
+
+# 4. Deploy en servidor
+echo ""
+echo "[4/4] Desplegando en el servidor..."
+ssh $SSH_OPTS "$SERVER" bash <<'REMOTE'
 set -euo pipefail
+cd ~
 
-cd "${PROJECT_PATH}"
+echo "  Login a ECR..."
+aws ecr get-login-password --region us-west-2 \
+  | docker login --username AWS --password-stdin 314679576825.dkr.ecr.us-west-2.amazonaws.com 2>&1 | grep -v WARNING
 
-echo "--- [1/3] Pulling últimos cambios de git..."
-git pull
+echo "  Pulling nueva imagen..."
+docker-compose -f docker-compose.prod.yml pull frontend
 
-echo ""
-echo "--- [2/3] Rebuildeando imagen del frontend..."
-docker compose -f docker-compose.prod.yml -f docker-compose.prod-build.yml build frontend
+echo "  Reiniciando contenedor..."
+docker-compose -f docker-compose.prod.yml up -d frontend
 
-echo ""
-echo "--- [3/3] Reiniciando contenedor del frontend..."
-docker compose -f docker-compose.prod.yml -f docker-compose.prod-build.yml up -d frontend
-
-echo ""
-echo "--- Verificando estado..."
+echo "  Verificando..."
 sleep 3
-docker compose -f docker-compose.prod.yml ps frontend
+docker-compose -f docker-compose.prod.yml ps
+REMOTE
 
 echo ""
-echo "✓ Deploy completado."
-REMOTE
+echo "================================================"
+echo " ✓ Deploy completado exitosamente"
+echo "================================================"
