@@ -6,7 +6,7 @@ import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
 
 const CAROUSEL_COURSES = [
-  'Paquetería Excell',
+  'Paquetería Excel',
   'Modelado 3D',
   'Capacitación Interna',
   'Fusionado de Fibra Óptica',

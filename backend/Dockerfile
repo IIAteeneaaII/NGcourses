@@ -30,6 +30,8 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 ENV PYTHONPATH=/app
 
 COPY ./scripts /app/scripts
+# Fix CRLF line endings (Windows hosts may check out scripts with \r\n)
+RUN sed -i 's/\r$//' /app/scripts/*.sh && chmod +x /app/scripts/*.sh
 
 COPY ./pyproject.toml ./uv.lock ./alembic.ini /app/
 
