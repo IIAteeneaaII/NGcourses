@@ -10,12 +10,7 @@ const CAROUSEL_COURSES = [
   'Modelado 3D',
   'Capacitación Interna',
   'Fusionado de Fibra Óptica',
-  'Ponchado de cable ethernet',
-  'Liderazgo y Gestión de Equipos de Alto Rendimiento',
-  'Excel Avanzado para Análisis Financiero',
-  'Inteligencia Artificial Aplicada a los Negocios',
-  'Comunicación Efectiva y Presentaciones de Impacto',
-  'Finanzas para No Financieros',
+  'Ponchado de cable ethernet'
 ];
 
 export default function LoginContent() {
@@ -57,12 +52,14 @@ export default function LoginContent() {
         <section className={styles.leftPanel}>
           <div className={styles.brandContainer}>
             <div className={styles.brandIcon}>NG</div>
-            <div className={styles.title}>NEXT GEN</div>
-            <div className={styles.titleB}>Course</div>
+            <h1 className={styles.mainTitle}>
+              <span className={styles.titleBold}>NEXT GEN</span>{' '}
+              <span className={styles.titleLight}>Course</span>
+            </h1>
           </div>
 
           <p className={styles.titleTagline}>
-            Potencia tu carrera,<br />domina lo que sigue.
+            Potencia tu carrera, domina lo que sigue.
           </p>
           <br />
 
