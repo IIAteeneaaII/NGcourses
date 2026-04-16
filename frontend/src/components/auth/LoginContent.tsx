@@ -5,6 +5,14 @@ import { useRouter } from 'next/navigation';
 import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
 
+const CAROUSEL_COURSES = [
+  'Paquetería Excel',
+  'Modelado 3D',
+  'Capacitación Interna',
+  'Fusionado de Fibra Óptica',
+  'Ponchado de cable ethernet'
+];
+
 export default function LoginContent() {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -44,44 +52,26 @@ export default function LoginContent() {
         <section className={styles.leftPanel}>
           <div className={styles.brandContainer}>
             <div className={styles.brandIcon}>NG</div>
-            <div className={styles.brandText}>NEXTGEN Training</div>
+            <h1 className={styles.mainTitle}>
+              <span className={styles.titleBold}>NEXT GEN</span>{' '}
+              <span className={styles.titleLight}>Course</span>
+            </h1>
           </div>
 
-          <h1 className={styles.title}>
-            Potencia tu carrera,<br />
-            domina lo que sigue.
-          </h1>
+          <p className={styles.titleTagline}>
+            Potencia tu carrera, domina lo que sigue.
+          </p>
+          <br />
 
           <p className={styles.description}>
             Accede a programas diseñados para profesionales que no se conforman con el promedio.
             Aprende a tu ritmo, certifícate y crece.
           </p>
+          <br />
 
           <div className={styles.carouselWrapper}>
             <div className={styles.carouselTrack}>
-              {[
-                'Liderazgo y Gestión de Equipos de Alto Rendimiento',
-                'Excel Avanzado para Análisis Financiero',
-                'Inteligencia Artificial Aplicada a los Negocios',
-                'Ventas Consultivas y Negociación Estratégica',
-                'Ciberseguridad Empresarial desde Cero',
-                'Gestión de Proyectos con Metodologías Ágiles',
-                'Marketing Digital y Estrategia en Redes Sociales',
-                'Logística y Cadena de Suministro Moderna',
-                'Comunicación Efectiva y Presentaciones de Impacto',
-                'Finanzas para No Financieros',
-              ].concat([
-                'Liderazgo y Gestión de Equipos de Alto Rendimiento',
-                'Excel Avanzado para Análisis Financiero',
-                'Inteligencia Artificial Aplicada a los Negocios',
-                'Ventas Consultivas y Negociación Estratégica',
-                'Ciberseguridad Empresarial desde Cero',
-                'Gestión de Proyectos con Metodologías Ágiles',
-                'Marketing Digital y Estrategia en Redes Sociales',
-                'Logística y Cadena de Suministro Moderna',
-                'Comunicación Efectiva y Presentaciones de Impacto',
-                'Finanzas para No Financieros',
-              ]).map((curso, i) => (
+              {[...CAROUSEL_COURSES, ...CAROUSEL_COURSES].map((curso, i) => (
                 <span key={i} className={styles.carouselItem}>{curso}</span>
               ))}
             </div>
@@ -162,7 +152,7 @@ export default function LoginContent() {
               </div>
 
               {error && (
-                <p style={{ color: 'var(--color-accent-10)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
+                <p style={{ color: 'var(--color-error)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
                   {error}
                 </p>
               )}
