@@ -208,6 +208,20 @@
   color: var(--color-secondary-30);
 }
 
+/* Section Title (usado para agrupar por organización / NextGen) */
+.sectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin: 2rem 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--color-accent-10);
+}
+
+.sectionTitle:first-child {
+  margin-top: 1rem;
+}
+
 /* Courses Grid */
 .coursesGrid {
   display: grid;

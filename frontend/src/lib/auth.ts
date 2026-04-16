@@ -2,13 +2,20 @@
 
 import { apiClient } from './api/client';
 
+export interface OrganizacionInfo {
+  id: string;
+  nombre: string;
+  rol_org: string;
+}
+
 export interface AuthUser {
   id: string;
   email: string;
   full_name: string | null;
-  rol: 'estudiante' | 'instructor' | 'usuario_control' | 'administrador';
+  rol: 'estudiante' | 'instructor' | 'supervisor' | 'usuario_control' | 'administrador';
   is_superuser: boolean;
   is_active: boolean;
+  organizacion?: OrganizacionInfo | null;
 }
 
 const TOKEN_KEY = 'access_token';

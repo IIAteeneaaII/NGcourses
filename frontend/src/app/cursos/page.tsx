@@ -15,6 +15,7 @@ interface ApiCurso {
   calificacion_prom: number;
   descripcion: string | null;
   portada_url: string | null;
+  marca?: 'RAM' | 'NEXTGEN';
 }
 
 interface ApiResponse {
@@ -27,6 +28,7 @@ const FALLBACK_USER: User = { id: '1', name: 'Usuario', initials: 'U' };
 export default function CursosPage() {
   const [courses, setCourses] = useState<CourseCard[]>([]);
   const [user, setUser] = useState<User>(FALLBACK_USER);
+  const [orgName, setOrgName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,6 +46,7 @@ export default function CursosPage() {
             name: u.full_name || u.email,
             initials: (u.full_name || u.email).slice(0, 2).toUpperCase(),
           });
+          if (u.organizacion?.nombre) setOrgName(u.organizacion.nombre);
         }
 
         if (resp.status === 'fulfilled') {
@@ -54,6 +57,7 @@ export default function CursosPage() {
             level: 'Intermedio',
             rating: c.calificacion_prom || 0,
             image: c.portada_url ? `${API_URL}${c.portada_url}` : '/placeholder-course.jpg',
+            marca: c.marca,
           }));
           setCourses(cards);
         }
@@ -75,5 +79,5 @@ export default function CursosPage() {
     );
   }
 
-  return <CoursesContent courses={courses} user={user} />;
+  return <CoursesContent courses={courses} user={user} orgName={orgName} />;
 }
