@@ -90,3 +90,23 @@ def require_admin_or_superuser(current_user: CurrentUser) -> User:
 
 
 AdminOrSuperuser = Annotated[User, Depends(require_admin_or_superuser)]
+
+
+_SUPERVISOR_ROLES = {
+    RolUsuario.SUPERVISOR,
+    RolUsuario.ADMINISTRADOR,
+    RolUsuario.USUARIO_CONTROL,
+}
+
+
+def require_supervisor_or_above(current_user: CurrentUser) -> User:
+    """Dependency: rechaza con 403 si el usuario no es supervisor, admin o usuario_control."""
+    if not current_user.is_superuser and current_user.rol not in _SUPERVISOR_ROLES:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Se requiere rol de supervisor o administrador",
+        )
+    return current_user
+
+
+SupervisorOrAbove = Annotated[User, Depends(require_supervisor_or_above)]

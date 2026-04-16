@@ -2,7 +2,7 @@ import uuid
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
-from sqlmodel import col, delete, func, select
+from sqlmodel import SQLModel, col, delete, func, select
 
 from app import crud
 from app.api.deps import (
@@ -142,12 +142,29 @@ def update_password_me(
     return Message(message="Password updated successfully")
 
 
-@router.get("/me", response_model=UserPublic)
-def read_user_me(current_user: CurrentUser) -> Any:
-    """
-    Get current user.
-    """
-    return current_user
+class UserOrgInfo(SQLModel):
+    id: uuid.UUID
+    nombre: str
+    rol_org: str
+
+
+class UserMePublic(UserPublic):
+    organizacion: UserOrgInfo | None = None
+
+
+@router.get("/me", response_model=UserMePublic)
+def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
+    """Get current user with organization info."""
+    info = crud.get_organizacion_of_user(session=session, user_id=current_user.id)
+    org_public: UserOrgInfo | None = None
+    if info:
+        org, rol_org = info
+        org_public = UserOrgInfo(
+            id=org.id, nombre=org.nombre,
+            rol_org=rol_org.value if hasattr(rol_org, "value") else str(rol_org),
+        )
+    data = current_user.model_dump()
+    return UserMePublic(**data, organizacion=org_public)
 
 
 @router.delete("/me", response_model=Message)

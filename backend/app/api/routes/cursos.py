@@ -85,34 +85,12 @@ def list_cursos(
             categoria_id=categoria_id, search=search
         )
     else:
-        # Estudiantes: solo ven cursos en los que están inscritos (acceso por invitación)
-        from app.models.contenido import Curso as CursoModel
-        stmt = (
-            select(CursoModel)
-            .join(Inscripcion, Inscripcion.curso_id == CursoModel.id)
-            .where(
-                Inscripcion.usuario_id == current_user.id,
-                Inscripcion.estado == EstadoInscripcion.ACTIVA,
-                CursoModel.estado == EstadoCurso.PUBLICADO,
-            )
+        # Estudiantes/Supervisores: catálogo = marca NEXTGEN publicados +
+        # cursos con LicenciaCurso ACTIVA para la org del usuario.
+        cursos, count = crud.list_cursos_for_student(
+            session=session, user_id=current_user.id,
+            skip=skip, limit=limit, categoria_id=categoria_id, search=search,
         )
-        if categoria_id:
-            stmt = stmt.where(CursoModel.categoria_id == categoria_id)
-        if search:
-            stmt = stmt.where(CursoModel.titulo.ilike(f"%{search}%"))  # type: ignore[attr-defined]
-        items = list(session.exec(stmt.offset(skip).limit(limit)).all())
-        count_stmt = (
-            select(func.count())
-            .select_from(CursoModel)
-            .join(Inscripcion, Inscripcion.curso_id == CursoModel.id)
-            .where(
-                Inscripcion.usuario_id == current_user.id,
-                Inscripcion.estado == EstadoInscripcion.ACTIVA,
-                CursoModel.estado == EstadoCurso.PUBLICADO,
-            )
-        )
-        count = session.exec(count_stmt).one()
-        cursos, count = items, count
 
     return CursosPublic(data=cursos, count=count)
 

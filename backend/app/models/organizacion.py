@@ -24,6 +24,10 @@ class Organizacion(SQLModel, table=True):
     rfc: str | None = Field(default=None, max_length=20)
     dominio_corporativo: str | None = Field(default=None, max_length=255)
     estado: EstadoOrganizacion = Field(default=EstadoOrganizacion.ACTIVA)
+    email_contacto: str | None = Field(default=None, max_length=255)
+    telefono_contacto: str | None = Field(default=None, max_length=20)
+    plan_de_cursos: str | None = Field(default=None)
+    fecha_compra: datetime | None = Field(default=None)
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     creado_en: datetime = Field(default_factory=datetime.utcnow)
 

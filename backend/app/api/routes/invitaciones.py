@@ -103,9 +103,16 @@ def canjear_invitacion(
     if inv.expira_en < datetime.utcnow():
         raise HTTPException(status_code=410, detail="Esta invitación ha expirado")
 
+    # Si el creador de la invitación pertenece a una organización (supervisor),
+    # el usuario canjeado queda automáticamente vinculado a esa organización.
+    org_info = crud.get_organizacion_of_user(
+        session=session, user_id=inv.creado_por
+    )
+    creador_org_id = org_info[0].id if org_info else None
+
     # Crear cuenta si no existe — la contraseña se retorna solo en este momento
     user, usuario_creado, password_temporal = crud.get_or_create_user_by_email(
-        session=session, email=inv.email
+        session=session, email=inv.email, organizacion_id=creador_org_id,
     )
 
     db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
