@@ -87,6 +87,10 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
               <span className={styles.infoLabel}>Teléfono</span>
               <span className={styles.infoValue}>{profile.phone || '—'}</span>
             </div>
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>Organización</span>
+              <span className={styles.infoValue}>{profile.organizacion?.nombre || 'Sin organización'}</span>
+            </div>
           </div>
         </div>
 

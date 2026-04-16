@@ -32,6 +32,8 @@ export default function LoginContent() {
         router.push('/admin');
       } else if (user.rol === 'instructor') {
         router.push('/instructor');
+      } else if (user.rol === 'supervisor') {
+        router.push('/supervisor');
       } else {
         router.push('/cursos');
       }

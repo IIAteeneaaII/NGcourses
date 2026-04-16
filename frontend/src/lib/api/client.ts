@@ -296,6 +296,48 @@ export const invitacionesApi = {
     apiClient.post(`/api/v1/invitaciones/${id}/reenviar`, {}),
 };
 
+export const organizacionesApi = {
+  list: (params?: { skip?: number; limit?: number; search?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.skip) qs.set('skip', String(params.skip));
+    if (params?.limit) qs.set('limit', String(params.limit));
+    if (params?.search) qs.set('search', params.search);
+    return apiClient.get(`/api/v1/organizaciones/?${qs}`);
+  },
+  get: (id: string) => apiClient.get(`/api/v1/organizaciones/${id}`),
+  create: (data: unknown) => apiClient.post('/api/v1/organizaciones/', data),
+  update: (id: string, data: unknown) => apiClient.patch(`/api/v1/organizaciones/${id}`, data),
+  delete: (id: string) => apiClient.delete(`/api/v1/organizaciones/${id}`),
+  listMiembros: (id: string) => apiClient.get(`/api/v1/organizaciones/${id}/miembros`),
+  asignarMiembro: (id: string, data: { user_id: string; rol_org?: string }) =>
+    apiClient.post(`/api/v1/organizaciones/${id}/miembros`, data),
+  quitarMiembro: (id: string, user_id: string) =>
+    apiClient.delete(`/api/v1/organizaciones/${id}/miembros/${user_id}`),
+  crearSupervisor: (id: string, data: { email: string; full_name: string; password: string; telefono?: string }) =>
+    apiClient.post(`/api/v1/organizaciones/${id}/supervisor`, data),
+  listLicencias: (id: string) => apiClient.get(`/api/v1/organizaciones/${id}/licencias`),
+  asignarLicencia: (id: string, curso_id: string) =>
+    apiClient.post(`/api/v1/organizaciones/${id}/licencias`, { curso_id }),
+  quitarLicencia: (id: string, curso_id: string) =>
+    apiClient.delete(`/api/v1/organizaciones/${id}/licencias/${curso_id}`),
+};
+
+export const supervisorApi = {
+  miOrganizacion: () => apiClient.get('/api/v1/supervisor/mi-organizacion'),
+  cursos: () => apiClient.get('/api/v1/supervisor/cursos'),
+  usuarios: () => apiClient.get('/api/v1/supervisor/usuarios'),
+  crearUsuario: (data: { email: string; password: string; full_name?: string; telefono?: string }) =>
+    apiClient.post('/api/v1/supervisor/usuarios', data),
+  quitarUsuario: (user_id: string) => apiClient.delete(`/api/v1/supervisor/usuarios/${user_id}`),
+  invitar: (data: { curso_id: string; emails: string[] }) =>
+    apiClient.post('/api/v1/supervisor/invitaciones', data),
+  listarInvitaciones: () => apiClient.get('/api/v1/supervisor/invitaciones'),
+  stats: () => apiClient.get('/api/v1/supervisor/stats'),
+  crearSolicitud: (data: { titulo_solicitud: string; descripcion?: string }) =>
+    apiClient.post('/api/v1/supervisor/solicitudes', data),
+  listarSolicitudes: () => apiClient.get('/api/v1/supervisor/solicitudes'),
+};
+
 export const quizApi = {
   /** El alumno envía sus respuestas y obtiene resultado inmediato. */
   enviar: (leccion_id: string, data: { inscripcion_id: string; respuestas: { pregunta_id: string; opcion_id: string }[] }) =>

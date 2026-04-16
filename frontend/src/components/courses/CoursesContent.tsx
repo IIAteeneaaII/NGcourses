@@ -10,9 +10,10 @@ import styles from './CoursesContent.module.css';
 interface CoursesContentProps {
   courses: CourseCardType[];
   user: User;
+  orgName?: string | null;
 }
 
-export default function CoursesContent({ courses, user }: CoursesContentProps) {
+export default function CoursesContent({ courses, user, orgName }: CoursesContentProps) {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -141,17 +142,47 @@ export default function CoursesContent({ courses, user }: CoursesContentProps) {
           )}
         </div>
 
-        <div className={styles.coursesGrid}>
-          {filteredCourses.length > 0 ? (
-            filteredCourses.map((course) => (
-              <CourseCard key={course.id} course={course} />
-            ))
-          ) : (
-            <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
-              No se encontraron cursos con los filtros aplicados.
-            </p>
-          )}
-        </div>
+        {(() => {
+          const orgCourses = filteredCourses.filter((c) => c.marca === 'RAM');
+          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'NEXTGEN');
+          const untagged = filteredCourses.filter((c) => !c.marca);
+          const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
+
+          if (!hasGroups) {
+            return (
+              <div className={styles.coursesGrid}>
+                {untagged.length > 0 ? (
+                  untagged.map((course) => <CourseCard key={course.id} course={course} />)
+                ) : (
+                  <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
+                    No se encontraron cursos con los filtros aplicados.
+                  </p>
+                )}
+              </div>
+            );
+          }
+
+          return (
+            <>
+              {orgCourses.length > 0 && (
+                <>
+                  <h2 className={styles.sectionTitle}>{orgName ? `Cursos ${orgName}` : 'Cursos de tu organización'}</h2>
+                  <div className={styles.coursesGrid}>
+                    {orgCourses.map((course) => <CourseCard key={course.id} course={course} />)}
+                  </div>
+                </>
+              )}
+              {nextgenCourses.length > 0 && (
+                <>
+                  <h2 className={styles.sectionTitle}>Cursos NextGen</h2>
+                  <div className={styles.coursesGrid}>
+                    {nextgenCourses.map((course) => <CourseCard key={course.id} course={course} />)}
+                  </div>
+                </>
+              )}
+            </>
+          );
+        })()}
       </main>
     </div>
   );

@@ -11,6 +11,7 @@ interface ApiUser {
   full_name: string | null;
   email: string;
   telefono: string | null;
+  organizacion?: { id: string; nombre: string; rol_org: string } | null;
 }
 
 interface ApiInscripcion {
@@ -87,6 +88,7 @@ export default function PerfilPage() {
           department: '',
           position: '',
           registrationDate: '',
+          organizacion: userRaw.organizacion || null,
         });
 
         const stored = localStorage.getItem(`avatar_${userRaw.id}`);

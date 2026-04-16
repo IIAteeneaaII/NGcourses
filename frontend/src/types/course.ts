@@ -99,6 +99,7 @@ export interface CourseCard {
   image: string;
   tag?: CourseTag;
   category?: string;
+  marca?: 'RAM' | 'NEXTGEN';
 }
 
 export interface User {
@@ -116,6 +117,7 @@ export interface UserProfile {
   department: string;
   position: string;
   registrationDate: string;
+  organizacion?: { id: string; nombre: string; rol_org: string } | null;
 }
 
 export interface UserStatistics {
