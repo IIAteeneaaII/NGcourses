@@ -10,9 +10,11 @@ from app.api.routes import (
     invitaciones,
     items,
     login,
+    organizaciones,
     private,
     progreso,
     quiz,
+    supervisor,
     users,
     utils,
     webhooks,
@@ -33,6 +35,8 @@ api_router.include_router(progreso.router)
 api_router.include_router(quiz.router)
 api_router.include_router(calificaciones.router)
 api_router.include_router(certificados.router)
+api_router.include_router(organizaciones.router)
+api_router.include_router(supervisor.router)
 api_router.include_router(webhooks.router)
 
 

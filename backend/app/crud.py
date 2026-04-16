@@ -23,11 +23,27 @@ from app.models.contenido import (
     Leccion, LeccionCreate, LeccionUpdate,
     RecursoLeccion, RecursoLeccionCreate,
 )
-from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoCalificacion, RolUsuario
+from app.models._enums import (
+    EstadoCurso,
+    EstadoInscripcion,
+    EstadoCalificacion,
+    EstadoLicencia,
+    EstadoSolicitud,
+    MarcaCurso,
+    RolOrganizacion,
+    RolUsuario,
+)
 from app.models.inscripcion import Certificado, Inscripcion, ProgresoLeccion
 from app.models.calificacion import Calificacion, VotoResena
 from app.models.quiz import QuizIntento, QuizRespuesta
 from app.models.invitacion import InvitacionCurso
+from app.models.organizacion import (
+    ComentarioSolicitud,
+    LicenciaCurso,
+    Organizacion,
+    SolicitudCurso,
+    UsuarioOrganizacion,
+)
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -919,14 +935,350 @@ def reenviar_invitacion(
 
 
 def get_or_create_user_by_email(
-    *, session: Session, email: str
+    *, session: Session, email: str, organizacion_id: uuid.UUID | None = None
 ) -> tuple[User, bool, str | None]:
     """Retorna (usuario, creado, contraseña_temporal).
-    contraseña_temporal solo tiene valor cuando creado=True; de lo contrario None."""
+    contraseña_temporal solo tiene valor cuando creado=True; de lo contrario None.
+    Si se pasa organizacion_id y el usuario no pertenece a esa org, se vincula."""
     user = get_user_by_email(session=session, email=email)
     if user:
+        if organizacion_id is not None:
+            _ensure_user_in_org(session=session, user_id=user.id, organizacion_id=organizacion_id)
         return user, False, None
     temp_password = email  # La contraseña inicial es el propio email del usuario
     user_create = UserCreate(email=email, password=temp_password, rol=RolUsuario.ESTUDIANTE)
     new_user = create_user(session=session, user_create=user_create)
+    if organizacion_id is not None:
+        _ensure_user_in_org(
+            session=session, user_id=new_user.id, organizacion_id=organizacion_id
+        )
     return new_user, True, temp_password
+
+
+def _ensure_user_in_org(
+    *, session: Session, user_id: uuid.UUID, organizacion_id: uuid.UUID,
+    rol_org: RolOrganizacion = RolOrganizacion.MIEMBRO,
+) -> None:
+    """Asegura que el usuario esté vinculado a la organización. Idempotente."""
+    existing = session.exec(
+        select(UsuarioOrganizacion).where(
+            UsuarioOrganizacion.organizacion_id == organizacion_id,
+            UsuarioOrganizacion.usuario_id == user_id,
+        )
+    ).first()
+    if existing:
+        return
+    link = UsuarioOrganizacion(
+        organizacion_id=organizacion_id, usuario_id=user_id, rol_org=rol_org
+    )
+    session.add(link)
+    session.commit()
+
+
+# ── Organizaciones ────────────────────────────────────────────────────────────
+
+
+def create_organizacion(
+    *, session: Session, nombre: str, email_contacto: str | None = None,
+    telefono_contacto: str | None = None, plan_de_cursos: str | None = None,
+    fecha_compra: datetime | None = None, rfc: str | None = None,
+    dominio_corporativo: str | None = None,
+) -> Organizacion:
+    org = Organizacion(
+        nombre=nombre,
+        email_contacto=email_contacto,
+        telefono_contacto=telefono_contacto,
+        plan_de_cursos=plan_de_cursos,
+        fecha_compra=fecha_compra,
+        rfc=rfc,
+        dominio_corporativo=dominio_corporativo,
+    )
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org
+
+
+def get_organizacion(*, session: Session, org_id: uuid.UUID) -> Organizacion | None:
+    return session.get(Organizacion, org_id)
+
+
+def list_organizaciones(
+    *, session: Session, skip: int = 0, limit: int = 100, search: str | None = None
+) -> tuple[list[Organizacion], int]:
+    stmt = select(Organizacion)
+    count_stmt = select(func.count()).select_from(Organizacion)
+    if search:
+        like = f"%{search}%"
+        stmt = stmt.where(Organizacion.nombre.ilike(like))  # type: ignore[attr-defined]
+        count_stmt = count_stmt.where(Organizacion.nombre.ilike(like))  # type: ignore[attr-defined]
+    stmt = stmt.order_by(Organizacion.creado_en.desc()).offset(skip).limit(limit)  # type: ignore[arg-type]
+    items = list(session.exec(stmt).all())
+    count = session.exec(count_stmt).one()
+    return items, count
+
+
+def update_organizacion(
+    *, session: Session, org: Organizacion, data: dict
+) -> Organizacion:
+    for k, v in data.items():
+        if hasattr(org, k) and v is not None:
+            setattr(org, k, v)
+    session.add(org)
+    session.commit()
+    session.refresh(org)
+    return org
+
+
+def delete_organizacion(*, session: Session, org_id: uuid.UUID) -> None:
+    org = session.get(Organizacion, org_id)
+    if org:
+        session.delete(org)
+        session.commit()
+
+
+def get_organizacion_of_user(
+    *, session: Session, user_id: uuid.UUID
+) -> tuple[Organizacion, RolOrganizacion] | None:
+    """Retorna (org, rol_org) del usuario, o None si no pertenece a ninguna."""
+    row = session.exec(
+        select(UsuarioOrganizacion).where(UsuarioOrganizacion.usuario_id == user_id)
+    ).first()
+    if not row:
+        return None
+    org = session.get(Organizacion, row.organizacion_id)
+    if not org:
+        return None
+    return org, row.rol_org
+
+
+def list_org_users(
+    *, session: Session, org_id: uuid.UUID
+) -> list[tuple[User, RolOrganizacion]]:
+    rows = session.exec(
+        select(UsuarioOrganizacion).where(UsuarioOrganizacion.organizacion_id == org_id)
+    ).all()
+    result: list[tuple[User, RolOrganizacion]] = []
+    for r in rows:
+        u = session.get(User, r.usuario_id)
+        if u:
+            result.append((u, r.rol_org))
+    return result
+
+
+def add_user_to_organizacion(
+    *, session: Session, org_id: uuid.UUID, user_id: uuid.UUID,
+    rol_org: RolOrganizacion = RolOrganizacion.MIEMBRO,
+) -> UsuarioOrganizacion:
+    existing = session.exec(
+        select(UsuarioOrganizacion).where(
+            UsuarioOrganizacion.organizacion_id == org_id,
+            UsuarioOrganizacion.usuario_id == user_id,
+        )
+    ).first()
+    if existing:
+        if existing.rol_org != rol_org:
+            existing.rol_org = rol_org
+            session.add(existing)
+            session.commit()
+            session.refresh(existing)
+        return existing
+    link = UsuarioOrganizacion(
+        organizacion_id=org_id, usuario_id=user_id, rol_org=rol_org
+    )
+    session.add(link)
+    session.commit()
+    session.refresh(link)
+    return link
+
+
+def remove_user_from_organizacion(
+    *, session: Session, org_id: uuid.UUID, user_id: uuid.UUID
+) -> None:
+    row = session.exec(
+        select(UsuarioOrganizacion).where(
+            UsuarioOrganizacion.organizacion_id == org_id,
+            UsuarioOrganizacion.usuario_id == user_id,
+        )
+    ).first()
+    if row:
+        session.delete(row)
+        session.commit()
+
+
+# ── Licencias (org ↔ curso) ──────────────────────────────────────────────────
+
+
+def assign_licencia(
+    *, session: Session, org_id: uuid.UUID, curso_id: uuid.UUID
+) -> LicenciaCurso:
+    """Asigna un curso a una organización con cupos ilimitados (cupos_total=0 representa
+    ilimitado en esta configuración)."""
+    existing = session.exec(
+        select(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.curso_id == curso_id,
+        )
+    ).first()
+    if existing:
+        if existing.estado != EstadoLicencia.ACTIVA:
+            existing.estado = EstadoLicencia.ACTIVA
+            session.add(existing)
+            session.commit()
+            session.refresh(existing)
+        return existing
+    lic = LicenciaCurso(
+        organizacion_id=org_id,
+        curso_id=curso_id,
+        cupos_total=0,  # 0 = ilimitados
+        cupos_usados=0,
+        estado=EstadoLicencia.ACTIVA,
+    )
+    session.add(lic)
+    session.commit()
+    session.refresh(lic)
+    return lic
+
+
+def unassign_licencia(
+    *, session: Session, org_id: uuid.UUID, curso_id: uuid.UUID
+) -> None:
+    row = session.exec(
+        select(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.curso_id == curso_id,
+        )
+    ).first()
+    if row:
+        session.delete(row)
+        session.commit()
+
+
+def list_licencias_by_org(
+    *, session: Session, org_id: uuid.UUID
+) -> list[LicenciaCurso]:
+    return list(session.exec(
+        select(LicenciaCurso).where(LicenciaCurso.organizacion_id == org_id)
+    ).all())
+
+
+def list_cursos_for_student(
+    *, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 100,
+    categoria_id: uuid.UUID | None = None, search: str | None = None,
+) -> tuple[list[Curso], int]:
+    """Retorna cursos publicados donde:
+       - marca = NEXTGEN (visible para todos), OR
+       - existe LicenciaCurso ACTIVA para la organización del usuario
+    """
+    org_info = get_organizacion_of_user(session=session, user_id=user_id)
+    org_id = org_info[0].id if org_info else None
+
+    from sqlalchemy import or_
+
+    stmt = select(Curso).where(Curso.estado == EstadoCurso.PUBLICADO)
+    lic_subq = select(LicenciaCurso.curso_id).where(
+        LicenciaCurso.estado == EstadoLicencia.ACTIVA
+    )
+    if org_id is not None:
+        lic_subq = lic_subq.where(LicenciaCurso.organizacion_id == org_id)
+        stmt = stmt.where(
+            or_(Curso.marca == MarcaCurso.NEXTGEN, Curso.id.in_(lic_subq))  # type: ignore[attr-defined]
+        )
+    else:
+        stmt = stmt.where(Curso.marca == MarcaCurso.NEXTGEN)
+
+    if categoria_id:
+        stmt = stmt.where(Curso.categoria_id == categoria_id)
+    if search:
+        stmt = stmt.where(Curso.titulo.ilike(f"%{search}%"))  # type: ignore[attr-defined]
+
+    count_stmt = select(func.count()).select_from(stmt.subquery())
+    count = session.exec(count_stmt).one()
+    items = list(session.exec(stmt.offset(skip).limit(limit)).all())
+    return items, count
+
+
+# ── Stats de organización ────────────────────────────────────────────────────
+
+
+def get_org_stats(*, session: Session, org_id: uuid.UUID) -> dict:
+    """Retorna estadísticas básicas de una organización."""
+    user_ids = [
+        r.usuario_id for r in session.exec(
+            select(UsuarioOrganizacion).where(
+                UsuarioOrganizacion.organizacion_id == org_id
+            )
+        ).all()
+    ]
+    total_usuarios = len(user_ids)
+    if not user_ids:
+        return {
+            "usuarios_totales": 0,
+            "usuarios_activos": 0,
+            "progreso_promedio": 0.0,
+            "cursos_disponibles": 0,
+            "inscripciones_totales": 0,
+        }
+
+    active_count = session.exec(
+        select(func.count()).select_from(User).where(
+            User.id.in_(user_ids),  # type: ignore[attr-defined]
+            User.is_active == True,  # noqa: E712
+        )
+    ).one()
+
+    inscripciones = list(session.exec(
+        select(Inscripcion).where(Inscripcion.usuario_id.in_(user_ids))  # type: ignore[attr-defined]
+    ).all())
+    total_insc = len(inscripciones)
+
+    # Progreso promedio: sobre ProgresoLeccion de los usuarios de la org.
+    progreso_vals = list(session.exec(
+        select(ProgresoLeccion.progreso_pct).where(
+            ProgresoLeccion.usuario_id.in_(user_ids)  # type: ignore[attr-defined]
+        )
+    ).all())
+    progreso_prom = (sum(progreso_vals) / len(progreso_vals)) if progreso_vals else 0.0
+
+    cursos_disp = session.exec(
+        select(func.count()).select_from(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.estado == EstadoLicencia.ACTIVA,
+        )
+    ).one()
+
+    return {
+        "usuarios_totales": total_usuarios,
+        "usuarios_activos": int(active_count),
+        "progreso_promedio": round(float(progreso_prom), 2),
+        "cursos_disponibles": int(cursos_disp),
+        "inscripciones_totales": total_insc,
+    }
+
+
+# ── Solicitudes de curso ─────────────────────────────────────────────────────
+
+
+def create_solicitud_curso(
+    *, session: Session, org_id: uuid.UUID, solicitante_id: uuid.UUID,
+    titulo: str, descripcion: str | None,
+) -> SolicitudCurso:
+    s = SolicitudCurso(
+        organizacion_id=org_id,
+        solicitante_id=solicitante_id,
+        titulo_solicitud=titulo,
+        descripcion=descripcion,
+    )
+    session.add(s)
+    session.commit()
+    session.refresh(s)
+    return s
+
+
+def list_solicitudes_by_org(
+    *, session: Session, org_id: uuid.UUID
+) -> list[SolicitudCurso]:
+    return list(session.exec(
+        select(SolicitudCurso).where(SolicitudCurso.organizacion_id == org_id)
+        .order_by(SolicitudCurso.creado_en.desc())  # type: ignore[arg-type]
+    ).all())
