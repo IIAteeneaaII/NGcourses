@@ -172,12 +172,15 @@ def usuarios_de_mi_org(
     rows = crud.list_org_users(session=session, org_id=org.id)
     result: list[UsuarioOrgPublic] = []
     for (u, r) in rows:
-        # Progreso promedio del usuario
+        # Progreso promedio del usuario (ProgresoLeccion no tiene usuario_id directo)
+        insc_ids_u = session.exec(
+            select(Inscripcion.id).where(Inscripcion.usuario_id == u.id)
+        ).all()
         progresos = list(session.exec(
             select(ProgresoLeccion.progreso_pct).where(
-                ProgresoLeccion.usuario_id == u.id
+                ProgresoLeccion.inscripcion_id.in_(insc_ids_u)  # type: ignore[attr-defined]
             )
-        ).all())
+        ).all()) if insc_ids_u else []
         prom = round(float(sum(progresos) / len(progresos)), 2) if progresos else 0.0
         inscripciones = list(session.exec(
             select(Inscripcion).where(
