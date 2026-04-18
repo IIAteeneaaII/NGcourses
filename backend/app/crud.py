@@ -1233,11 +1233,15 @@ def get_org_stats(*, session: Session, org_id: uuid.UUID) -> dict:
     total_insc = len(inscripciones)
 
     # Progreso promedio: sobre ProgresoLeccion de los usuarios de la org.
-    progreso_vals = list(session.exec(
-        select(ProgresoLeccion.progreso_pct).where(
-            ProgresoLeccion.usuario_id.in_(user_ids)  # type: ignore[attr-defined]
-        )
-    ).all())
+    insc_ids = [i.id for i in inscripciones]
+    if insc_ids:
+        progreso_vals = list(session.exec(
+            select(ProgresoLeccion.progreso_pct).where(
+                ProgresoLeccion.inscripcion_id.in_(insc_ids)  # type: ignore[attr-defined]
+            )
+        ).all())
+    else:
+        progreso_vals = []
     progreso_prom = (sum(progreso_vals) / len(progreso_vals)) if progreso_vals else 0.0
 
     cursos_disp = session.exec(
