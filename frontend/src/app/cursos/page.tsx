@@ -15,7 +15,7 @@ interface ApiCurso {
   calificacion_prom: number;
   descripcion: string | null;
   portada_url: string | null;
-  marca?: 'RAM' | 'NEXTGEN';
+  marca?: 'ram' | 'nextgen';
 }
 
 interface ApiResponse {

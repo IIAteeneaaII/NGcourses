@@ -99,7 +99,7 @@ export interface CourseCard {
   image: string;
   tag?: CourseTag;
   category?: string;
-  marca?: 'RAM' | 'NEXTGEN';
+  marca?: 'ram' | 'nextgen';
 }
 
 export interface User {

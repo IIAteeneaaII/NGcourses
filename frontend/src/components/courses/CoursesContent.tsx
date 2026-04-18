@@ -143,8 +143,8 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
         </div>
 
         {(() => {
-          const orgCourses = filteredCourses.filter((c) => c.marca === 'RAM');
-          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'NEXTGEN');
+          const orgCourses = filteredCourses.filter((c) => c.marca === 'ram');
+          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'nextgen');
           const untagged = filteredCourses.filter((c) => !c.marca);
           const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
 
