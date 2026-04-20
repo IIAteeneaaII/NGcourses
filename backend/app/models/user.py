@@ -1,11 +1,15 @@
 import uuid
 
+import sqlalchemy as sa
 from pydantic import EmailStr
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models._enums import EstadoUsuario, RolUsuario
+
+_rol_type = sa.Enum(RolUsuario, values_callable=lambda obj: [e.value for e in obj], name="rolusuario", create_type=False)
+_estado_type = sa.Enum(EstadoUsuario, values_callable=lambda obj: [e.value for e in obj], name="estadousuario", create_type=False)
 
 
 # Shared properties
@@ -14,8 +18,8 @@ class UserBase(SQLModel):
     is_active: bool = True
     is_superuser: bool = False
     full_name: str | None = Field(default=None, max_length=255)
-    rol: RolUsuario = Field(default=RolUsuario.ESTUDIANTE)
-    estado: EstadoUsuario = Field(default=EstadoUsuario.ACTIVO)
+    rol: RolUsuario = Field(default=RolUsuario.ESTUDIANTE, sa_type=_rol_type)
+    estado: EstadoUsuario = Field(default=EstadoUsuario.ACTIVO, sa_type=_estado_type)
     telefono: str | None = Field(default=None, max_length=20)
     telefono_e164: str | None = Field(default=None, max_length=20)
     whatsapp_opt_in: bool = Field(default=False)

@@ -22,3 +22,6 @@ npm-debug.log*
 
 # Documentación de los sprints
 /sprints/
+
+# Permisos de claude
+.claude/
