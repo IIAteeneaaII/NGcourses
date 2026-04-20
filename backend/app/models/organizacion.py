@@ -1,6 +1,7 @@
 import uuid
 from datetime import datetime
 
+import sqlalchemy as sa
 from sqlalchemy import Column, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -11,6 +12,14 @@ from app.models._enums import (
     EstadoSolicitud,
     RolOrganizacion,
 )
+
+def _ev(obj):
+    return [e.value for e in obj]
+
+_estadoorg_type = sa.Enum(EstadoOrganizacion, values_callable=_ev, name="estadoorganizacion", create_type=False)
+_rolorg_type = sa.Enum(RolOrganizacion, values_callable=_ev, name="rolorganizacion", create_type=False)
+_estadolic_type = sa.Enum(EstadoLicencia, values_callable=_ev, name="estadolicencia", create_type=False)
+_estadosol_type = sa.Enum(EstadoSolicitud, values_callable=_ev, name="estadosolicitud", create_type=False)
 
 
 # ── Organizaciones ──────────────────────────────────────────────────────────
@@ -23,7 +32,7 @@ class Organizacion(SQLModel, table=True):
     nombre: str = Field(max_length=255)
     rfc: str | None = Field(default=None, max_length=20)
     dominio_corporativo: str | None = Field(default=None, max_length=255)
-    estado: EstadoOrganizacion = Field(default=EstadoOrganizacion.ACTIVA)
+    estado: EstadoOrganizacion = Field(default=EstadoOrganizacion.ACTIVA, sa_type=_estadoorg_type)
     email_contacto: str | None = Field(default=None, max_length=255)
     telefono_contacto: str | None = Field(default=None, max_length=20)
     plan_de_cursos: str | None = Field(default=None)
@@ -55,7 +64,7 @@ class UsuarioOrganizacion(SQLModel, table=True):
         foreign_key="organizaciones.id", nullable=False, ondelete="CASCADE"
     )
     usuario_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
-    rol_org: RolOrganizacion = Field(default=RolOrganizacion.MIEMBRO)
+    rol_org: RolOrganizacion = Field(default=RolOrganizacion.MIEMBRO, sa_type=_rolorg_type)
     creado_en: datetime = Field(default_factory=datetime.utcnow)
 
     # Relationships
@@ -77,7 +86,7 @@ class LicenciaCurso(SQLModel, table=True):
     cupos_usados: int = Field(default=0)
     inicia_en: datetime | None = Field(default=None)
     termina_en: datetime | None = Field(default=None)
-    estado: EstadoLicencia = Field(default=EstadoLicencia.ACTIVA)
+    estado: EstadoLicencia = Field(default=EstadoLicencia.ACTIVA, sa_type=_estadolic_type)
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     creado_en: datetime = Field(default_factory=datetime.utcnow)
 
@@ -99,7 +108,7 @@ class SolicitudCurso(SQLModel, table=True):
     solicitante_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
     titulo_solicitud: str = Field(max_length=255)
     descripcion: str | None = Field(default=None)
-    estado: EstadoSolicitud = Field(default=EstadoSolicitud.ABIERTA)
+    estado: EstadoSolicitud = Field(default=EstadoSolicitud.ABIERTA, sa_type=_estadosol_type)
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime | None = Field(default=None)
 
