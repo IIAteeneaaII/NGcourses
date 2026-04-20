@@ -99,6 +99,9 @@ export default function CrearCursoPage() {
   // Selector de tipo de lección (moduleId o null)
   const [choosingForModule, setChoosingForModule] = useState<string | null>(null);
 
+  // Pasos que el usuario ya completó (avanzó más allá de ellos)
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
   // UI state
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -107,6 +110,7 @@ export default function CrearCursoPage() {
   const [isAddingModule, setIsAddingModule] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
+  const [isPublished, setIsPublished] = useState(false);
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const notify = React.useCallback((type: 'success' | 'error', message: string) => {
@@ -172,6 +176,7 @@ export default function CrearCursoPage() {
           requisitos: requisitos.trim() || undefined,
         }) as { id: string };
         setCursoId(resp.id);
+        setCompletedSteps((prev) => { const next = new Set(prev); next.add(1); return next; });
         setCurrentStep(2);
       } catch (err) {
         setCreateError(err instanceof Error ? err.message : 'Error al crear el borrador');
@@ -180,7 +185,10 @@ export default function CrearCursoPage() {
       }
       return;
     }
-    if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
+    if (currentStep < STEPS.length) {
+      setCompletedSteps((prev) => { const next = new Set(prev); next.add(currentStep); return next; });
+      setCurrentStep(currentStep + 1);
+    }
   };
 
   const handlePrev = () => {
@@ -383,7 +391,8 @@ export default function CrearCursoPage() {
         lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
         requisitos: requisitos.trim() || undefined,
       });
-      router.push(`/admin/cursos/${cursoId}/editar`);
+      setIsPublished(true);
+      setCompletedSteps((prev) => { const next = new Set(prev); next.add(5); return next; });
     } catch {
       setPublishError('Error al publicar el curso. Intenta de nuevo.');
     } finally {
@@ -394,13 +403,18 @@ export default function CrearCursoPage() {
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 1: return !!(title && description && level);
-      case 2: return true; // portada opcional
-      case 3: return modules.length > 0;
+      case 2: return coverUploadStatus === 'success';
+      case 3: return modules.length > 0 && modules.some((m) => m.lessons.length > 0);
       case 4: return true;
       case 5: return true;
       default: return false;
     }
   };
+
+  const isStepMarkedComplete = (step: number) => completedSteps.has(step) && isStepComplete(step);
+
+  const maxReachedStep = completedSteps.size > 0 ? Math.max(...completedSteps) + 1 : 1;
+  const isStepLocked = (step: number) => isPublished || step > maxReachedStep;
 
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
@@ -442,12 +456,21 @@ export default function CrearCursoPage() {
             {STEPS.map((step) => (
               <button
                 key={step.id}
-                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepComplete(step.id) ? styles.complete : ''}`}
-                onClick={() => setCurrentStep(step.id)}
+                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepMarkedComplete(step.id) ? styles.complete : ''} ${isStepLocked(step.id) ? styles.locked : ''}`}
+                onClick={() => !isStepLocked(step.id) && setCurrentStep(step.id)}
+                disabled={isStepLocked(step.id)}
+                title={isStepLocked(step.id) ? 'Completa los pasos anteriores para desbloquear' : undefined}
               >
-                <span className={styles.stepIcon}>{step.icon}</span>
+                <span className={styles.stepIcon}>
+                  {isStepLocked(step.id) ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  ) : step.icon}
+                </span>
                 <span className={styles.stepName}>{step.name}</span>
-                {isStepComplete(step.id) && currentStep !== step.id && (
+                {isStepMarkedComplete(step.id) && currentStep !== step.id && (
                   <span className={styles.checkmark}>✓</span>
                 )}
               </button>
@@ -624,6 +647,11 @@ export default function CrearCursoPage() {
                     </label>
                   )}
                 </div>
+                {coverUploadStatus !== 'success' && (
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280', textAlign: 'center' }}>
+                    Se requiere subir una imagen de portada para continuar al siguiente paso.
+                  </p>
+                )}
               </div>
             )}
 
@@ -808,6 +836,13 @@ export default function CrearCursoPage() {
                     {isAddingModule ? 'Creando módulo...' : 'Agregar módulo'}
                   </button>
                 </div>
+                {!isStepComplete(3) && (
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                    {modules.length === 0
+                      ? 'Agrega al menos un módulo con una lección para continuar.'
+                      : 'Agrega al menos una lección en algún módulo para continuar.'}
+                  </p>
+                )}
               </div>
             )}
 
@@ -846,7 +881,33 @@ export default function CrearCursoPage() {
             )}
 
             {/* Step 5: Publicar */}
-            {currentStep === 5 && (
+            {currentStep === 5 && isPublished && (
+              <div className={styles.stepContent}>
+                <div className={styles.publishSuccess}>
+                  <div className={styles.publishSuccessIcon}>
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  </div>
+                  <h2 className={styles.publishSuccessTitle}>¡Curso publicado exitosamente!</h2>
+                  <p className={styles.publishSuccessSubtitle}>
+                    <strong>{title}</strong> ya está disponible para los estudiantes.
+                  </p>
+                  <button
+                    className={styles.editCourseButton}
+                    onClick={() => router.push(`/admin/cursos/${cursoId}/editar`)}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Ir a editar el curso
+                  </button>
+                </div>
+              </div>
+            )}
+            {currentStep === 5 && !isPublished && (
               <div className={styles.stepContent}>
                 <h2 className={styles.stepTitle}>Publicar Curso</h2>
                 <p className={styles.stepDescription}>Revisa el resumen y publica tu curso</p>
@@ -883,32 +944,34 @@ export default function CrearCursoPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className={styles.navigationButtons}>
-              <button className={styles.backButton} onClick={handlePrev} disabled={currentStep === 1}>
-                Atrás
-              </button>
-
-              {currentStep < STEPS.length ? (
-                <button
-                  className={styles.nextButton}
-                  onClick={handleNext}
-                  disabled={!isStepComplete(currentStep) || isCreating || isUploadingCover || coverUploadStatus === 'uploading'}
-                >
-                  {isCreating ? 'Creando borrador...' : 'Siguiente'}
+            {!isPublished && (
+              <div className={styles.navigationButtons}>
+                <button className={styles.backButton} onClick={handlePrev} disabled={currentStep === 1}>
+                  Atrás
                 </button>
-              ) : (
-                <>
-                  {publishError && (
-                    <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
-                      {publishError}
-                    </p>
-                  )}
-                  <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing}>
-                    {isPublishing ? 'Publicando...' : 'Publicar curso'}
+
+                {currentStep < STEPS.length ? (
+                  <button
+                    className={styles.nextButton}
+                    onClick={handleNext}
+                    disabled={!isStepComplete(currentStep) || isCreating || isUploadingCover || coverUploadStatus === 'uploading'}
+                  >
+                    {isCreating ? 'Creando borrador...' : 'Siguiente'}
                   </button>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    {publishError && (
+                      <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
+                        {publishError}
+                      </p>
+                    )}
+                    <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing}>
+                      {isPublishing ? 'Publicando...' : 'Publicar curso'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>
