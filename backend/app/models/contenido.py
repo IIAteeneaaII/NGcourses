@@ -1,11 +1,19 @@
 import uuid
 from datetime import datetime
 
+import sqlalchemy as sa
 from sqlalchemy import Column, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models._enums import EstadoCurso, MarcaCurso, TipoLeccion, TipoRecurso
+
+def _ev(obj):
+    return [e.value for e in obj]
+
+_estadocurso_type = sa.Enum(EstadoCurso, values_callable=_ev, name="estadocurso", create_type=False)
+_tipoleccion_type = sa.Enum(TipoLeccion, values_callable=_ev, name="tipoleccion", create_type=False)
+_tiporecurso_type = sa.Enum(TipoRecurso, values_callable=_ev, name="tiporecurso", create_type=False)
 
 
 # ── Categorias ──────────────────────────────────────────────────────────────
@@ -70,7 +78,7 @@ class Curso(SQLModel, table=True):
     titulo: str = Field(max_length=255)
     slug: str = Field(max_length=255, unique=True, index=True)
     descripcion: str | None = Field(default=None)
-    estado: EstadoCurso = Field(default=EstadoCurso.BORRADOR)
+    estado: EstadoCurso = Field(default=EstadoCurso.BORRADOR, sa_type=_estadocurso_type)
     marca: MarcaCurso = Field(
         default=MarcaCurso.RAM,
         sa_column=Column("marca", String(20), nullable=False, server_default="ram"),
@@ -124,7 +132,7 @@ class Leccion(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     modulo_id: uuid.UUID = Field(foreign_key="modulos.id", nullable=False, ondelete="CASCADE")
     titulo: str = Field(max_length=255)
-    tipo: TipoLeccion = Field(default=TipoLeccion.VIDEO)
+    tipo: TipoLeccion = Field(default=TipoLeccion.VIDEO, sa_type=_tipoleccion_type)
     orden: int = Field(default=0)
     duracion_seg: int = Field(default=0)
     umbral_completado_pct: int = Field(default=90)
@@ -151,7 +159,7 @@ class RecursoLeccion(SQLModel, table=True):
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     leccion_id: uuid.UUID = Field(foreign_key="lecciones.id", nullable=False, ondelete="CASCADE")
-    tipo: TipoRecurso = Field(default=TipoRecurso.PDF)
+    tipo: TipoRecurso = Field(default=TipoRecurso.PDF, sa_type=_tiporecurso_type)
     titulo: str = Field(max_length=255)
     url: str
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))

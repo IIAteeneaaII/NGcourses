@@ -124,6 +124,17 @@
   color: var(--color-success);
 }
 
+.stepButton.locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.stepButton.locked:hover {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
 .stepIcon {
   font-size: 1.25rem;
   flex-shrink: 0;
@@ -724,6 +735,65 @@
 
 .publishButton:hover {
   background: #16a34a;
+}
+
+/* Publish Success Screen */
+.publishSuccess {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+  gap: 1rem;
+}
+
+.publishSuccessIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  background: #dcfce7;
+  color: #16a34a;
+  margin-bottom: 0.5rem;
+}
+
+.publishSuccessTitle {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--color-text-primary);
+}
+
+.publishSuccessSubtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: var(--color-text-secondary);
+  max-width: 400px;
+}
+
+.editCourseButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding: 0.75rem 1.75rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-white);
+  background: var(--color-secondary-30);
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+
+.editCourseButton:hover {
+  background: var(--color-secondary-30-light);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 71, 119, 0.2);
 }
 
 /* Preview Modal */
