@@ -72,11 +72,26 @@
   opacity: 0.8;
 }
 
-.logoText {
-  margin: 0;
-  font-size: 1.625rem;
-  font-weight: 700;
+.logoImg {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logoTitle {
+  font-size: 1.125rem;
+  line-height: 1;
   color: var(--color-secondary-30);
+  white-space: nowrap;
+}
+
+.logoBold {
+  font-weight: 900;
+}
+
+.logoLight {
+  font-weight: 300;
 }
 
 .adminBadge {
@@ -133,6 +148,14 @@
   color: var(--color-text-white);
   background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
   border-radius: 50%;
+}
+
+.userAvatarImg {
+  width: 2.875rem;
+  height: 2.875rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
 }
 
 .userInfo {

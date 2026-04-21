@@ -11,12 +11,13 @@ interface SupervisorHeaderProps {
     name: string;
     initials: string;
     role: string;
+    avatarUrl?: string | null;
   };
   onMenuClick?: () => void;
 }
 
 export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
-  user = { name: 'Supervisor', initials: 'S', role: 'Supervisor' },
+  user = { name: 'Supervisor', initials: 'S', role: 'Supervisor', avatarUrl: null },
   onMenuClick,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -37,7 +38,12 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
             <span />
           </button>
           <Link href="/supervisor" className={styles.logo}>
-            <h1 className={styles.logoText}>Cursos Online</h1>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NEXT GEN</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
             <span className={styles.adminBadge}>Supervisor</span>
           </Link>
         </div>
@@ -50,7 +56,12 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
               aria-expanded={showDropdown}
               aria-haspopup="true"
             >
-              <div className={styles.userAvatar}>{user.initials}</div>
+              {user.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatarUrl} alt={user.name} className={styles.userAvatarImg} />
+              ) : (
+                <div className={styles.userAvatar}>{user.initials}</div>
+              )}
               <div className={styles.userInfo}>
                 <span className={styles.userName}>{user.name}</span>
                 <span className={styles.userRole}>{user.role}</span>
