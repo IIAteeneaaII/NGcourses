@@ -94,7 +94,7 @@
 
 .optionIcon.users {
   background: linear-gradient(135deg, var(--color-accent-10), #1B8D56);
-  box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
+  box-shadow: 0 8px 20px rgba(0, 136, 41, 0.3);
 }
 
 .optionTitle {
