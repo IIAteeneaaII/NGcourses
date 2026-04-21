@@ -44,7 +44,6 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
               <span className={styles.logoBold}>NEXT GEN</span>
               <span className={styles.logoLight}> Course</span>
             </span>
-            <span className={styles.adminBadge}>Supervisor</span>
           </Link>
         </div>
 

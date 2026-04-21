@@ -52,7 +52,6 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
               <span className={styles.logoBold}>NEXT GEN</span>
               <span className={styles.logoLight}> Course</span>
             </span>
-            <span className={styles.adminBadge}>Instructor</span>
           </Link>
         </div>
 
