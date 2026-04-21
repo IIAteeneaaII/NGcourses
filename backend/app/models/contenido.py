@@ -324,6 +324,7 @@ class CursoPublic(SQLModel):
     nivel: str | None = None
     lo_que_aprenderas: list[str] = []
     requisitos: str | None = None
+    bloqueado_por_licencia: bool = False
 
 
 class CursoDetalle(CursoPublic):

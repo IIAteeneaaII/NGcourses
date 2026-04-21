@@ -1,11 +1,19 @@
 import uuid
 from datetime import datetime
 
+import sqlalchemy as sa
 from sqlalchemy import Column, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models._enums import EstadoInscripcion
+
+_estadoinscripcion_type = sa.Enum(
+    EstadoInscripcion,
+    values_callable=lambda obj: [e.value for e in obj],
+    name="estadoinscripcion",
+    create_type=False,
+)
 
 
 # ── Inscripciones ───────────────────────────────────────────────────────────
@@ -18,7 +26,9 @@ class Inscripcion(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     usuario_id: uuid.UUID = Field(foreign_key="user.id", nullable=False)
     curso_id: uuid.UUID = Field(foreign_key="cursos.id", nullable=False)
-    estado: EstadoInscripcion = Field(default=EstadoInscripcion.ACTIVA)
+    estado: EstadoInscripcion = Field(
+        default=EstadoInscripcion.ACTIVA, sa_type=_estadoinscripcion_type
+    )
     inscrito_en: datetime = Field(default_factory=datetime.utcnow)
     ultimo_acceso_en: datetime | None = Field(default=None)
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
