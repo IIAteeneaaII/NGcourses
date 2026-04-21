@@ -92,6 +92,7 @@ export default function EditarCursoAdminPage() {
   const cursoId = params.id as string;
 
   const [currentStep, setCurrentStep] = useState(1);
+  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
   const [showPreview, setShowPreview] = useState(false);
   const [categories, setCategories] = useState<ApiCategoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -199,6 +200,11 @@ export default function EditarCursoAdminPage() {
     }
   };
 
+  const goToStep = (step: number) => {
+    setCurrentStep(step);
+    setVisitedSteps((prev) => { const next = new Set(prev); next.add(step); return next; });
+  };
+
   const handleNext = async () => {
     if (currentStep === 1) {
       setIsSaving(true);
@@ -210,7 +216,7 @@ export default function EditarCursoAdminPage() {
           marca,
           ...(category ? { categoria_id: category } : {}),
         });
-        setCurrentStep(2);
+        goToStep(2);
       } catch {
         setSaveError('Error al guardar la información básica');
       } finally {
@@ -218,11 +224,11 @@ export default function EditarCursoAdminPage() {
       }
       return;
     }
-    if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
+    if (currentStep < STEPS.length) goToStep(currentStep + 1);
   };
 
   const handlePrev = () => {
-    if (currentStep > 1) setCurrentStep(currentStep - 1);
+    if (currentStep > 1) goToStep(currentStep - 1);
   };
 
   const handleSave = async () => {
@@ -428,8 +434,8 @@ export default function EditarCursoAdminPage() {
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 1: return !!(title && description);
-      case 2: return true;
-      case 3: return true;
+      case 2: return !!(coverImagePreview);
+      case 3: return modules.length > 0 && modules.some((m) => m.lessons.length > 0);
       case 4: return true;
       case 5: return true;
       default: return false;
@@ -481,19 +487,23 @@ export default function EditarCursoAdminPage() {
       <div className={styles.contentWrapper}>
         <aside className={styles.sidebar}>
           <nav className={styles.stepNav}>
-            {STEPS.map((step) => (
-              <button
-                key={step.id}
-                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepComplete(step.id) ? styles.complete : ''}`}
-                onClick={() => setCurrentStep(step.id)}
-              >
-                <span className={styles.stepIcon}>{step.icon}</span>
-                <span className={styles.stepName}>{step.name}</span>
-                {isStepComplete(step.id) && currentStep !== step.id && (
-                  <span className={styles.checkmark}>✓</span>
-                )}
-              </button>
-            ))}
+            {STEPS.map((step) => {
+              const visited = visitedSteps.has(step.id);
+              const complete = visited && isStepComplete(step.id);
+              return (
+                <button
+                  key={step.id}
+                  className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${complete ? styles.complete : ''}`}
+                  onClick={() => goToStep(step.id)}
+                >
+                  <span className={styles.stepIcon}>{step.icon}</span>
+                  <span className={styles.stepName}>{step.name}</span>
+                  {complete && currentStep !== step.id && (
+                    <span className={styles.checkmark}>✓</span>
+                  )}
+                </button>
+              );
+            })}
           </nav>
         </aside>
 
