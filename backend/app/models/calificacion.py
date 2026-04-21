@@ -1,10 +1,18 @@
 import uuid
 from datetime import datetime
 
+import sqlalchemy as sa
 from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 from app.models._enums import EstadoCalificacion
+
+_estadocalificacion_type = sa.Enum(
+    EstadoCalificacion,
+    values_callable=lambda obj: [e.value for e in obj],
+    name="estadocalificacion",
+    create_type=False,
+)
 
 
 # ── Calificaciones ──────────────────────────────────────────────────────────
@@ -20,7 +28,9 @@ class Calificacion(SQLModel, table=True):
     estrellas: int = Field(ge=1, le=5)
     titulo: str | None = Field(default=None, max_length=255)
     comentario: str | None = Field(default=None)
-    estado: EstadoCalificacion = Field(default=EstadoCalificacion.PENDIENTE)
+    estado: EstadoCalificacion = Field(
+        default=EstadoCalificacion.PENDIENTE, sa_type=_estadocalificacion_type
+    )
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime | None = Field(default=None)
 

@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
 import CourseInfoContent from '@/components/course/CourseInfoContent';
-import { cursosApi, inscripcionesApi } from '@/lib/api/client';
+import { cursosApi, inscripcionesApi, type ApiError } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 import type { CourseInfo } from '@/types/course';
 
 interface ApiModulo {
@@ -25,6 +26,7 @@ interface ApiCurso {
   lo_que_aprenderas: string[];
   requisitos: string | null;
   instructor_nombre: string | null;
+  bloqueado_por_licencia?: boolean;
 }
 
 interface ApiInscripcionesResp {
@@ -76,6 +78,7 @@ export default function CursoInfoPage() {
           requirements: cursoRaw.requisitos || '',
           syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
+          bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
         };
 
         setCourse(courseInfo);
@@ -95,8 +98,13 @@ export default function CursoInfoPage() {
     try {
       await inscripcionesApi.inscribirse(id);
       setIsEnrolled(true);
-    } catch {
-      // ya inscrito u otro error
+    } catch (e) {
+      const err = e as ApiError;
+      if (err?.status === 403) {
+        // Defensa en profundidad: si el flag se perdió por race, sincronizar UI
+        setCourse((prev) => (prev ? { ...prev, bloqueadoPorLicencia: true } : prev));
+      }
+      logError('CursoInfoPage/inscribirse', e);
     } finally {
       setEnrollLoading(false);
     }
@@ -118,6 +126,7 @@ export default function CursoInfoPage() {
       isEnrolled={isEnrolled}
       onInscribirse={handleInscribirse}
       enrollLoading={enrollLoading}
+      bloqueadoPorLicencia={course.bloqueadoPorLicencia}
     />
   );
 }

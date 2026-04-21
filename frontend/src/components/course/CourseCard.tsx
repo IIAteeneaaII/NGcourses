@@ -49,6 +49,11 @@ export default function CourseCard({ course }: CourseCardProps) {
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           onError={() => setImgSrc('/placeholder-course.jpg')}
         />
+        {course.bloqueadoPorLicencia && (
+          <span className={styles.lockedBadge}>
+            Requiere licencia
+          </span>
+        )}
       </div>
 
       <div className={styles.content}>

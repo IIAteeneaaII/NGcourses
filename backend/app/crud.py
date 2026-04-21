@@ -1162,6 +1162,55 @@ def list_licencias_by_org(
     ).all())
 
 
+def tiene_licencia_activa(
+    *, session: Session, org_id: uuid.UUID, curso_id: uuid.UUID
+) -> bool:
+    """True si la org tiene LicenciaCurso ACTIVA, vigente y con cupos para el curso.
+
+    cupos_total=0 representa cupos ilimitados.
+    """
+    lic = session.exec(
+        select(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.curso_id == curso_id,
+            LicenciaCurso.estado == EstadoLicencia.ACTIVA,
+        )
+    ).first()
+    if not lic:
+        return False
+    now = datetime.utcnow()
+    if lic.inicia_en and lic.inicia_en > now:
+        return False
+    if lic.termina_en and lic.termina_en < now:
+        return False
+    if lic.cupos_total and lic.cupos_usados >= lic.cupos_total:
+        return False
+    return True
+
+
+def cursos_con_licencia_activa(
+    *, session: Session, org_id: uuid.UUID
+) -> set[uuid.UUID]:
+    """Set de curso_id con licencia ACTIVA y vigente para la org. Útil para batch lookup."""
+    now = datetime.utcnow()
+    rows = session.exec(
+        select(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.estado == EstadoLicencia.ACTIVA,
+        )
+    ).all()
+    out: set[uuid.UUID] = set()
+    for lic in rows:
+        if lic.inicia_en and lic.inicia_en > now:
+            continue
+        if lic.termina_en and lic.termina_en < now:
+            continue
+        if lic.cupos_total and lic.cupos_usados >= lic.cupos_total:
+            continue
+        out.add(lic.curso_id)
+    return out
+
+
 def list_cursos_for_student(
     *, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 100,
     categoria_id: uuid.UUID | None = None, search: str | None = None,

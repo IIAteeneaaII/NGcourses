@@ -12,9 +12,10 @@ interface CourseInfoContentProps {
   onInscribirse?: () => void;
   enrollLoading?: boolean;
   backHref?: string;
+  bloqueadoPorLicencia?: boolean;
 }
 
-export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading, backHref = '/cursos' }: CourseInfoContentProps) {
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia }: CourseInfoContentProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
 
   return (
@@ -111,6 +112,13 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
               <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
                 Continuar curso
               </Link>
+            ) : bloqueadoPorLicencia ? (
+              <div className={styles.lockedBlock} role="status" aria-live="polite">
+                <h3 className={styles.lockedTitle}>Curso no disponible</h3>
+                <p className={styles.lockedMessage}>
+                  Tu organización no ha adquirido este curso. Contacta a tu administrador para más información.
+                </p>
+              </div>
             ) : (
               onInscribirse && (
                 <button

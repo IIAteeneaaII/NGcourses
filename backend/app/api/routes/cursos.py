@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core.config import settings
-from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
 from app.models.inscripcion import Inscripcion
 from app.models.contenido import (
     BunnyVideoInitResponse,
@@ -91,6 +91,24 @@ def list_cursos(
             session=session, user_id=current_user.id,
             skip=skip, limit=limit, categoria_id=categoria_id, search=search,
         )
+        org_info = crud.get_organizacion_of_user(
+            session=session, user_id=current_user.id
+        )
+        org_id = org_info[0].id if org_info else None
+        accesibles = (
+            crud.cursos_con_licencia_activa(session=session, org_id=org_id)
+            if org_id else set()
+        )
+        items: list[CursoPublic] = []
+        for c in cursos:
+            item = CursoPublic.model_validate(c, from_attributes=True)
+            item.bloqueado_por_licencia = (
+                c.marca == MarcaCurso.NEXTGEN
+                and not c.es_gratis
+                and c.id not in accesibles
+            )
+            items.append(item)
+        return CursosPublic(data=items, count=count)
 
     return CursosPublic(data=cursos, count=count)
 
@@ -136,6 +154,23 @@ def get_curso(
     curso_data.lo_que_aprenderas = meta.get("lo_que_aprenderas", [])
     curso_data.requisitos = meta.get("requisitos")
     curso_data.instructor_nombre = db_curso.instructor.full_name if db_curso.instructor else None
+
+    # Bloqueo por licencia: solo aplica a estudiantes (admins/instructores siempre acceden).
+    if (
+        not is_admin
+        and not is_owner
+        and db_curso.marca == MarcaCurso.NEXTGEN
+        and not db_curso.es_gratis
+    ):
+        org_info = crud.get_organizacion_of_user(
+            session=session, user_id=current_user.id
+        )
+        org_id = org_info[0].id if org_info else None
+        curso_data.bloqueado_por_licencia = not (
+            org_id and crud.tiene_licencia_activa(
+                session=session, org_id=org_id, curso_id=db_curso.id
+            )
+        )
     return curso_data
 
 

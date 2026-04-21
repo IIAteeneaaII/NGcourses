@@ -10,7 +10,7 @@ from sqlmodel import SQLModel
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
-from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
 from app.models.inscripcion import Certificado, Inscripcion
 
 router = APIRouter(prefix="/inscripciones", tags=["inscripciones"])
@@ -65,6 +65,24 @@ def inscribirse(
     )
     if existing:
         raise HTTPException(status_code=409, detail="Ya estás inscrito en este curso")
+
+    # Bloqueo: cursos NEXTGEN no gratuitos requieren LicenciaCurso activa de la org
+    if (
+        not is_admin
+        and db_curso.marca == MarcaCurso.NEXTGEN
+        and not db_curso.es_gratis
+    ):
+        org_info = crud.get_organizacion_of_user(
+            session=session, user_id=current_user.id
+        )
+        org_id = org_info[0].id if org_info else None
+        if not org_id or not crud.tiene_licencia_activa(
+            session=session, org_id=org_id, curso_id=db_curso.id
+        ):
+            raise HTTPException(
+                status_code=403,
+                detail="Tu organización no ha adquirido este curso.",
+            )
 
     db_inscripcion = crud.create_inscripcion(
         session=session,
