@@ -89,11 +89,11 @@
 
 .optionIcon.instructors {
   background: linear-gradient(135deg, #10b981, #34d399);
-  box-shadow: 0 8px 20px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 8px 20px rgba(28, 112, 84, 0.3);
 }
 
 .optionIcon.users {
-  background: linear-gradient(135deg, var(--color-accent-10), #ff8a4c);
+  background: linear-gradient(135deg, var(--color-accent-10), #1B8D56);
   box-shadow: 0 8px 20px rgba(249, 115, 22, 0.3);
 }
 
