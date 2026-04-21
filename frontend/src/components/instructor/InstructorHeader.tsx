@@ -16,12 +16,7 @@ interface InstructorHeaderProps {
 }
 
 export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
-  user = {
-    name: 'Laura Sanchez',
-    initials: 'LS',
-    role: 'Instructor',
-    avatarUrl: null,
-  },
+  user,
   onMenuClick,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
@@ -58,21 +53,34 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
         <div className={styles.right}>
         {/* User Dropdown */}
         <div className={styles.userMenu}>
+          
           <button
             className={styles.userButton}
-            onClick={() => setShowDropdown(!showDropdown)}
+            onClick={() => user && setShowDropdown(!showDropdown)}
             aria-expanded={showDropdown}
             aria-haspopup="true"
+            disabled={!user}
           >
-            {user.avatarUrl ? (
+            {!user ? (
+              <div className={styles.skeletonAvatar} />
+            ) : user.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={user.avatarUrl} alt={user.name} className={styles.userAvatarImg} />
             ) : (
               <div className={styles.userAvatar}>{user.initials}</div>
             )}
             <div className={styles.userInfo}>
-              <span className={styles.userName}>{user.name}</span>
-              <span className={styles.userRole}>{user.role}</span>
+              {!user ? (
+                <>
+                  <span className={styles.skeletonName} />
+                  <span className={styles.skeletonRole} />
+                </>
+              ) : (
+                <>
+                  <span className={styles.userName}>{user.name}</span>
+                  <span className={styles.userRole}>{user.role}</span>
+                </>
+              )}
             </div>
             <svg
               xmlns="http://www.w3.org/2000/svg"

@@ -288,3 +288,37 @@
     right: -0.5rem;
   }
 }
+
+.skeletonAvatar {
+  width: 2.875rem;
+  height: 2.875rem;
+  border-radius: 50%;
+  background: #e5e7eb;
+  flex-shrink: 0;
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+}
+
+.skeletonName {
+  display: block;
+  width: 7rem;
+  height: 0.75rem;
+  border-radius: 0.25rem;
+  background: #e5e7eb;
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+}
+
+.skeletonRole {
+  display: block;
+  width: 4rem;
+  height: 0.625rem;
+  border-radius: 0.25rem;
+  background: #e5e7eb;
+  animation: skeletonPulse 1.2s ease-in-out infinite;
+  animation-delay: 0.15s;
+}
+
+@keyframes skeletonPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
