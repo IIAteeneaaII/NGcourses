@@ -16,26 +16,14 @@ interface SupervisorUser {
   cursos_inscritos: number;
 }
 
-interface Curso {
-  id: string;
-  titulo: string;
-}
-
 export default function SupervisorUsuariosPage() {
   const [users, setUsers] = useState<SupervisorUser[]>([]);
-  const [cursos, setCursos] = useState<Curso[]>([]);
   const [loading, setLoading] = useState(true);
 
   const [showAlta, setShowAlta] = useState(false);
   const [altaForm, setAltaForm] = useState({ email: '', full_name: '', password: '', telefono: '' });
   const [altaLoading, setAltaLoading] = useState(false);
   const [altaError, setAltaError] = useState('');
-
-  const [showInvitar, setShowInvitar] = useState(false);
-  const [invitarForm, setInvitarForm] = useState({ email: '', curso_id: '' });
-  const [invitarLoading, setInvitarLoading] = useState(false);
-  const [invitarMsg, setInvitarMsg] = useState('');
-  const [invitarError, setInvitarError] = useState('');
 
   const loadUsers = useCallback(async () => {
     setLoading(true);
@@ -49,19 +37,9 @@ export default function SupervisorUsuariosPage() {
     }
   }, []);
 
-  const loadCursos = useCallback(async () => {
-    try {
-      const data = await supervisorApi.cursos() as Curso[];
-      setCursos(data);
-    } catch (e) {
-      logError('supervisor.cursos', e);
-    }
-  }, []);
-
   useEffect(() => {
     loadUsers();
-    loadCursos();
-  }, [loadUsers, loadCursos]);
+  }, [loadUsers]);
 
   const handleAlta = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -85,33 +63,6 @@ export default function SupervisorUsuariosPage() {
     }
   };
 
-  const handleInvitar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setInvitarLoading(true);
-    setInvitarError('');
-    setInvitarMsg('');
-    try {
-      const result = await supervisorApi.invitar({
-        curso_id: invitarForm.curso_id,
-        emails: [invitarForm.email],
-      }) as Array<{ email: string; estado: string; detalle?: string }>;
-      const r = result[0];
-      if (r?.estado === 'error') {
-        setInvitarError(r.detalle || 'Error al enviar invitación');
-      } else if (r?.estado === 'ya_inscrito') {
-        setInvitarMsg('El usuario ya está inscrito en ese curso');
-      } else {
-        setInvitarMsg('Invitación enviada correctamente');
-        setInvitarForm({ email: '', curso_id: '' });
-      }
-    } catch (err: unknown) {
-      const apiErr = err as { detail?: string };
-      setInvitarError(apiErr?.detail || 'Error al enviar invitación');
-    } finally {
-      setInvitarLoading(false);
-    }
-  };
-
   const handleQuitar = async (user_id: string) => {
     if (!confirm('¿Quitar este usuario de la organización?')) return;
     try {
@@ -130,9 +81,6 @@ export default function SupervisorUsuariosPage() {
           <p className={styles.subtitle}>Usuarios de tu organización</p>
         </div>
         <div className={styles.headerActions}>
-          <button className={styles.secondaryBtn} onClick={() => { setShowInvitar(true); setInvitarError(''); setInvitarMsg(''); }}>
-            Invitar por email
-          </button>
           <button className={styles.primaryBtn} onClick={() => { setShowAlta(true); setAltaError(''); }}>
             Dar de alta
           </button>
@@ -217,45 +165,6 @@ export default function SupervisorUsuariosPage() {
                 <button type="button" className={styles.cancelButton} onClick={() => setShowAlta(false)}>Cancelar</button>
                 <button type="submit" className={styles.submitButton} disabled={altaLoading}>
                   {altaLoading ? 'Creando...' : 'Crear usuario'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {showInvitar && (
-        <div className={styles.modalOverlay} onClick={() => setShowInvitar(false)}>
-          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Invitar por email</h2>
-              <button className={styles.modalClose} onClick={() => setShowInvitar(false)}>✕</button>
-            </div>
-            <form onSubmit={handleInvitar} className={styles.form}>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email *</label>
-                <input type="email" required className={styles.formInput}
-                  value={invitarForm.email}
-                  onChange={(e) => setInvitarForm({ ...invitarForm, email: e.target.value })}
-                  placeholder="alumno@empresa.com" />
-              </div>
-              <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Curso *</label>
-                <select required className={styles.formInput}
-                  value={invitarForm.curso_id}
-                  onChange={(e) => setInvitarForm({ ...invitarForm, curso_id: e.target.value })}>
-                  <option value="">-- Seleccionar curso --</option>
-                  {cursos.map((c) => (
-                    <option key={c.id} value={c.id}>{c.titulo}</option>
-                  ))}
-                </select>
-              </div>
-              {invitarError && <p className={styles.formError}>{invitarError}</p>}
-              {invitarMsg && <p className={styles.formMsg}>{invitarMsg}</p>}
-              <div className={styles.modalActions}>
-                <button type="button" className={styles.cancelButton} onClick={() => setShowInvitar(false)}>Cancelar</button>
-                <button type="submit" className={styles.submitButton} disabled={invitarLoading}>
-                  {invitarLoading ? 'Enviando...' : 'Enviar invitación'}
                 </button>
               </div>
             </form>
