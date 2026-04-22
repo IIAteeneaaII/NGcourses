@@ -92,6 +92,7 @@ export default function CrearCursoPage() {
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
   const [marca, setMarca] = useState<'ram' | 'nextgen'>('ram');
+  const [esGratis, setEsGratis] = useState(false);
 
   // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
@@ -170,7 +171,7 @@ export default function CrearCursoPage() {
           ...(category ? { categoria_id: category } : {}),
           estado: 'borrador',
           marca,
-          es_gratis: true,
+          es_gratis: esGratis,
           nivel: level || undefined,
           lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
           requisitos: requisitos.trim() || undefined,
@@ -499,7 +500,7 @@ export default function CrearCursoPage() {
 
                 <div className={styles.formGroup}>
                   <label className={styles.label}>Marca del certificado <span className={styles.required}>*</span></label>
-                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.375rem' }}>
+                  <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.375rem', alignItems: 'center', flexWrap: 'wrap' }}>
                     {(['ram', 'nextgen'] as const).map((m) => (
                       <label key={m} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: marca === m ? 700 : 400 }}>
                         <input
@@ -512,7 +513,19 @@ export default function CrearCursoPage() {
                         {m === 'ram' ? 'RAM Electronics' : 'NextGen'}
                       </label>
                     ))}
+                    <span style={{ width: '1px', height: '1.25rem', background: 'var(--color-text-light, #d1d5db)' }} aria-hidden="true" />
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: esGratis ? 700 : 400 }}>
+                      <input
+                        type="checkbox"
+                        checked={esGratis}
+                        onChange={(e) => setEsGratis(e.target.checked)}
+                      />
+                      Curso gratuito
+                    </label>
                   </div>
+                  <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginTop: '0.375rem', display: 'block' }}>
+                    Si no marcas &quot;Curso gratuito&quot;, el curso será de paga y requerirá licencia para inscribirse.
+                  </small>
                 </div>
 
                 <div className={styles.formRow}>
