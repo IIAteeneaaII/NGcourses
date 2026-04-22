@@ -338,6 +338,54 @@ def listar_invitaciones(
     return result
 
 
+@router.post("/invitaciones/{invitacion_id}/reenviar", response_model=InvitacionEnvioResultado)
+def reenviar_invitacion_supervisor(
+    *, invitacion_id: uuid.UUID, session: SessionDep, current_user: SupervisorOrAbove,
+) -> Any:
+    """Reenvía el email de una invitación creada por este supervisor. Genera un
+    nuevo token. No permite reenviar invitaciones ya usadas."""
+    inv = crud.get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv or inv.creado_por != current_user.id:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if inv.usado_en is not None:
+        raise HTTPException(
+            status_code=409, detail="No se puede reenviar una invitación ya utilizada"
+        )
+
+    curso = crud.get_curso(session=session, curso_id=inv.curso_id)
+    curso_titulo = curso.titulo if curso else ""
+
+    inv, raw_token = crud.reenviar_invitacion(session=session, invitacion_id=invitacion_id)
+
+    if settings.emails_enabled:
+        from app.utils import generate_invitation_email, send_email
+        email_data = generate_invitation_email(
+            email_to=inv.email, curso_titulo=curso_titulo,
+            token=raw_token, password_temporal=None,
+        )
+        send_email(
+            email_to=inv.email, subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
+    return InvitacionEnvioResultado(email=inv.email, estado="enviada")
+
+
+@router.delete("/invitaciones/{invitacion_id}", status_code=204)
+def revocar_invitacion_supervisor(
+    *, invitacion_id: uuid.UUID, session: SessionDep, current_user: SupervisorOrAbove,
+) -> None:
+    """Revoca una invitación pendiente creada por este supervisor."""
+    inv = crud.get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv or inv.creado_por != current_user.id:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if inv.usado_en is not None:
+        raise HTTPException(
+            status_code=409, detail="No se puede revocar una invitación ya utilizada"
+        )
+    crud.delete_invitacion(session=session, invitacion_id=invitacion_id)
+
+
 @router.get("/stats", response_model=StatsPublic)
 def stats(
     *, session: SessionDep, current_user: SupervisorOrAbove,
