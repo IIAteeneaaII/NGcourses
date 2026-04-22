@@ -1,16 +1,17 @@
 import logging
 import os
 import uuid
+from datetime import datetime
 from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
-from sqlmodel import func, select
+from sqlmodel import SQLModel, func, select
 
 logger = logging.getLogger(__name__)
 
 from app import crud
-from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
+from app.api.deps import CurrentUser, InstructorOrAbove, SessionDep, get_current_active_superuser
 from app.core.config import settings
 from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
 from app.models.inscripcion import Inscripcion
@@ -783,3 +784,176 @@ def delete_recurso(
 
     crud.delete_recurso_leccion(session=session, recurso_id=recurso_id)
     return Message(message="Recurso eliminado exitosamente")
+
+
+# ── Invitaciones por curso (instructor) ───────────────────────────────────────
+
+
+class _InvitarBody(SQLModel):
+    emails: list[str]
+
+
+class _InvitacionEnvioResultado(SQLModel):
+    email: str
+    estado: str
+    detalle: str | None = None
+
+
+class _InvitacionPublica(SQLModel):
+    id: uuid.UUID
+    curso_id: uuid.UUID
+    email: str
+    expira_en: datetime
+    usado_en: datetime | None
+    creado_en: datetime
+    estado: str
+
+
+def _estado_inv(inv: Any) -> str:
+    if inv.usado_en is not None:
+        return "usada"
+    if inv.expira_en < datetime.utcnow():
+        return "expirada"
+    return "pendiente"
+
+
+def _require_curso_instructor_access(
+    session: SessionDep, curso_id: uuid.UUID, current_user: CurrentUser
+) -> Any:
+    """Devuelve el curso si el usuario es su instructor o admin. Lanza 404/403 si no."""
+    curso = crud.get_curso(session=session, curso_id=curso_id)
+    if not curso:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+    _require_curso_owner_or_admin(current_user, curso.instructor_id)
+    return curso
+
+
+@router.post(
+    "/{curso_id}/invitaciones",
+    response_model=list[_InvitacionEnvioResultado],
+    status_code=201,
+)
+def invitar_a_curso(
+    *,
+    curso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: InstructorOrAbove,
+    body: _InvitarBody,
+) -> Any:
+    """Envía invitaciones por email para un curso propio del instructor."""
+    curso = _require_curso_instructor_access(session, curso_id, current_user)
+
+    resultados: list[_InvitacionEnvioResultado] = []
+    for email in body.emails:
+        email = email.strip().lower()
+        if not email:
+            continue
+        try:
+            existing_user = crud.get_user_by_email(session=session, email=email)
+            if existing_user:
+                insc = crud.get_inscripcion_by_usuario_curso(
+                    session=session, usuario_id=existing_user.id, curso_id=curso_id,
+                )
+                if insc and insc.estado == EstadoInscripcion.ACTIVA:
+                    resultados.append(_InvitacionEnvioResultado(
+                        email=email, estado="ya_inscrito",
+                        detalle="El usuario ya está inscrito en este curso",
+                    ))
+                    continue
+
+            db_inv, raw_token = crud.create_invitacion(
+                session=session, curso_id=curso_id, email=email,
+                creado_por_id=current_user.id,
+            )
+
+            if settings.emails_enabled:
+                from app.utils import generate_invitation_email, send_email
+                email_data = generate_invitation_email(
+                    email_to=email, curso_titulo=curso.titulo,
+                    token=raw_token, password_temporal=None,
+                )
+                send_email(
+                    email_to=email, subject=email_data.subject,
+                    html_content=email_data.html_content,
+                )
+
+            resultados.append(_InvitacionEnvioResultado(email=email, estado="enviada"))
+        except Exception as exc:
+            logger.error("Error al invitar %s: %s", email, exc)
+            resultados.append(_InvitacionEnvioResultado(
+                email=email, estado="error", detalle=str(exc)
+            ))
+    return resultados
+
+
+@router.get("/{curso_id}/invitaciones", response_model=list[_InvitacionPublica])
+def listar_invitaciones_curso_instructor(
+    *,
+    curso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: InstructorOrAbove,
+) -> Any:
+    """Lista las invitaciones de un curso propio del instructor."""
+    _require_curso_instructor_access(session, curso_id, current_user)
+    invs = crud.get_invitaciones_por_curso(session=session, curso_id=curso_id)
+    return [
+        _InvitacionPublica(
+            id=inv.id, curso_id=inv.curso_id, email=inv.email,
+            expira_en=inv.expira_en, usado_en=inv.usado_en,
+            creado_en=inv.creado_en, estado=_estado_inv(inv),
+        )
+        for inv in invs
+    ]
+
+
+@router.post(
+    "/{curso_id}/invitaciones/{invitacion_id}/reenviar",
+    response_model=_InvitacionEnvioResultado,
+)
+def reenviar_invitacion_curso(
+    *,
+    curso_id: uuid.UUID,
+    invitacion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: InstructorOrAbove,
+) -> Any:
+    """Reenvía una invitación de un curso propio del instructor."""
+    curso = _require_curso_instructor_access(session, curso_id, current_user)
+    inv = crud.get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv or inv.curso_id != curso_id:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if inv.usado_en is not None:
+        raise HTTPException(status_code=409, detail="No se puede reenviar una invitación ya utilizada")
+
+    inv, raw_token = crud.reenviar_invitacion(session=session, invitacion_id=invitacion_id)
+
+    if settings.emails_enabled:
+        from app.utils import generate_invitation_email, send_email
+        email_data = generate_invitation_email(
+            email_to=inv.email, curso_titulo=curso.titulo,
+            token=raw_token, password_temporal=None,
+        )
+        send_email(
+            email_to=inv.email, subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
+    return _InvitacionEnvioResultado(email=inv.email, estado="enviada")
+
+
+@router.delete("/{curso_id}/invitaciones/{invitacion_id}", status_code=204)
+def revocar_invitacion_curso(
+    *,
+    curso_id: uuid.UUID,
+    invitacion_id: uuid.UUID,
+    session: SessionDep,
+    current_user: InstructorOrAbove,
+) -> None:
+    """Revoca una invitación pendiente de un curso propio del instructor."""
+    _require_curso_instructor_access(session, curso_id, current_user)
+    inv = crud.get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv or inv.curso_id != curso_id:
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    if inv.usado_en is not None:
+        raise HTTPException(status_code=409, detail="No se puede revocar una invitación ya utilizada")
+    crud.delete_invitacion(session=session, invitacion_id=invitacion_id)
