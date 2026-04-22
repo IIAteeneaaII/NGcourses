@@ -91,6 +91,7 @@ export default function CrearCursoPage() {
   const [allowComments, setAllowComments] = useState(true);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
+  const [esGratis, setEsGratis] = useState(false);
 
   // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
@@ -132,7 +133,7 @@ export default function CrearCursoPage() {
           descripcion: description,
           ...(category ? { categoria_id: category } : {}),
           estado: 'borrador',
-          es_gratis: true,
+          es_gratis: esGratis,
           nivel: level || undefined,
           lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
           requisitos: requisitos.trim() || undefined,
@@ -480,6 +481,20 @@ export default function CrearCursoPage() {
                     rows={3}
                     placeholder="Ej: Conocimientos básicos de computación, acceso a internet..."
                   />
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: esGratis ? 700 : 400 }}>
+                    <input
+                      type="checkbox"
+                      checked={esGratis}
+                      onChange={(e) => setEsGratis(e.target.checked)}
+                    />
+                    Curso gratuito
+                  </label>
+                  <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginTop: '0.375rem', display: 'block' }}>
+                    Si no marcas &quot;Curso gratuito&quot;, el curso será de paga y requerirá licencia para inscribirse.
+                  </small>
                 </div>
 
                 {createError && (
