@@ -283,6 +283,17 @@ export const certificadosApi = {
   },
 };
 
+export const instructorInvitacionesApi = {
+  enviar: (curso_id: string, emails: string[]) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/invitaciones`, { emails }),
+  listar: (curso_id: string) =>
+    apiClient.get(`/api/v1/cursos/${curso_id}/invitaciones`),
+  reenviar: (curso_id: string, inv_id: string) =>
+    apiClient.post(`/api/v1/cursos/${curso_id}/invitaciones/${inv_id}/reenviar`, {}),
+  revocar: (curso_id: string, inv_id: string) =>
+    apiClient.delete(`/api/v1/cursos/${curso_id}/invitaciones/${inv_id}`),
+};
+
 export const invitacionesApi = {
   crear: (data: { curso_id: string; emails: string[] }) =>
     apiClient.post('/api/v1/invitaciones/', data),
@@ -332,6 +343,10 @@ export const supervisorApi = {
   invitar: (data: { curso_id: string; emails: string[] }) =>
     apiClient.post('/api/v1/supervisor/invitaciones', data),
   listarInvitaciones: () => apiClient.get('/api/v1/supervisor/invitaciones'),
+  reenviarInvitacion: (id: string) =>
+    apiClient.post(`/api/v1/supervisor/invitaciones/${id}/reenviar`, {}),
+  revocarInvitacion: (id: string) =>
+    apiClient.delete(`/api/v1/supervisor/invitaciones/${id}`),
   stats: () => apiClient.get('/api/v1/supervisor/stats'),
   crearSolicitud: (data: { titulo_solicitud: string; descripcion?: string }) =>
     apiClient.post('/api/v1/supervisor/solicitudes', data),
