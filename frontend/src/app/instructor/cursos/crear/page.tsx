@@ -103,46 +103,23 @@ export default function CrearCursoPage() {
   const [createError, setCreateError] = useState('');
   const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState('');
+  const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Creación inline de categoría
-  const [showNewCatInput, setShowNewCatInput] = useState(false);
-  const [newCategoryName, setNewCategoryName] = useState('');
-  const [isCreatingCategory, setIsCreatingCategory] = useState(false);
 
   useEffect(() => {
     categoriasApi.list().then((data) => setCategories(data as ApiCategoria[])).catch((e) => logError('instructor/cursos/crear/autoSave', e));
   }, []);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (e.target.value === '__new__') {
-      setShowNewCatInput(true);
-      setCategory('');
-    } else {
-      setCategory(e.target.value);
-      setShowNewCatInput(false);
-    }
-  };
-
-  const handleCreateCategory = async () => {
-    if (!newCategoryName.trim()) return;
-    setIsCreatingCategory(true);
-    try {
-      const newCat = await categoriasApi.create({ nombre: newCategoryName.trim() }) as ApiCategoria;
-      setCategories((prev) => [...prev, newCat]);
-      setCategory(newCat.id);
-      setNewCategoryName('');
-      setShowNewCatInput(false);
-    } catch (e) {
-      logError('instructor/cursos/crear/createCategory', e);
-    } finally {
-      setIsCreatingCategory(false);
-    }
+    setCategory(e.target.value);
   };
 
   // Avanzar paso — al ir de step 1 a step 2, crear el curso en backend
   const handleNext = async () => {
     if (currentStep === 1) {
       if (cursoId) {
+        setCompletedSteps((prev) => { const next = new Set(prev); next.add(1); return next; });
         setCurrentStep(2);
         return;
       }
@@ -161,6 +138,7 @@ export default function CrearCursoPage() {
           requisitos: requisitos.trim() || undefined,
         }) as { id: string };
         setCursoId(resp.id);
+        setCompletedSteps((prev) => { const next = new Set(prev); next.add(1); return next; });
         setCurrentStep(2);
       } catch (err) {
         setCreateError(err instanceof Error ? err.message : 'Error al crear el borrador');
@@ -177,7 +155,10 @@ export default function CrearCursoPage() {
         // No bloqueamos el avance si falla la portada
       }
     }
-    if (currentStep < STEPS.length) setCurrentStep(currentStep + 1);
+    if (currentStep < STEPS.length) {
+      setCompletedSteps((prev) => { const next = new Set(prev); next.add(currentStep); return next; });
+      setCurrentStep(currentStep + 1);
+    }
   };
 
   const handlePrev = () => {
@@ -363,7 +344,8 @@ export default function CrearCursoPage() {
         lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
         requisitos: requisitos.trim() || undefined,
       });
-      router.push(`/instructor/cursos/${cursoId}/editar`);
+      setIsSubmitted(true);
+      setCompletedSteps((prev) => { const next = new Set(prev); next.add(5); return next; });
     } catch {
       setPublishError('Error al enviar el curso para revisión. Intenta de nuevo.');
     } finally {
@@ -374,13 +356,17 @@ export default function CrearCursoPage() {
   const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 1: return !!(title && description && level);
-      case 2: return true; // portada opcional
-      case 3: return modules.length > 0;
+      case 2: return !!coverFile;
+      case 3: return modules.length > 0 && modules.some((m) => m.lessons.length > 0);
       case 4: return true;
       case 5: return true;
       default: return false;
     }
   };
+
+  const isStepMarkedComplete = (step: number) => completedSteps.has(step) && isStepComplete(step);
+  const maxReachedStep = completedSteps.size > 0 ? Math.max(...completedSteps) + 1 : 1;
+  const isStepLocked = (step: number) => isSubmitted || step > maxReachedStep;
 
   const totalLessons = modules.reduce((acc, m) => acc + m.lessons.length, 0);
 
@@ -411,12 +397,21 @@ export default function CrearCursoPage() {
             {STEPS.map((step) => (
               <button
                 key={step.id}
-                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepComplete(step.id) ? styles.complete : ''}`}
-                onClick={() => setCurrentStep(step.id)}
+                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepMarkedComplete(step.id) ? styles.complete : ''} ${isStepLocked(step.id) ? styles.locked : ''}`}
+                onClick={() => !isStepLocked(step.id) && setCurrentStep(step.id)}
+                disabled={isStepLocked(step.id)}
+                title={isStepLocked(step.id) ? 'Completa los pasos anteriores para desbloquear' : undefined}
               >
-                <span className={styles.stepIcon}>{step.icon}</span>
+                <span className={styles.stepIcon}>
+                  {isStepLocked(step.id) ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                  ) : step.icon}
+                </span>
                 <span className={styles.stepName}>{step.name}</span>
-                {isStepComplete(step.id) && currentStep !== step.id && (
+                {isStepMarkedComplete(step.id) && currentStep !== step.id && (
                   <span className={styles.checkmark}>✓</span>
                 )}
               </button>
@@ -446,46 +441,12 @@ export default function CrearCursoPage() {
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label className={styles.label}>Categoría</label>
-                    {!showNewCatInput ? (
-                      <select value={category} onChange={handleCategoryChange} className={styles.select}>
-                        <option value="">Sin categoría</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                        ))}
-                        <option value="__new__">+ Crear nueva categoría...</option>
-                      </select>
-                    ) : (
-                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                        <input
-                          type="text"
-                          className={styles.input}
-                          placeholder="Nombre de la nueva categoría"
-                          value={newCategoryName}
-                          onChange={(e) => setNewCategoryName(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
-                          autoFocus
-                          disabled={isCreatingCategory}
-                          aria-label="Nombre de la nueva categoría"
-                          style={{ flex: 1 }}
-                        />
-                        <button
-                          type="button"
-                          onClick={handleCreateCategory}
-                          disabled={!newCategoryName.trim() || isCreatingCategory}
-                          style={{ padding: '0.5rem 1rem', background: 'var(--color-secondary-30)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
-                        >
-                          {isCreatingCategory ? 'Creando...' : 'Crear'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
-                          style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
-                          aria-label="Cancelar crear categoría"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    )}
+                    <select value={category} onChange={handleCategoryChange} className={styles.select}>
+                      <option value="">Sin categoría</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                      ))}
+                    </select>
                   </div>
                   <div className={styles.formGroup}>
                     <label className={styles.label}>Nivel <span className={styles.required}>*</span></label>
@@ -560,6 +521,11 @@ export default function CrearCursoPage() {
                     </label>
                   )}
                 </div>
+                {!coverFile && (
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280', textAlign: 'center' }}>
+                    Se requiere subir una imagen de portada para continuar al siguiente paso.
+                  </p>
+                )}
               </div>
             )}
 
@@ -744,6 +710,13 @@ export default function CrearCursoPage() {
                     Agregar módulo
                   </button>
                 </div>
+                {!isStepComplete(3) && (
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                    {modules.length === 0
+                      ? 'Agrega al menos un módulo con una lección para continuar.'
+                      : 'Agrega al menos una lección en algún módulo para continuar.'}
+                  </p>
+                )}
               </div>
             )}
 
@@ -781,8 +754,31 @@ export default function CrearCursoPage() {
               </div>
             )}
 
+            {/* Step 5: Enviado con éxito */}
+            {currentStep === 5 && isSubmitted && (
+              <div className={styles.stepContent}>
+                <div className={styles.submitSuccess}>
+                  <div className={styles.submitSuccessIcon}>
+                    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  </div>
+                  <h2 className={styles.submitSuccessTitle}>¡Curso enviado para revisión!</h2>
+                  <p className={styles.submitSuccessSubtitle}>
+                    <strong>{title}</strong> ha sido enviado. Un administrador lo revisará y publicará pronto.
+                  </p>
+                  <button
+                    className={styles.editCourseButton}
+                    onClick={() => router.push(`/instructor/cursos/${cursoId}/editar`)}
+                  >
+                    Ir a editar el curso
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Step 5: Enviar para revisión */}
-            {currentStep === 5 && (
+            {currentStep === 5 && !isSubmitted && (
               <div className={styles.stepContent}>
                 <h2 className={styles.stepTitle}>Enviar para Revisión</h2>
                 <p className={styles.stepDescription}>
@@ -821,32 +817,34 @@ export default function CrearCursoPage() {
             )}
 
             {/* Navigation Buttons */}
-            <div className={styles.navigationButtons}>
-              <button className={styles.backButton} onClick={handlePrev} disabled={currentStep === 1}>
-                Atrás
-              </button>
-
-              {currentStep < STEPS.length ? (
-                <button
-                  className={styles.nextButton}
-                  onClick={handleNext}
-                  disabled={!isStepComplete(currentStep) || isCreating}
-                >
-                  {isCreating ? 'Creando borrador...' : 'Siguiente'}
+            {!isSubmitted && (
+              <div className={styles.navigationButtons}>
+                <button className={styles.backButton} onClick={handlePrev} disabled={currentStep === 1}>
+                  Atrás
                 </button>
-              ) : (
-                <>
-                  {publishError && (
-                    <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
-                      {publishError}
-                    </p>
-                  )}
-                  <button className={styles.publishButton} onClick={handleSubmit} disabled={isPublishing}>
-                    {isPublishing ? 'Enviando...' : 'Enviar para revisión'}
+
+                {currentStep < STEPS.length ? (
+                  <button
+                    className={styles.nextButton}
+                    onClick={handleNext}
+                    disabled={!isStepComplete(currentStep) || isCreating}
+                  >
+                    {isCreating ? 'Creando borrador...' : 'Siguiente'}
                   </button>
-                </>
-              )}
-            </div>
+                ) : (
+                  <>
+                    {publishError && (
+                      <p style={{ color: 'var(--color-error, #e53e3e)', fontSize: '0.875rem', margin: '0 0 0.5rem' }}>
+                        {publishError}
+                      </p>
+                    )}
+                    <button className={styles.publishButton} onClick={handleSubmit} disabled={isPublishing}>
+                      {isPublishing ? 'Enviando...' : 'Enviar para revisión'}
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </main>
       </div>

@@ -12,15 +12,17 @@ interface InstructorLayoutProps {
 
 export const InstructorLayout: React.FC<InstructorLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [headerUser, setHeaderUser] = useState<{ name: string; initials: string; role: string } | undefined>(undefined);
+  const [headerUser, setHeaderUser] = useState<{ name: string; initials: string; role: string; avatarUrl?: string | null } | undefined>(undefined);
 
   useEffect(() => {
     getCurrentUser().then((u) => {
       const name = u.full_name || u.email;
+      const stored = localStorage.getItem(`avatar_${u.id}`);
       setHeaderUser({
         name,
         initials: name.slice(0, 2).toUpperCase(),
         role: 'Instructor',
+        avatarUrl: stored || null,
       });
     }).catch(() => {/* mantener undefined para mostrar valor por defecto */});
   }, []);
