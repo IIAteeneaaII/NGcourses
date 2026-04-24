@@ -1,3 +1,18 @@
+/* Notice de acceso denegado */
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  background-color: var(--color-accent-10-light);
+  border: 1px solid var(--color-accent-10);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-accent-10);
+  font-weight: 500;
+}
+
 /* Variables locales del login */
 .container {
   min-height: 100vh;
@@ -82,18 +97,10 @@
 }
 
 .brandIcon {
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: rgba(255,255,255,.16);
-  border: 1px solid rgba(255,255,255,.22);
-  display: grid;
-  place-items: center;
-  backdrop-filter: blur(8px);
-  box-shadow: 0 10px 25px rgba(0,0,0,.12);
-  font-weight: 800;
-  font-size: 0.95rem;
-  letter-spacing: 0.5px;
+  width: 70px;
+  height: 70px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brandText {

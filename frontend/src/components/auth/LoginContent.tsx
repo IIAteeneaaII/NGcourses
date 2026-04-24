@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
@@ -21,6 +21,14 @@ export default function LoginContent() {
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [notice, setNotice] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get('error');
+    if (errorParam === 'auth') setNotice('Debes iniciar sesión para acceder a esa página.');
+    if (errorParam === 'role') setNotice('No tienes permisos para acceder a esa sección.');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,7 +61,8 @@ export default function LoginContent() {
         {/* Panel izquierdo - Brand */}
         <section className={styles.leftPanel}>
           <div className={styles.brandContainer}>
-            <div className={styles.brandIcon}>NG</div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/icono_invertido.png" alt="NextGen" className={styles.brandIcon}/>
             <h1 className={styles.mainTitle}>
               <span className={styles.titleBold}>NEXT GEN</span>{' '}
               <span className={styles.titleLight}>Course</span>
@@ -85,6 +94,15 @@ export default function LoginContent() {
           <div className={styles.loginCard}>
             <h2 className={styles.loginTitle}>Tu siguiente nivel te espera</h2>
             <p className={styles.loginSubtitle}>El conocimiento que transforma carreras, a tu ritmo.</p>
+
+            {notice && (
+              <div className={styles.notice}>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                </svg>
+                {notice}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className={styles.form}>
               <div className={styles.inputGroup}>

@@ -25,7 +25,7 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
 
   const handleLogout = async () => {
     await logout();
-    router.push('/');
+    router.replace('/');
   };
 
   return (

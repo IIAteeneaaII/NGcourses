@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { logout } from '@/lib/auth';
 import styles from './AdminHeader.module.css';
 
 interface AdminHeaderProps {
@@ -22,9 +23,9 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
-    // TODO: Implement actual logout logic
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
   };
 
   const handleProfile = () => {

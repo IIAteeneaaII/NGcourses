@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { logout } from '@/lib/auth';
 import styles from './InstructorHeader.module.css';
 
 interface InstructorHeaderProps {
@@ -22,8 +23,9 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
   const [showDropdown, setShowDropdown] = useState(false);
   const router = useRouter();
 
-  const handleLogout = () => {
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
   };
 
   const handleProfile = () => {
