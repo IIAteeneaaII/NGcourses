@@ -38,6 +38,8 @@ export function setToken(token: string): void {
 export function clearToken(): void {
   localStorage.removeItem(TOKEN_KEY);
   document.cookie = `${TOKEN_KEY}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  document.cookie = `user_rol=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  document.cookie = `user_superuser=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
 }
 
 export function isAuthenticated(): boolean {
@@ -48,6 +50,8 @@ export async function login(email: string, password: string): Promise<AuthUser> 
   const data = await apiClient.loginForm(email, password);
   setToken(data.access_token);
   const user = await getCurrentUser();
+  document.cookie = `user_rol=${user.rol}; path=/; SameSite=Lax`;
+  document.cookie = `user_superuser=${user.is_superuser ? '1' : '0'}; path=/; SameSite=Lax`;
   return user;
 }
 

@@ -1,36 +1,49 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-/**
- * Rutas que requieren autenticación.
- * El middleware verifica que exista el token en la cookie o header.
- * El token se almacena en localStorage (client-side), por lo que
- * usamos una cookie "auth_token" sincronizada desde el cliente.
- */
-const PROTECTED_PATHS = [
-  '/cursos',
-  '/curso',
-  '/mis-cursos',
-  '/perfil',
-  '/instructor',
-  '/admin',
-];
+const ROLE_ROUTES: Record<string, string> = {
+  '/admin':      'administrador',
+  '/supervisor': 'supervisor',
+  '/instructor': 'instructor',
+};
 
-const ADMIN_ONLY = ['/admin'];
-const INSTRUCTOR_ONLY = ['/instructor'];
+const ROL_HOME: Record<string, string> = {
+  'administrador': '/admin',
+  'supervisor':    '/supervisor',
+  'instructor':    '/instructor',
+};
+
+const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-
-  const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
-  if (!isProtected) return NextResponse.next();
-
-  // El token se sincroniza a una cookie desde el cliente (ver useAuth hook)
   const token = request.cookies.get('access_token')?.value;
+  const userRol = request.cookies.get('user_rol')?.value;
+  const isSuperuser = request.cookies.get('user_superuser')?.value === '1';
 
-  if (!token) {
-    const loginUrl = new URL('/', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  // Rutas con rol específico
+  for (const [prefix, requiredRole] of Object.entries(ROLE_ROUTES)) {
+    if (pathname.startsWith(prefix)) {
+      if (!token) {
+        return NextResponse.redirect(new URL('/?error=auth', request.url));
+      }
+      if (isSuperuser && prefix === '/admin') return NextResponse.next();
+      if (userRol !== requiredRole) {
+        // Tiene sesión pero rol incorrecto → redirigir a su propio dashboard
+        const home = userRol ? (ROL_HOME[userRol] ?? '/cursos') : '/cursos';
+        return NextResponse.redirect(new URL(`${home}?error=role`, request.url));
+      }
+      return NextResponse.next();
+    }
+  }
+
+  // Rutas que solo requieren sesión activa
+  for (const route of AUTH_ROUTES) {
+    if (pathname.startsWith(route)) {
+      if (!token) {
+        return NextResponse.redirect(new URL('/?error=auth', request.url));
+      }
+      return NextResponse.next();
+    }
   }
 
   return NextResponse.next();
@@ -38,11 +51,12 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/admin/:path*',
+    '/supervisor/:path*',
+    '/instructor/:path*',
     '/cursos/:path*',
     '/curso/:path*',
     '/mis-cursos/:path*',
     '/perfil/:path*',
-    '/instructor/:path*',
-    '/admin/:path*',
   ],
 };
