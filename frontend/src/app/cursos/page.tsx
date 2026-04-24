@@ -42,10 +42,12 @@ export default function CursosPage() {
 
         if (apiUser.status === 'fulfilled') {
           const u = apiUser.value;
+          const stored = localStorage.getItem(`avatar_${u.id}`);
           setUser({
             id: u.id,
             name: u.full_name || u.email,
             initials: (u.full_name || u.email).slice(0, 2).toUpperCase(),
+            avatarUrl: stored || null,
           });
           if (u.organizacion?.nombre) setOrgName(u.organizacion.nombre);
         }

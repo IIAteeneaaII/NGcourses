@@ -1,10 +1,13 @@
 'use client';
 
+'use client';
+
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CourseCard from '@/components/course/CourseCard';
 import type { CourseCard as CourseCardType, User } from '@/types/course';
+import { logout } from '@/lib/auth';
 import styles from './CoursesContent.module.css';
 
 interface CoursesContentProps {
@@ -43,21 +46,32 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
     setIsDropdownOpen(false);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('access_token');
-    document.cookie = 'access_token=; Max-Age=0; path=/';
-    router.push('/');
+  const handleLogout = async () => {
+    await logout();
+    router.replace('/');
   };
 
   return (
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Cursos Online</div>
+          <div className={styles.logoGroup}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NEXT GEN</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
+          </div>
 
           <div className={styles.userDropdown}>
             <button className={styles.userButton} onClick={toggleDropdown}>
-              <div className={styles.userAvatar}>{user.initials}</div>
+              {user.avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={user.avatarUrl} alt={user.name} className={styles.userAvatarImg} />
+              ) : (
+                <div className={styles.userAvatar}>{user.initials}</div>
+              )}
               <span className={styles.userName}>{user.name}</span>
               <span
                 className={`${styles.dropdownArrow} ${isDropdownOpen ? styles.dropdownArrowOpen : ''}`}
@@ -97,7 +111,9 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
 
           <div className={styles.searchContainer}>
             <div className={styles.searchInputWrapper}>
-              <span className={styles.searchIcon}>🔍</span>
+              <svg className={styles.searchIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+              </svg>
               <input
                 type="text"
                 placeholder="Buscar por título, categoría o instructor"

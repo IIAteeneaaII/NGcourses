@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import MyCoursesContent from '@/components/my-courses/MyCoursesContent';
-import type { UserCourse, MyCoursesStatistics } from '@/types/course';
+import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
 import { inscripcionesApi, cursosApi, certificadosApi } from '@/lib/api/client';
+import { getCurrentUser } from '@/lib/auth';
 
 interface ApiInscripcion {
   id: string;
@@ -48,18 +49,29 @@ const EMPTY_STATS: MyCoursesStatistics = {
   totalHours: '0h',
 };
 
+const FALLBACK_USER: User = { id: '', name: 'Usuario', initials: 'U' };
+
 export default function MisCursosPage() {
   const [courses, setCourses] = useState<UserCourse[]>([]);
   const [statistics, setStatistics] = useState<MyCoursesStatistics>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User>(FALLBACK_USER);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [inscResp, certResp] = await Promise.all([
+        const [inscResp, certResp, apiUser] = await Promise.all([
           inscripcionesApi.mis() as Promise<ApiInscripcionesResp>,
           certificadosApi.mis() as Promise<ApiCertificadosResp>,
+          getCurrentUser(),
         ]);
+        const stored = localStorage.getItem(`avatar_${apiUser.id}`);
+        setUser({
+          id: apiUser.id,
+          name: apiUser.full_name || apiUser.email,
+          initials: (apiUser.full_name || apiUser.email).slice(0, 2).toUpperCase(),
+          avatarUrl: stored || null,
+        });
         const inscripciones = inscResp.data;
         const certByCursoId = Object.fromEntries(
           certResp.data.map((c) => [c.curso_id, c])
@@ -120,5 +132,5 @@ export default function MisCursosPage() {
     );
   }
 
-  return <MyCoursesContent courses={courses} statistics={statistics} />;
+  return <MyCoursesContent courses={courses} statistics={statistics} user={user} />;
 }

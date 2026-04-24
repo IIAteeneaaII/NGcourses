@@ -108,6 +108,7 @@ export interface User {
   id: string;
   name: string;
   initials: string;
+  avatarUrl?: string | null;
 }
 
 export interface UserProfile {

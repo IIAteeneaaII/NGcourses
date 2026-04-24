@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import type { UserCourse, MyCoursesStatistics } from '@/types/course';
+import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
 import { certificadosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './MyCoursesContent.module.css';
@@ -13,9 +13,10 @@ type FilterType = 'all' | 'in_progress' | 'completed';
 interface MyCoursesContentProps {
   courses: UserCourse[];
   statistics: MyCoursesStatistics;
+  user?: User;
 }
 
-export default function MyCoursesContent({ courses, statistics }: MyCoursesContentProps) {
+export default function MyCoursesContent({ courses, statistics, user }: MyCoursesContentProps) {
   const [activeFilter, setActiveFilter] = useState<FilterType>('all');
   const [downloading, setDownloading] = useState<string | null>(null);
 
@@ -42,10 +43,30 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Cursos Online</div>
-          <Link href="/cursos" className={styles.backButton}>
-            ← Volver al Dashboard
-          </Link>
+          <div className={styles.logoGroup}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NEXT GEN</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
+          </div>
+          <div className={styles.headerRight}>
+            {user && (
+              <div className={styles.userInfo}>
+                {user.avatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={user.avatarUrl} alt={user.name} className={styles.userAvatarImg} />
+                ) : (
+                  <div className={styles.userAvatar}>{user.initials}</div>
+                )}
+                <span className={styles.userName}>{user.name}</span>
+              </div>
+            )}
+            <Link href="/cursos" className={styles.backButton}>
+              ← Volver al Dashboard
+            </Link>
+          </div>
         </div>
       </header>
 
