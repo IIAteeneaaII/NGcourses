@@ -25,7 +25,7 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    window.location.replace('/');
   };
 
   const handleProfile = () => {
