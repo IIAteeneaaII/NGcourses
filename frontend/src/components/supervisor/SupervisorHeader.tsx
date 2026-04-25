@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
 import styles from './SupervisorHeader.module.css';
 
@@ -21,11 +20,10 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
   onMenuClick,
 }) => {
   const [showDropdown, setShowDropdown] = useState(false);
-  const router = useRouter();
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    window.location.replace('/');
   };
 
   return (
