@@ -85,13 +85,13 @@ jobs:
             | docker login --username AWS --password-stdin 314679576825.dkr.ecr.us-west-2.amazonaws.com
 
           echo "Pulling new images..."
-          docker compose -f docker-compose.prod.yml pull
+          docker-compose -f docker-compose.prod.yml pull
 
           echo "Restarting services..."
-          docker compose -f docker-compose.prod.yml up -d
+          docker-compose -f docker-compose.prod.yml up -d
 
           echo "Status:"
-          docker compose -f docker-compose.prod.yml ps
+          docker-compose -f docker-compose.prod.yml ps
 
           echo "Pruning dangling images..."
           docker image prune -f
