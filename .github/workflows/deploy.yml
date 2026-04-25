@@ -72,11 +72,11 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H 44.250.178.54 >> ~/.ssh/known_hosts
 
       - name: SSH and restart compose
         run: |
-          ssh -i ~/.ssh/deploy_key ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} bash <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key ec2-user@44.250.178.54 bash <<'REMOTE'
           set -euo pipefail
           cd ~
 
