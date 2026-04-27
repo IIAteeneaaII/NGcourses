@@ -110,6 +110,23 @@ class Settings(BaseSettings):
     def bunny_enabled(self) -> bool:
         return bool(self.BUNNY_API_KEY and self.BUNNY_LIBRARY_ID)
 
+    # PayPal (RF10/RF08) — Sandbox para dev, Live para produccion
+    PAYPAL_CLIENT_ID: str | None = None
+    PAYPAL_SECRET: str | None = None
+    PAYPAL_MODE: Literal["sandbox", "live"] = "sandbox"
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def paypal_enabled(self) -> bool:
+        return bool(self.PAYPAL_CLIENT_ID and self.PAYPAL_SECRET)
+
+    @computed_field  # type: ignore[prop-decorator]
+    @property
+    def paypal_api_base(self) -> str:
+        if self.PAYPAL_MODE == "live":
+            return "https://api-m.paypal.com"
+        return "https://api-m.sandbox.paypal.com"
+
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
         if value == "changethis":
             message = (
