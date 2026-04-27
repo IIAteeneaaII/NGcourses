@@ -25,7 +25,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/');
+    window.location.replace('/');
   };
 
   const handleProfile = () => {
