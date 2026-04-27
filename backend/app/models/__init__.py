@@ -11,6 +11,7 @@ from app.models.contenido import *  # noqa: F401, F403
 from app.models.inscripcion import *  # noqa: F401, F403
 from app.models.item import *  # noqa: F401, F403
 from app.models.organizacion import *  # noqa: F401, F403
+from app.models.pago import *  # noqa: F401, F403
 from app.models.schemas import *  # noqa: F401, F403
 from app.models.invitacion import *  # noqa: F401, F403
 from app.models.quiz import *  # noqa: F401, F403
