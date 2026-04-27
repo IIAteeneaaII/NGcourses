@@ -44,6 +44,8 @@ from app.models.organizacion import (
     SolicitudCurso,
     UsuarioOrganizacion,
 )
+from app.models.pago import Pago
+from app.models._enums import EstadoPago
 
 
 def create_user(*, session: Session, user_create: UserCreate) -> User:
@@ -1352,3 +1354,91 @@ def list_solicitudes_by_org(
         select(SolicitudCurso).where(SolicitudCurso.organizacion_id == org_id)
         .order_by(SolicitudCurso.creado_en.desc())  # type: ignore[arg-type]
     ).all())
+
+
+# ── Pagos (RF10/RF08) ──────────────────────────────────────────────────────
+
+
+def create_pago_pendiente(
+    *,
+    session: Session,
+    usuario_id: uuid.UUID,
+    curso_id: uuid.UUID,
+    monto: Any,
+    moneda: str,
+    referencia_paypal: str | None = None,
+    status: EstadoPago = EstadoPago.PENDIENTE,
+) -> Pago:
+    """Crea un registro de pago en estado PENDIENTE (o el que se indique).
+    Se usa al iniciar la orden PayPal y como base para cortesias."""
+    pago = Pago(
+        usuario_id=usuario_id,
+        curso_id=curso_id,
+        monto=monto,
+        moneda=moneda,
+        referencia_paypal=referencia_paypal,
+        status=status,
+    )
+    session.add(pago)
+    session.commit()
+    session.refresh(pago)
+    return pago
+
+
+def get_pago_by_id(*, session: Session, pago_id: uuid.UUID) -> Pago | None:
+    return session.get(Pago, pago_id)
+
+
+def update_pago_status(
+    *,
+    session: Session,
+    pago: Pago,
+    status: EstadoPago,
+    referencia_paypal: str | None = None,
+) -> Pago:
+    pago.status = status
+    if referencia_paypal:
+        pago.referencia_paypal = referencia_paypal
+    pago.updated_at = datetime.utcnow()
+    session.add(pago)
+    session.commit()
+    session.refresh(pago)
+    return pago
+
+
+def get_pagos_usuario(
+    *, session: Session, usuario_id: uuid.UUID, skip: int = 0, limit: int = 100
+) -> tuple[list[Pago], int]:
+    base = select(Pago).where(Pago.usuario_id == usuario_id)
+    count = session.exec(
+        select(func.count()).select_from(Pago).where(Pago.usuario_id == usuario_id)
+    ).one()
+    items = session.exec(
+        base.order_by(Pago.created_at.desc())  # type: ignore[arg-type]
+        .offset(skip).limit(limit)
+    ).all()
+    return list(items), count
+
+
+def usuario_tiene_pago_completado(
+    *, session: Session, usuario_id: uuid.UUID, curso_id: uuid.UUID
+) -> bool:
+    """Indica si el usuario tiene un Pago COMPLETADO o CORTESIA para el curso."""
+    stmt = select(Pago).where(
+        Pago.usuario_id == usuario_id,
+        Pago.curso_id == curso_id,
+        Pago.status.in_([EstadoPago.COMPLETADO, EstadoPago.CORTESIA]),  # type: ignore[attr-defined]
+    )
+    return session.exec(stmt).first() is not None
+
+
+def cursos_con_pago_del_usuario(
+    *, session: Session, usuario_id: uuid.UUID
+) -> set[uuid.UUID]:
+    """Set de curso_ids donde el usuario tiene Pago COMPLETADO o CORTESIA.
+    Se usa para no marcar 'bloqueado_por_licencia' en cursos que el alumno ya compro."""
+    stmt = select(Pago.curso_id).where(
+        Pago.usuario_id == usuario_id,
+        Pago.status.in_([EstadoPago.COMPLETADO, EstadoPago.CORTESIA]),  # type: ignore[attr-defined]
+    )
+    return {row for row in session.exec(stmt).all()}

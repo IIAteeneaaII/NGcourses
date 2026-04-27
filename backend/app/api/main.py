@@ -11,6 +11,7 @@ from app.api.routes import (
     items,
     login,
     organizaciones,
+    pagos,
     private,
     progreso,
     quiz,
@@ -36,6 +37,7 @@ api_router.include_router(quiz.router)
 api_router.include_router(calificaciones.router)
 api_router.include_router(certificados.router)
 api_router.include_router(organizaciones.router)
+api_router.include_router(pagos.router)
 api_router.include_router(supervisor.router)
 api_router.include_router(webhooks.router)
 
