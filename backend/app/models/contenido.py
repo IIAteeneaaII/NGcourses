@@ -1,8 +1,9 @@
 import uuid
 from datetime import datetime
+from decimal import Decimal
 
 import sqlalchemy as sa
-from sqlalchemy import Column, String, UniqueConstraint
+from sqlalchemy import Column, Numeric, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -87,6 +88,18 @@ class Curso(SQLModel, table=True):
     calificacion_prom: float = Field(default=0.0)
     total_resenas: int = Field(default=0)
     es_gratis: bool = Field(default=False)
+    precio: Decimal | None = Field(
+        default=None,
+        sa_column=Column("precio", Numeric(10, 2), nullable=True),
+    )
+    moneda: str = Field(
+        default="MXN",
+        sa_column=Column("moneda", String(3), nullable=False, server_default="MXN"),
+    )
+    destacado: bool = Field(
+        default=False,
+        sa_column=Column("destacado", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+    )
     portada_url: str | None = Field(default=None, max_length=500)
     bunny_library_id: str | None = Field(default=None, max_length=50)
     bunny_collection_id: str | None = Field(default=None, max_length=100)
@@ -315,6 +328,9 @@ class CursoPublic(SQLModel):
     calificacion_prom: float
     total_resenas: int
     es_gratis: bool
+    precio: Decimal | None = None
+    moneda: str = "MXN"
+    destacado: bool = False
     portada_url: str | None = None
     bunny_library_id: str | None = None
     bunny_collection_id: str | None = None
@@ -345,6 +361,9 @@ class CursoCreate(SQLModel):
     estado: EstadoCurso = EstadoCurso.BORRADOR
     marca: MarcaCurso = MarcaCurso.RAM
     es_gratis: bool = False
+    precio: Decimal | None = None
+    moneda: str = "MXN"
+    destacado: bool = False
     bunny_library_id: str | None = None
     nivel: str | None = None
     lo_que_aprenderas: list[str] = []
@@ -359,6 +378,9 @@ class CursoUpdate(SQLModel):
     estado: EstadoCurso | None = None
     marca: MarcaCurso | None = None
     es_gratis: bool | None = None
+    precio: Decimal | None = None
+    moneda: str | None = None
+    destacado: bool | None = None
     portada_url: str | None = None
     bunny_library_id: str | None = None
     nivel: str | None = None
