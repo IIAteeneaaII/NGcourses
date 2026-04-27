@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import type { UserProfile, UserStatistics, CourseInProgress } from '@/types/course';
+import MisCompras from './MisCompras';
 import styles from './ProfileContent.module.css';
 
 interface ProfileContentProps {
@@ -116,6 +117,8 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
             ))}
           </div>
         </div>
+
+        <MisCompras />
       </main>
     </div>
   );
