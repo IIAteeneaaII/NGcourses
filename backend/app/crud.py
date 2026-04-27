@@ -207,6 +207,7 @@ def get_cursos(
     instructor_id: uuid.UUID | None = None,
     categoria_id: uuid.UUID | None = None,
     search: str | None = None,
+    destacado: bool | None = None,
 ) -> tuple[list[Curso], int]:
     query = select(Curso)
     count_query = select(func.count()).select_from(Curso)
@@ -220,6 +221,8 @@ def get_cursos(
         filters.append(Curso.categoria_id == categoria_id)
     if search:
         filters.append(Curso.titulo.ilike(f"%{search}%"))
+    if destacado is not None:
+        filters.append(Curso.destacado == destacado)
 
     for f in filters:
         query = query.where(f)
@@ -237,8 +240,18 @@ def get_curso(*, session: Session, curso_id: uuid.UUID) -> Curso | None:
 _METADATA_FIELDS = ("nivel", "lo_que_aprenderas", "requisitos")
 
 
+def _sync_es_gratis_with_precio(data: dict) -> None:
+    """Mantiene `es_gratis` sincronizado con `precio` para evitar incongruencias.
+    precio null o 0 -> es_gratis True. precio > 0 -> es_gratis False.
+    No toca licencias organizacionales (LicenciaCurso) — esa via sigue independiente."""
+    if "precio" in data:
+        precio = data["precio"]
+        data["es_gratis"] = precio is None or precio == 0
+
+
 def create_curso(*, session: Session, curso_in: CursoCreate, instructor_id: uuid.UUID) -> Curso:
     data = curso_in.model_dump(exclude_unset=True)
+    _sync_es_gratis_with_precio(data)
     meta: dict = {}
     for key in _METADATA_FIELDS:
         val = data.pop(key, None)
@@ -256,6 +269,7 @@ def create_curso(*, session: Session, curso_in: CursoCreate, instructor_id: uuid
 
 def update_curso(*, session: Session, db_curso: Curso, curso_in: CursoUpdate) -> Curso:
     data = curso_in.model_dump(exclude_unset=True)
+    _sync_es_gratis_with_precio(data)
     if "estado" in data and data["estado"] == EstadoCurso.PUBLICADO and db_curso.publicado_en is None:
         data["publicado_en"] = datetime.utcnow()
     data["actualizado_en"] = datetime.utcnow()
@@ -1214,6 +1228,7 @@ def cursos_con_licencia_activa(
 def list_cursos_for_student(
     *, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 100,
     categoria_id: uuid.UUID | None = None, search: str | None = None,
+    destacado: bool | None = None,
 ) -> tuple[list[Curso], int]:
     """Retorna cursos publicados donde:
        - marca = NEXTGEN (visible para todos), OR
@@ -1240,6 +1255,8 @@ def list_cursos_for_student(
         stmt = stmt.where(Curso.categoria_id == categoria_id)
     if search:
         stmt = stmt.where(Curso.titulo.ilike(f"%{search}%"))  # type: ignore[attr-defined]
+    if destacado is not None:
+        stmt = stmt.where(Curso.destacado == destacado)
 
     count_stmt = select(func.count()).select_from(stmt.subquery())
     count = session.exec(count_stmt).one()
