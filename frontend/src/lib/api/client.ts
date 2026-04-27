@@ -138,15 +138,19 @@ export const authApi = {
 };
 
 export const cursosApi = {
-  list: (params?: { skip?: number; limit?: number; categoria_id?: string; search?: string; estado?: string }) => {
+  list: (params?: { skip?: number; limit?: number; categoria_id?: string; search?: string; estado?: string; destacado?: boolean }) => {
     const qs = new URLSearchParams();
     if (params?.skip) qs.set('skip', String(params.skip));
     if (params?.limit) qs.set('limit', String(params.limit));
     if (params?.categoria_id) qs.set('categoria_id', params.categoria_id);
     if (params?.search) qs.set('search', params.search);
     if (params?.estado) qs.set('estado', params.estado);
+    if (params?.destacado !== undefined) qs.set('destacado', String(params.destacado));
     return apiClient.get(`/api/v1/cursos/?${qs}`);
   },
+  /** Endpoint publico (sin auth): cursos destacados para el carrete del login. */
+  destacados: (limit = 12) =>
+    apiClient.get(`/api/v1/cursos/destacados?limit=${limit}`),
   get: (id: string) => apiClient.get(`/api/v1/cursos/${id}`),
   create: (data: unknown) => apiClient.post('/api/v1/cursos/', data),
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/cursos/${id}`, data),

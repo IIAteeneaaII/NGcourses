@@ -62,6 +62,9 @@ export interface CourseInfo {
   syllabus: string[];
   image: string;
   bloqueadoPorLicencia?: boolean;
+  precio?: number | null;
+  moneda?: string;
+  destacado?: boolean;
 }
 
 // ── Quiz / Lección tipos (editor de cursos) ──────────────────────────────────
@@ -102,6 +105,9 @@ export interface CourseCard {
   category?: string;
   marca?: 'ram' | 'nextgen';
   bloqueadoPorLicencia?: boolean;
+  precio?: number | null;
+  moneda?: string;
+  destacado?: boolean;
 }
 
 export interface User {
