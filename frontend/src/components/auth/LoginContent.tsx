@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
 
@@ -14,7 +13,6 @@ const CAROUSEL_COURSES = [
 ];
 
 export default function LoginContent() {
-  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -37,13 +35,13 @@ export default function LoginContent() {
     try {
       const user = await login(email, password);
       if (user.is_superuser || user.rol === 'administrador') {
-        router.push('/admin');
+        window.location.replace('/admin');
       } else if (user.rol === 'instructor') {
-        router.push('/instructor');
+        window.location.replace('/instructor');
       } else if (user.rol === 'supervisor') {
-        router.push('/supervisor');
+        window.location.replace('/supervisor');
       } else {
-        router.push('/cursos');
+        window.location.replace('/cursos');
       }
     } catch {
       setError('Correo o contraseña incorrectos');
@@ -93,14 +91,26 @@ export default function LoginContent() {
         <section className={styles.rightPanel}>
           <div className={styles.loginCard}>
             <h2 className={styles.loginTitle}>Tu siguiente nivel te espera</h2>
-            <p className={styles.loginSubtitle}>El conocimiento que transforma carreras, a tu ritmo.</p>
+            <p className={styles.loginSubtitle}>El conocimiento que transforma carreras a tu ritmo.</p>
 
             {notice && (
-              <div className={styles.notice}>
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-                </svg>
-                {notice}
+              <div className={styles.notice} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+                  </svg>
+                  {notice}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setNotice('')}
+                  aria-label="Cerrar"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0.25rem', display: 'flex', alignItems: 'center', color: 'inherit' }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" width="16" height="16">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
               </div>
             )}
 

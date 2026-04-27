@@ -20,6 +20,15 @@ export function proxy(request: NextRequest) {
   const userRol = request.cookies.get('user_rol')?.value;
   const isSuperuser = request.cookies.get('user_superuser')?.value === '1';
 
+  // Login: redirigir a dashboard si ya tiene sesión activa
+  if (pathname === '/') {
+    if (token && userRol) {
+      const home = ROL_HOME[userRol] ?? '/cursos';
+      return NextResponse.redirect(new URL(home, request.url));
+    }
+    return NextResponse.next();
+  }
+
   // Rutas con rol específico
   for (const [prefix, requiredRole] of Object.entries(ROLE_ROUTES)) {
     if (pathname.startsWith(prefix)) {
@@ -51,6 +60,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    '/',
     '/admin/:path*',
     '/supervisor/:path*',
     '/instructor/:path*',
