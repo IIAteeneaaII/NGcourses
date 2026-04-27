@@ -3,13 +3,25 @@
 import { useState, useEffect } from 'react';
 import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
+import { cursosApi } from '@/lib/api/client';
+import { logError } from '@/lib/logger';
 
-const CAROUSEL_COURSES = [
-  'Paquetería Excel',
+interface ApiCursoDestacado {
+  id: string;
+  titulo: string;
+}
+
+interface DestacadosResp {
+  data: ApiCursoDestacado[];
+  count: number;
+}
+
+const FALLBACK_CAROUSEL: string[] = [
+  'Paqueteria Excel',
   'Modelado 3D',
-  'Capacitación Interna',
-  'Fusionado de Fibra Óptica',
-  'Ponchado de cable ethernet'
+  'Capacitacion Interna',
+  'Fusionado de Fibra Optica',
+  'Ponchado de cable ethernet',
 ];
 
 export default function LoginContent() {
@@ -20,12 +32,31 @@ export default function LoginContent() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [notice, setNotice] = useState('');
+  const [carouselItems, setCarouselItems] = useState<string[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
     if (errorParam === 'auth') setNotice('Debes iniciar sesión para acceder a esa página.');
     if (errorParam === 'role') setNotice('No tienes permisos para acceder a esa sección.');
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    cursosApi
+      .destacados(12)
+      .then((resp) => {
+        if (cancelled) return;
+        const titles = (resp as DestacadosResp).data.map((c) => c.titulo).filter(Boolean);
+        setCarouselItems(titles.length > 0 ? titles : FALLBACK_CAROUSEL);
+      })
+      .catch((e) => {
+        logError('LoginContent/destacados', e);
+        if (!cancelled) setCarouselItems(FALLBACK_CAROUSEL);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -78,13 +109,15 @@ export default function LoginContent() {
           </p>
           <br />
 
-          <div className={styles.carouselWrapper}>
-            <div className={styles.carouselTrack}>
-              {[...CAROUSEL_COURSES, ...CAROUSEL_COURSES].map((curso, i) => (
-                <span key={i} className={styles.carouselItem}>{curso}</span>
-              ))}
+          {carouselItems.length > 0 && (
+            <div className={styles.carouselWrapper}>
+              <div className={styles.carouselTrack}>
+                {[...carouselItems, ...carouselItems].map((curso, i) => (
+                  <span key={i} className={styles.carouselItem}>{curso}</span>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </section>
 
         {/* Panel derecho - Login Card */}
