@@ -19,7 +19,7 @@ interface ApiUser {
   full_name: string | null;
   email: string;
   rol: string;
-  estado: 'activo' | 'suspendido';
+  estado: 'activo' | 'suspendido' | 'pendiente_activacion';
 }
 
 interface ApiUsersResp {
@@ -48,6 +48,9 @@ export default function UsuariosPage() {
   const [createForm, setCreateForm] = useState<CreateUserForm>({ email: '', full_name: '', password: '', rol: 'estudiante', telefono: '' });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [reenviarId, setReenviarId] = useState<string | null>(null);
+  const [reenviarMsg, setReenviarMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -78,6 +81,41 @@ export default function UsuariosPage() {
       setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, estado: newEstado } : u));
     } catch {
       // Fallo silencioso
+    }
+  };
+
+  const handleReenviarActivacion = async (userId: string) => {
+    setReenviarId(userId);
+    setReenviarMsg(null);
+    try {
+      const res = await fetch(`/api/v1/users/${userId}/reenviar-activacion`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+      });
+      if (!res.ok) throw new Error();
+      setReenviarMsg({ tipo: 'ok', texto: 'Correo de activación reenviado correctamente.' });
+    } catch {
+      setReenviarMsg({ tipo: 'error', texto: 'No se pudo reenviar el correo. Intenta de nuevo.' });
+    } finally {
+      setReenviarId(null);
+    }
+  };
+
+  const handleEliminarInvitacion = async (user: ApiUser) => {
+    if (!confirm(`¿Cancelar la invitación de ${user.email}? El usuario no podrá activar su cuenta.`)) return;
+    setEliminandoId(user.id);
+    try {
+      const res = await fetch(`/api/v1/users/${user.id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+      });
+      if (!res.ok) throw new Error();
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      setTotal((t) => t - 1);
+    } catch {
+      setReenviarMsg({ tipo: 'error', texto: 'No se pudo cancelar la invitación. Intenta de nuevo.' });
+    } finally {
+      setEliminandoId(null);
     }
   };
 
@@ -124,6 +162,12 @@ export default function UsuariosPage() {
             </svg>
             Inicio
           </button>
+          <button className={styles.createButton} style={{ background: 'white', color: '#00968f', border: '1px solid rgba(0,150,143,.3)' }} onClick={() => router.push('/admin/usuarios/crear')}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+            </svg>
+            Alta empresa
+          </button>
           <button className={styles.createButton} onClick={() => { setShowCreateModal(true); setCreateError(''); }}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 5v14M5 12h14" />
@@ -134,6 +178,26 @@ export default function UsuariosPage() {
       </div>
 
       <section className={styles.mainContent}>
+        {reenviarMsg && (
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 16px', marginBottom: '16px', borderRadius: '10px',
+            background: reenviarMsg.tipo === 'ok' ? '#ecfdf5' : '#fef2f2',
+            border: `1px solid ${reenviarMsg.tipo === 'ok' ? '#6ee7b7' : '#fca5a5'}`,
+          }}>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: reenviarMsg.tipo === 'ok' ? '#065f46' : '#991b1b' }}>
+              {reenviarMsg.texto}
+            </span>
+            <button
+              onClick={() => setReenviarMsg(null)}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px', display: 'flex', color: reenviarMsg.tipo === 'ok' ? '#065f46' : '#991b1b', opacity: 0.7 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 6L6 18M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
         <div className={styles.filterRow}>
           <div className={styles.searchWrapper}>
             <input
@@ -182,24 +246,50 @@ export default function UsuariosPage() {
                     <td>{user.email}</td>
                     <td>{ROLES[user.rol] || user.rol}</td>
                     <td className={styles.actionsCell}>
-                      <Link href={`/admin/usuarios/${user.id}/editar`} className={styles.editButton} title="Editar">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </Link>
-                      <label className={styles.toggleLabel} title="Activar/Suspender cuenta">
-                        <input
-                          type="checkbox"
-                          checked={user.estado === 'activo'}
-                          onChange={() => handleToggleActive(user)}
-                          className={styles.toggleInput}
-                        />
-                        <span className={styles.toggleSlider}></span>
-                      </label>
-                      <span className={`${styles.statusText} ${user.estado === 'activo' ? styles.active : styles.inactive}`}>
-                        {user.estado === 'activo' ? 'Activo' : 'Suspendido'}
-                      </span>
+                      {user.estado === 'pendiente_activacion' ? (
+                        <>
+                          <span style={{ fontSize: '12px', fontWeight: 600, color: '#d97706', background: '#fef3c7', border: '1px solid #fcd34d', borderRadius: '6px', padding: '2px 8px' }}>
+                            Pendiente
+                          </span>
+                          <button
+                            title="Reenviar correo de activación"
+                            onClick={() => handleReenviarActivacion(user.id)}
+                            disabled={reenviarId === user.id}
+                            style={{ background: 'none', border: '1px solid rgba(0,150,143,.3)', borderRadius: '6px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px', color: '#00968f', fontWeight: 600 }}
+                          >
+                            {reenviarId === user.id ? '...' : 'Reenviar'}
+                          </button>
+                          <button
+                            title="Cancelar invitación"
+                            onClick={() => handleEliminarInvitacion(user)}
+                            disabled={eliminandoId === user.id}
+                            style={{ background: 'none', border: '1px solid rgba(239,68,68,.3)', borderRadius: '6px', cursor: 'pointer', padding: '4px 8px', fontSize: '12px', color: '#dc2626', fontWeight: 600 }}
+                          >
+                            {eliminandoId === user.id ? '...' : 'Cancelar'}
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <Link href={`/admin/usuarios/${user.id}/editar`} className={styles.editButton} title="Editar">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" />
+                              <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
+                            </svg>
+                          </Link>
+                          <label className={styles.toggleLabel} title="Activar/Suspender cuenta">
+                            <input
+                              type="checkbox"
+                              checked={user.estado === 'activo'}
+                              onChange={() => handleToggleActive(user)}
+                              className={styles.toggleInput}
+                            />
+                            <span className={styles.toggleSlider}></span>
+                          </label>
+                          <span className={`${styles.statusText} ${user.estado === 'activo' ? styles.active : styles.inactive}`}>
+                            {user.estado === 'activo' ? 'Activo' : 'Suspendido'}
+                          </span>
+                        </>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -61,6 +61,8 @@ class User(UserBase, table=True):
     hashed_password: str
     password_reset_token: str | None = Field(default=None, max_length=255)
     password_reset_expira: datetime | None = Field(default=None)
+    token_activacion: str | None = Field(default=None, max_length=255)
+    token_activacion_expira: datetime | None = Field(default=None)
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)  # noqa: F821
     # Relationships
     cursos_instructor: list["Curso"] = Relationship(back_populates="instructor")  # noqa: F821

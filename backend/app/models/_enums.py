@@ -12,6 +12,7 @@ class RolUsuario(str, enum.Enum):
 class EstadoUsuario(str, enum.Enum):
     ACTIVO = "activo"
     SUSPENDIDO = "suspendido"
+    PENDIENTE_ACTIVACION = "pendiente_activacion"
 
 
 class EstadoCurso(str, enum.Enum):
