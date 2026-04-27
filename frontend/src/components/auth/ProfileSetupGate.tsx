@@ -35,7 +35,13 @@ export default function ProfileSetupGate({ children }: { children: React.ReactNo
 
   if (!checked) return <>{children}</>;
 
-  const needsSetup = user && !user.full_name && pathname !== '/' && !pathname.startsWith('/invitacion');
+  const isStaff = user && ['administrador', 'instructor', 'supervisor'].includes(user.rol);
+  const needsSetup =
+    user &&
+    !user.full_name &&
+    !isStaff &&
+    pathname !== '/' &&
+    !pathname.startsWith('/invitacion');
 
   return (
     <>
