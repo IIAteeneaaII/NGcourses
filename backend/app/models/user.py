@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import sqlalchemy as sa
 from pydantic import EmailStr
@@ -58,6 +59,8 @@ class UpdatePassword(SQLModel):
 class User(UserBase, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     hashed_password: str
+    password_reset_token: str | None = Field(default=None, max_length=255)
+    password_reset_expira: datetime | None = Field(default=None)
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)  # noqa: F821
     # Relationships
     cursos_instructor: list["Curso"] = Relationship(back_populates="instructor")  # noqa: F821
