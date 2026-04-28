@@ -617,6 +617,7 @@ def check_and_emit_certificate(
             student_name=student_name,
             course_title=course_title,
             instructor_name=instructor_name,
+            instructor_id=str(curso.instructor_id) if curso else None,
             issued_date=certificado.emitido_en,
             marca=marca,
             output_path=output_path,
