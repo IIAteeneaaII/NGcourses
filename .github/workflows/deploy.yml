@@ -80,6 +80,30 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H 44.250.178.54 >> ~/.ssh/known_hosts
 
+      - name: Sync backend env (.env.prod) on EC2
+        env:
+          PAYPAL_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
+          PAYPAL_SECRET: ${{ secrets.PAYPAL_SECRET }}
+          PAYPAL_MODE: ${{ secrets.NEXT_PUBLIC_PAYPAL_MODE }}
+        run: |
+          {
+            printf 'PAYPAL_CLIENT_ID=%s\n' "$PAYPAL_CLIENT_ID"
+            printf 'PAYPAL_SECRET=%s\n' "$PAYPAL_SECRET"
+            printf 'PAYPAL_MODE=%s\n' "${PAYPAL_MODE:-sandbox}"
+          } > paypal.env
+          scp -i ~/.ssh/deploy_key paypal.env ec2-user@44.250.178.54:~/paypal.env
+          rm paypal.env
+          ssh -i ~/.ssh/deploy_key ec2-user@44.250.178.54 bash <<'REMOTE'
+          set -euo pipefail
+          cd ~
+          touch .env.prod
+          grep -v '^PAYPAL_CLIENT_ID=\|^PAYPAL_SECRET=\|^PAYPAL_MODE=' .env.prod > .env.prod.tmp || true
+          mv .env.prod.tmp .env.prod
+          printf '\n' >> .env.prod
+          cat paypal.env >> .env.prod
+          rm paypal.env
+          REMOTE
+
       - name: SSH and restart compose
         run: |
           ssh -i ~/.ssh/deploy_key ec2-user@44.250.178.54 bash <<'REMOTE'
@@ -93,7 +117,10 @@ jobs:
           echo "Pulling new images..."
           docker-compose -f docker-compose.prod.yml pull
 
-          echo "Restarting services..."
+          echo "Recreating backend (to pick up env changes)..."
+          docker-compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
+
+          echo "Restarting other services..."
           docker-compose -f docker-compose.prod.yml up -d
 
           echo "Status:"
