@@ -10,8 +10,17 @@ interface CourseCardProps {
   course: CourseCardType;
 }
 
+function formatPrice(precio: number | null | undefined, moneda?: string): string {
+  if (precio == null || Number(precio) === 0) return 'Gratis';
+  const valor = Number(precio);
+  const entero = Number.isInteger(valor) ? valor.toString() : valor.toFixed(2);
+  return `$${entero} ${moneda || 'MXN'}`;
+}
+
 export default function CourseCard({ course }: CourseCardProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
+  const priceLabel = formatPrice(course.precio, course.moneda);
+  const isFree = priceLabel === 'Gratis';
   const getTagClass = (tag: string) => {
     switch (tag) {
       case 'Nuevo':
@@ -54,6 +63,9 @@ export default function CourseCard({ course }: CourseCardProps) {
             Requiere licencia
           </span>
         )}
+        <span className={`${styles.priceBadge} ${isFree ? styles.priceFree : styles.pricePaid}`}>
+          {priceLabel}
+        </span>
       </div>
 
       <div className={styles.content}>

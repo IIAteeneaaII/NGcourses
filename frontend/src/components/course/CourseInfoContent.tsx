@@ -4,19 +4,30 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { CourseInfo } from '@/types/course';
+import PayPalCheckout from './PayPalCheckout';
 import styles from './CourseInfoContent.module.css';
 
 interface CourseInfoContentProps {
   course: CourseInfo;
   isEnrolled?: boolean;
   onInscribirse?: () => void;
+  onPaymentSuccess?: () => void;
   enrollLoading?: boolean;
   backHref?: string;
   bloqueadoPorLicencia?: boolean;
 }
 
-export default function CourseInfoContent({ course, isEnrolled, onInscribirse, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia }: CourseInfoContentProps) {
+function formatPrice(precio: number | null | undefined, moneda?: string): { label: string; isFree: boolean } {
+  if (precio == null || Number(precio) === 0) return { label: 'Gratis', isFree: true };
+  const valor = Number(precio);
+  const entero = Number.isInteger(valor) ? valor.toString() : valor.toFixed(2);
+  return { label: `$${entero} ${moneda || 'MXN'}`, isFree: false };
+}
+
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia }: CourseInfoContentProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
+  const price = formatPrice(course.precio, course.moneda);
+  const requierePago = !price.isFree;
 
   return (
     <div className={styles.container}>
@@ -72,6 +83,13 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
                 <span className={styles.courseInfoLabel}>Lecciones:</span>
                 <span className={styles.courseInfoValue}>{course.lessonsCount}</span>
               </div>
+
+              <div className={styles.priceBlock}>
+                <span className={styles.priceLabel}>Precio</span>
+                <span className={`${styles.priceValue} ${price.isFree ? styles.priceFree : ''}`}>
+                  {price.label}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -112,6 +130,16 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, e
               <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
                 Continuar curso
               </Link>
+            ) : requierePago ? (
+              // Precio > 0: PayPal tiene prioridad sobre el bloqueo de licencia, ya que
+              // RF10 permite que cualquier alumno compre el curso individualmente.
+              <PayPalCheckout
+                cursoId={course.id}
+                monedaCurso={course.moneda}
+                onSuccess={() => {
+                  if (onPaymentSuccess) onPaymentSuccess();
+                }}
+              />
             ) : bloqueadoPorLicencia ? (
               <div className={styles.lockedBlock} role="status" aria-live="polite">
                 <h3 className={styles.lockedTitle}>Curso no disponible</h3>

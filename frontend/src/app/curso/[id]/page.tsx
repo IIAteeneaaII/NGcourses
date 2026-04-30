@@ -27,6 +27,9 @@ interface ApiCurso {
   requisitos: string | null;
   instructor_nombre: string | null;
   bloqueado_por_licencia?: boolean;
+  precio?: number | string | null;
+  moneda?: string;
+  destacado?: boolean;
 }
 
 interface ApiInscripcionesResp {
@@ -79,6 +82,9 @@ export default function CursoInfoPage() {
           syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
           bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
+          precio: cursoRaw.precio != null ? Number(cursoRaw.precio) : null,
+          moneda: cursoRaw.moneda || 'MXN',
+          destacado: cursoRaw.destacado ?? false,
         };
 
         setCourse(courseInfo);
@@ -125,6 +131,7 @@ export default function CursoInfoPage() {
       course={course}
       isEnrolled={isEnrolled}
       onInscribirse={handleInscribirse}
+      onPaymentSuccess={() => setIsEnrolled(true)}
       enrollLoading={enrollLoading}
       bloqueadoPorLicencia={course.bloqueadoPorLicencia}
     />

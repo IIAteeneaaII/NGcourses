@@ -17,6 +17,9 @@ interface ApiCurso {
   portada_url: string | null;
   marca?: 'ram' | 'nextgen';
   bloqueado_por_licencia?: boolean;
+  precio?: number | string | null;
+  moneda?: string;
+  destacado?: boolean;
 }
 
 interface ApiResponse {
@@ -62,6 +65,9 @@ export default function CursosPage() {
             image: c.portada_url ? `${API_URL}${c.portada_url}` : '/placeholder-course.jpg',
             marca: c.marca,
             bloqueadoPorLicencia: c.bloqueado_por_licencia ?? false,
+            precio: c.precio != null ? Number(c.precio) : null,
+            moneda: c.moneda || 'MXN',
+            destacado: c.destacado ?? false,
           }));
           setCourses(cards);
         }
