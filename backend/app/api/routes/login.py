@@ -1,21 +1,21 @@
-from datetime import timedelta
+import secrets
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from sqlmodel import select
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, UserPublic
+from app.models import Message, NewPassword, Token, User, UserPublic
 from app.utils import (
-    generate_password_reset_token,
     generate_reset_password_email,
     send_email,
-    verify_password_reset_token,
 )
 
 router = APIRouter(tags=["login"])
@@ -54,7 +54,7 @@ def test_token(current_user: CurrentUser) -> Any:
 @router.post("/password-recovery/{email}")
 def recover_password(email: str, session: SessionDep) -> Message:
     """
-    Password Recovery
+    Password Recovery — genera token de un solo uso almacenado en DB.
     """
     user = crud.get_user_by_email(session=session, email=email)
 
@@ -63,9 +63,17 @@ def recover_password(email: str, session: SessionDep) -> Message:
             status_code=404,
             detail="The user with this email does not exist in the system.",
         )
-    password_reset_token = generate_password_reset_token(email=email)
+
+    token = secrets.token_urlsafe(32)
+    user.password_reset_token = token
+    user.password_reset_expira = datetime.now(timezone.utc) + timedelta(
+        hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS
+    )
+    session.add(user)
+    session.commit()
+
     email_data = generate_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
+        email_to=user.email, email=email, token=token
     )
     send_email(
         email_to=user.email,
@@ -78,21 +86,24 @@ def recover_password(email: str, session: SessionDep) -> Message:
 @router.post("/reset-password/")
 def reset_password(session: SessionDep, body: NewPassword) -> Message:
     """
-    Reset password
+    Reset password — invalida el token al usarlo (uso único).
     """
-    email = verify_password_reset_token(token=body.token)
-    if not email:
-        raise HTTPException(status_code=400, detail="Invalid token")
-    user = crud.get_user_by_email(session=session, email=email)
+    user = session.exec(
+        select(User).where(User.password_reset_token == body.token)
+    ).first()
+
     if not user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this email does not exist in the system.",
-        )
-    elif not user.is_active:
+        raise HTTPException(status_code=400, detail="Invalid token")
+
+    if user.password_reset_expira is None or datetime.now(timezone.utc) > user.password_reset_expira.replace(tzinfo=timezone.utc):
+        raise HTTPException(status_code=400, detail="Token expired")
+
+    if not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
-    hashed_password = get_password_hash(password=body.new_password)
-    user.hashed_password = hashed_password
+
+    user.hashed_password = get_password_hash(password=body.new_password)
+    user.password_reset_token = None
+    user.password_reset_expira = None
     session.add(user)
     session.commit()
     return Message(message="Password updated successfully")

@@ -1,7 +1,10 @@
+import secrets
 import uuid
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
+from pydantic import EmailStr
 from sqlmodel import SQLModel, col, delete, func, select
 
 from app import crud
@@ -25,8 +28,9 @@ from app.models import (
     UserUpdate,
     UserUpdateMe,
 )
-from app.models._enums import EstadoUsuario, RolUsuario
-from app.utils import generate_new_account_email, send_email
+from app.models._enums import EstadoUsuario, RolOrganizacion, RolUsuario
+from app.models.organizacion import UsuarioOrganizacion
+from app.utils import generate_activacion_email, generate_new_account_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -261,8 +265,113 @@ def delete_user(
         raise HTTPException(
             status_code=403, detail="Super users are not allowed to delete themselves"
         )
-    statement = delete(Item).where(col(Item.owner_id) == user_id)
-    session.exec(statement)  # type: ignore
+    session.exec(delete(Item).where(col(Item.owner_id) == user_id))  # type: ignore
+    session.exec(delete(UsuarioOrganizacion).where(col(UsuarioOrganizacion.usuario_id) == user_id))  # type: ignore
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
+
+
+# ── RF-12: Alta de usuarios por empresa ────────────────────────────────────────
+
+class UserEmpresaCreate(SQLModel):
+    email: EmailStr
+    full_name: str | None = None
+    organizacion_id: uuid.UUID | None = None
+
+
+class ActivarCuentaBody(SQLModel):
+    token: str
+    new_password: str
+
+
+@router.post("/empresa", dependencies=[Depends(require_admin_or_superuser)], response_model=UserPublic)
+def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> Any:
+    """
+    Crea un usuario empresarial con estado pendiente_activacion.
+    Envía correo con link de activación (72h).
+    """
+    existing = crud.get_user_by_email(session=session, email=user_in.email)
+    if existing:
+        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
+
+    token = secrets.token_urlsafe(32)
+    placeholder_password = secrets.token_urlsafe(16)
+
+    user = User(
+        email=user_in.email,
+        full_name=user_in.full_name,
+        hashed_password=get_password_hash(placeholder_password),
+        rol=RolUsuario.ESTUDIANTE,
+        estado=EstadoUsuario.PENDIENTE_ACTIVACION,
+        is_active=False,
+        token_activacion=token,
+        token_activacion_expira=datetime.now(timezone.utc) + timedelta(hours=72),
+    )
+    session.add(user)
+    session.flush()  # INSERT user antes de la membresía para satisfacer el FK
+
+    if user_in.organizacion_id:
+        membresia = UsuarioOrganizacion(
+            organizacion_id=user_in.organizacion_id,
+            usuario_id=user.id,
+            rol_org=RolOrganizacion.MIEMBRO,
+        )
+        session.add(membresia)
+
+    session.commit()
+    session.refresh(user)
+
+    if settings.emails_enabled:
+        email_data = generate_activacion_email(email_to=user.email, token=token)
+        send_email(email_to=user.email, subject=email_data.subject, html_content=email_data.html_content)
+
+    return user
+
+
+@router.post("/activar", response_model=Message)
+def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
+    """
+    Ruta pública. El empleado establece su contraseña y activa su cuenta.
+    El token se invalida al usarse (uso único).
+    """
+    user = session.exec(select(User).where(User.token_activacion == body.token)).first()
+
+    if not user:
+        raise HTTPException(status_code=400, detail="Token inválido")
+
+    if user.token_activacion_expira is None or datetime.now(timezone.utc) > user.token_activacion_expira.replace(tzinfo=timezone.utc):
+        raise HTTPException(status_code=400, detail="Token expirado")
+
+    user.hashed_password = get_password_hash(body.new_password)
+    user.estado = EstadoUsuario.ACTIVO
+    user.is_active = True
+    user.token_activacion = None
+    user.token_activacion_expira = None
+    session.add(user)
+    session.commit()
+    return Message(message="Cuenta activada correctamente")
+
+
+@router.post("/{user_id}/reenviar-activacion", dependencies=[Depends(require_admin_or_superuser)], response_model=Message)
+def reenviar_activacion(*, session: SessionDep, user_id: uuid.UUID) -> Any:
+    """
+    Regenera el token de activación y reenvía el correo.
+    """
+    user = session.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    if user.estado != EstadoUsuario.PENDIENTE_ACTIVACION:
+        raise HTTPException(status_code=400, detail="El usuario ya activó su cuenta")
+
+    token = secrets.token_urlsafe(32)
+    user.token_activacion = token
+    user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    session.add(user)
+    session.commit()
+
+    if settings.emails_enabled:
+        email_data = generate_activacion_email(email_to=user.email, token=token)
+        send_email(email_to=user.email, subject=email_data.subject, html_content=email_data.html_content)
+
+    return Message(message="Correo de activación reenviado")
