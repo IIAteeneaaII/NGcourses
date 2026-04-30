@@ -116,3 +116,10 @@ class EstadoInvitacion(str, enum.Enum):
 class MarcaCurso(str, enum.Enum):
     RAM = "ram"
     NEXTGEN = "nextgen"
+
+
+class EstadoPago(str, enum.Enum):
+    PENDIENTE = "pendiente"
+    COMPLETADO = "completado"
+    FALLIDO = "fallido"
+    CORTESIA = "cortesia"

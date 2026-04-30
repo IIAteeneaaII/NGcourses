@@ -4,10 +4,10 @@ import React, { useState } from 'react';
 import type { QuizData, QuizQuestion, QuizOption, QuestionType } from '@/types/course';
 import styles from './QuizBuilder.module.css';
 
-// generateId() solo funciona en HTTPS — este fallback funciona en HTTP también
+// crypto.randomUUID() solo funciona en contextos seguros (HTTPS o localhost) — fallback para HTTP.
 function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return generateId();
+    return crypto.randomUUID();
   }
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
     const r = Math.random() * 16 | 0;

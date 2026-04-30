@@ -54,6 +54,22 @@ def _require_curso_owner_or_admin(current_user: CurrentUser, instructor_id: uuid
 
 # ── Cursos ────────────────────────────────────────────────────────────────────
 
+@router.get("/destacados", response_model=CursosPublic)
+def list_cursos_destacados(
+    session: SessionDep,
+    limit: int = 12,
+) -> Any:
+    """
+    Endpoint público (sin auth): lista cursos destacados PUBLICADOS para el carrete.
+    Usado en la pantalla de login (usuario sin sesión).
+    """
+    cursos, count = crud.get_cursos(
+        session=session, skip=0, limit=limit,
+        estado=EstadoCurso.PUBLICADO, destacado=True,
+    )
+    return CursosPublic(data=cursos, count=count)
+
+
 @router.get("/", response_model=CursosPublic)
 def list_cursos(
     session: SessionDep,
@@ -63,12 +79,13 @@ def list_cursos(
     estado: EstadoCurso | None = None,
     categoria_id: uuid.UUID | None = None,
     search: str | None = None,
+    destacado: bool | None = None,
 ) -> Any:
     """
     Lista cursos. Usuarios normales solo ven PUBLICADOS.
     Instructores ven sus propios cursos en cualquier estado.
     Admins/superusers ven todos.
-    Soporta filtros: ?categoria_id=&search=&estado=
+    Soporta filtros: ?categoria_id=&search=&estado=&destacado=
     """
     is_admin = current_user.is_superuser or current_user.rol in {
         RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
@@ -77,13 +94,15 @@ def list_cursos(
     if is_admin:
         cursos, count = crud.get_cursos(
             session=session, skip=skip, limit=limit,
-            estado=estado, categoria_id=categoria_id, search=search
+            estado=estado, categoria_id=categoria_id, search=search,
+            destacado=destacado,
         )
     elif current_user.rol == RolUsuario.INSTRUCTOR:
         cursos, count = crud.get_cursos(
             session=session, skip=skip, limit=limit,
             estado=estado, instructor_id=current_user.id,
-            categoria_id=categoria_id, search=search
+            categoria_id=categoria_id, search=search,
+            destacado=destacado,
         )
     else:
         # Estudiantes/Supervisores: catálogo = marca NEXTGEN publicados +
@@ -91,6 +110,7 @@ def list_cursos(
         cursos, count = crud.list_cursos_for_student(
             session=session, user_id=current_user.id,
             skip=skip, limit=limit, categoria_id=categoria_id, search=search,
+            destacado=destacado,
         )
         org_info = crud.get_organizacion_of_user(
             session=session, user_id=current_user.id
@@ -100,6 +120,10 @@ def list_cursos(
             crud.cursos_con_licencia_activa(session=session, org_id=org_id)
             if org_id else set()
         )
+        # RF10/RF08: cursos con pago individual (PayPal o cortesia) tambien son accesibles.
+        comprados = crud.cursos_con_pago_del_usuario(
+            session=session, usuario_id=current_user.id
+        )
         items: list[CursoPublic] = []
         for c in cursos:
             item = CursoPublic.model_validate(c, from_attributes=True)
@@ -107,6 +131,7 @@ def list_cursos(
                 c.marca == MarcaCurso.NEXTGEN
                 and not c.es_gratis
                 and c.id not in accesibles
+                and c.id not in comprados
             )
             items.append(item)
         return CursosPublic(data=items, count=count)
@@ -157,6 +182,7 @@ def get_curso(
     curso_data.instructor_nombre = db_curso.instructor.full_name if db_curso.instructor else None
 
     # Bloqueo por licencia: solo aplica a estudiantes (admins/instructores siempre acceden).
+    # RF10/RF08: el alumno desbloquea via licencia organizacional O via pago/cortesia individual.
     if (
         not is_admin
         and not is_owner
@@ -167,11 +193,15 @@ def get_curso(
             session=session, user_id=current_user.id
         )
         org_id = org_info[0].id if org_info else None
-        curso_data.bloqueado_por_licencia = not (
+        tiene_licencia = bool(
             org_id and crud.tiene_licencia_activa(
                 session=session, org_id=org_id, curso_id=db_curso.id
             )
         )
+        tiene_pago = crud.usuario_tiene_pago_completado(
+            session=session, usuario_id=current_user.id, curso_id=db_curso.id
+        )
+        curso_data.bloqueado_por_licencia = not (tiene_licencia or tiene_pago)
     return curso_data
 
 

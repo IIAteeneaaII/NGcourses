@@ -49,6 +49,9 @@ interface ApiCurso {
   estado?: string;
   marca?: 'ram' | 'nextgen';
   modulos: ApiModulo[];
+  precio?: number | string | null;
+  moneda?: string;
+  destacado?: boolean;
 }
 
 interface RecursoItem {
@@ -117,6 +120,11 @@ export default function EditarCursoAdminPage() {
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
   const [marca, setMarca] = useState<'ram' | 'nextgen'>('ram');
+  const [destacado, setDestacado] = useState(false);
+
+  // Precio (RF09)
+  const [precio, setPrecio] = useState<string>('');
+  const [moneda, setMoneda] = useState<string>('MXN');
 
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingCover, setIsUploadingCover] = useState(false);
@@ -149,6 +157,9 @@ export default function EditarCursoAdminPage() {
       setCategory(curso.categoria_id || '');
       if (curso.estado) setCursoEstado(curso.estado);
       if (curso.marca === 'nextgen') setMarca('nextgen');
+      if (curso.precio != null) setPrecio(String(curso.precio));
+      if (curso.moneda) setMoneda(curso.moneda);
+      setDestacado(!!curso.destacado);
       if (curso.portada_url) {
         setCoverImagePreview(`${API_URL}${curso.portada_url}`);
       }
@@ -210,10 +221,18 @@ export default function EditarCursoAdminPage() {
       setIsSaving(true);
       setSaveError('');
       try {
+        const precioNum = precio.trim() === '' ? null : Number(precio);
+        if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
+          setSaveError('El precio debe ser un número válido (0 o mayor)');
+          setIsSaving(false);
+          return;
+        }
         await cursosApi.update(cursoId, {
           titulo: title,
           descripcion: description,
           marca,
+          precio: precioNum,
+          moneda,
           ...(category ? { categoria_id: category } : {}),
         });
         goToStep(2);
@@ -234,7 +253,14 @@ export default function EditarCursoAdminPage() {
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await cursosApi.update(cursoId, { titulo: title, descripcion: description });
+      const precioNum = precio.trim() === '' ? null : Number(precio);
+      await cursosApi.update(cursoId, {
+        titulo: title,
+        descripcion: description,
+        precio: precioNum,
+        moneda,
+        destacado,
+      });
       router.push('/admin/cursos');
     } catch {
       notify('error', 'Error al guardar los cambios');
@@ -599,6 +625,32 @@ export default function EditarCursoAdminPage() {
                   </div>
                 </div>
 
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Precio</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={precio}
+                      onChange={(e) => setPrecio(e.target.value)}
+                      className={styles.input}
+                      placeholder="Vacio o 0 = curso gratuito"
+                    />
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                      Deja vacio o 0 para que el curso sea gratuito.
+                    </span>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Moneda</label>
+                    <select value={moneda} onChange={(e) => setMoneda(e.target.value)} className={styles.select}>
+                      <option value="MXN">MXN — Peso Mexicano</option>
+                      <option value="USD">USD — Dolar</option>
+                      <option value="EUR">EUR — Euro</option>
+                    </select>
+                  </div>
+                </div>
+
                 {saveError && (
                   <p style={{ color: 'red', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7' }}>
                     {saveError}
@@ -853,6 +905,13 @@ export default function EditarCursoAdminPage() {
                     <div className={styles.checkboxContent}>
                       <span className={styles.checkboxTitle}>Avance secuencial</span>
                       <span className={styles.checkboxDescription}>Las lecciones deben completarse en orden</span>
+                    </div>
+                  </label>
+                  <label className={styles.checkboxLabel}>
+                    <input type="checkbox" checked={destacado} onChange={(e) => setDestacado(e.target.checked)} className={styles.checkbox} />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Mostrar en carrete</span>
+                      <span className={styles.checkboxDescription}>Aparecera en el carrete de cursos destacados de la pantalla de inicio</span>
                     </div>
                   </label>
                 </div>
