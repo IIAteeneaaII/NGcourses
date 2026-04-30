@@ -39,6 +39,7 @@ export default function LoginContent() {
     const errorParam = params.get('error');
     if (errorParam === 'auth') setNotice('Debes iniciar sesión para acceder a esa página.');
     if (errorParam === 'role') setNotice('No tienes permisos para acceder a esa sección.');
+    if (params.get('reset') === 'ok') setNotice('✓ Contraseña actualizada. Ya puedes iniciar sesión.');
   }, []);
 
   useEffect(() => {
@@ -212,6 +213,9 @@ export default function LoginContent() {
                   />
                   <span>Recordarme</span>
                 </label>
+                <a href="/forgot-password" style={{ fontSize: '13px', color: '#00968f', fontWeight: 600, textDecoration: 'none' }}>
+                  ¿Olvidaste tu contraseña?
+                </a>
               </div>
 
               {error && (

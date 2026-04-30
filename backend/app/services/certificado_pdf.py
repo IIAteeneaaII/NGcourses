@@ -26,6 +26,7 @@ BG_COLOR   = HexColor("#f4f8f7")   # fondo muy suave
 # ── Rutas ─────────────────────────────────────────────────────────────────────
 
 STATIC_LOGOS = Path(__file__).parent.parent / "static" / "logos"
+FIRMAS_DIR   = STATIC_LOGOS / "firmas"
 CERT_DIR     = Path(__file__).parent.parent / "media" / "certificados"
 MARCO_PATH   = STATIC_LOGOS / "marco.png"
 
@@ -72,63 +73,93 @@ def _draw_all_corners(c: rl_canvas.Canvas) -> None:
 
 # ── Logo ──────────────────────────────────────────────────────────────────────
 
+_LOGO_W: dict[str, float] = {
+    "nextgen": PAGE_W * 0.30,
+    "ram":     PAGE_W * 0.22,
+}
+
 def _draw_logo(c: rl_canvas.Canvas, marca: str) -> None:
     logo_path = STATIC_LOGOS / marca / "logo.png"
     if not logo_path.exists():
         return
     img = ImageReader(str(logo_path))
     iw, ih = img.getSize()
-    max_w, max_h = 200.0, 140.0
-    scale = min(max_w / iw, max_h / ih)
-    dw, dh = iw * scale, ih * scale
+    fixed_w = _LOGO_W.get(marca, PAGE_W * 0.22)
+    dw = fixed_w
+    dh = ih * (fixed_w / iw)
     x = CX - dw / 2
-    y = PAGE_H - 32 - dh        # ≈ 500 pt desde abajo
+    y = PAGE_H - 32 - dh
     c.drawImage(img, x, y, width=dw, height=dh, mask="auto")
 
 
 # ── Sello ─────────────────────────────────────────────────────────────────────
+
+_SEAL_W: dict[str, float] = {
+    "nextgen": PAGE_W * 0.18,
+    "ram":     PAGE_W * 0.26,
+}
 
 def _draw_seal(c: rl_canvas.Canvas, marca: str) -> None:
     seal_path = STATIC_LOGOS / marca / "sello.png"
     if not seal_path.exists():
         return
     img = ImageReader(str(seal_path))
-    size = 280
-    x = PAGE_W - 50 - size       # esquina inferior derecha
-    y = 38
-    c.drawImage(img, x, y, width=size, height=size, mask="auto")
+    iw, ih = img.getSize()
+    fixed_w = _SEAL_W.get(marca, PAGE_W * 0.18)
+    dw = fixed_w
+    dh = ih * (fixed_w / iw)
+    x = PAGE_W - 38 - dw
+    y = 35
+    c.drawImage(img, x, y, width=dw, height=dh, mask="auto")
 
 
 # ── Firmas ────────────────────────────────────────────────────────────────────
 
-def _draw_signatures(c: rl_canvas.Canvas, instructor_name: str) -> None:
-    """Dos bloques de firma apilados a la izquierda, igual que la referencia."""
-    x1, x2 = 68, 295
-    cx_sig = (x1 + x2) / 2
 
-    # ── Firma 1: Instructor ──────────────────────────────────────────────────
-    y1_line = 148
-    _hline(c, x1, x2, y1_line, width=0.8, color=TEXT_GRAY)
+def _draw_signatures(c: rl_canvas.Canvas, marca: str) -> None:
+    """Dos firmas horizontales en la parte inferior según la marca del curso."""
+    # ── Posiciones relativas ──────────────────────────────────────────────────
+    y_line  = PAGE_H * 0.20          # ~122 pt desde abajo
+    sig_w   = PAGE_W * 0.18          # ~143 pt por bloque
+    gap     = PAGE_W * 0.06          # ~47 pt entre bloques
+    img_h   = PAGE_H * 0.08          # altura máx imagen de firma ~49 pt
 
-    c.setFillColor(TEXT_DARK)
-    c.setFont("Times-Bold", 10)
-    c.drawCentredString(cx_sig, y1_line - 14, "Firma del Instructor")
+    total_w = 2 * sig_w + gap
+    x_start = (PAGE_W - total_w) / 2   # centrado en la página
+    x1_a = x_start
+    x2_a = x_start + sig_w
+    x1_b = x_start + sig_w + gap
+    x2_b = x_start + sig_w + gap + sig_w
+    cx_a  = (x1_a + x2_a) / 2
+    cx_b  = (x1_b + x2_b) / 2
 
-    c.setFillColor(TEXT_GRAY)
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(cx_sig, y1_line - 26, instructor_name)
+    # ── Selección de firmas por marca ─────────────────────────────────────────
+    if marca == "ram":
+        bloques = [
+            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Director General"),
+            (cx_b, x1_b, x2_b, "director_general_mario.png",   "Ing. Mario  ",   "Director General"),
+        ]
+    else:  # nextgen
+        bloques = [
+            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Director General"),
+            (cx_b, x1_b, x2_b, "director_academico.png",       "Ing. Abraham Correa Romero", "Director Académico"),
+        ]
 
-    # ── Firma 2: Director ────────────────────────────────────────────────────
-    y2_line = 100
-    _hline(c, x1, x2, y2_line, width=0.8, color=TEXT_GRAY)
-
-    c.setFillColor(TEXT_DARK)
-    c.setFont("Times-Bold", 10)
-    c.drawCentredString(cx_sig, y2_line - 14, "Firma del Director")
-
-    c.setFillColor(TEXT_GRAY)
-    c.setFont("Helvetica", 9)
-    c.drawCentredString(cx_sig, y2_line - 26, "Ing. Rodrigo Ojeda Santillán")
+    for cx, x1, x2, fname, name, title in bloques:
+        img_path = FIRMAS_DIR / fname
+        if img_path.exists():
+            img = ImageReader(str(img_path))
+            iw, ih = img.getSize()
+            scale = min(sig_w / iw, img_h / ih)
+            dw, dh = iw * scale, ih * scale
+            c.drawImage(img, cx - dw / 2, y_line + 4, width=dw, height=dh, mask="auto")
+        _hline(c, x1, x2, y_line, width=0.8, color=TEXT_GRAY)
+        c.setFillColor(TEXT_DARK)
+        c.setFont("Times-Bold", 9)
+        c.drawCentredString(cx, y_line - 13, title)
+        c.setFillColor(TEXT_GRAY)
+        c.setFont("Helvetica", 8)
+        c.drawCentredString(cx, y_line - 24, name)
 
 
 # ── Cuerpo del certificado ───────────────────────────────────────────────────
@@ -199,10 +230,12 @@ def generate_certificate_pdf(
     folio: str,
     student_name: str,
     course_title: str,
-    instructor_name: str,
     issued_date: datetime,
     marca: MarcaCurso | str,
     output_path: str,
+    # Mantenidos por compatibilidad, ya no se usan en las firmas
+    instructor_name: str = "",
+    instructor_id: str | None = None,
 ) -> str:
     """
     Genera el PDF del certificado y lo escribe en output_path.
@@ -219,7 +252,7 @@ def generate_certificate_pdf(
     _draw_all_corners(c)
     _draw_logo(c, marca_s)
     _draw_body(c, folio, student_name, course_title, issued_date)
-    _draw_signatures(c, instructor_name)
+    _draw_signatures(c, marca_s)
     _draw_seal(c, marca_s)
 
     c.save()

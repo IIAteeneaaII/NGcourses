@@ -12,7 +12,7 @@ const ROL_HOME: Record<string, string> = {
   'instructor':    '/instructor',
 };
 
-const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil'];
+const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -68,5 +68,6 @@ export const config = {
     '/curso/:path*',
     '/mis-cursos/:path*',
     '/perfil/:path*',
+    '/pagos/:path*',
   ],
 };
