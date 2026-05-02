@@ -1,8 +1,8 @@
-"""add_all_domain_tables_and_extend_user
+"""initial_schema
 
-Revision ID: ad555931d588
-Revises: 1a31ce608336
-Create Date: 2026-02-26 14:09:31.987089
+Revision ID: 1a11599a9554
+Revises: 
+Create Date: 2026-05-02 16:05:09.029937
 
 """
 from alembic import op
@@ -11,8 +11,8 @@ import sqlmodel.sql.sqltypes
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = 'ad555931d588'
-down_revision = '1a31ce608336'
+revision = '1a11599a9554'
+down_revision = None
 branch_labels = None
 depends_on = None
 
@@ -43,23 +43,54 @@ def upgrade():
     sa.Column('nombre', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('rfc', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
     sa.Column('dominio_corporativo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
-    sa.Column('estado', sa.Enum('ACTIVA', 'INACTIVA', name='estadoorganizacion'), nullable=False),
+    sa.Column('estado', sa.Enum('activa', 'inactiva', name='estadoorganizacion'), nullable=False),
+    sa.Column('email_contacto', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('telefono_contacto', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
+    sa.Column('plan_de_cursos', sa.Text(), nullable=True),
+    sa.Column('fecha_compra', sa.DateTime(), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user',
+    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('is_superuser', sa.Boolean(), nullable=False),
+    sa.Column('full_name', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('rol', sa.Enum('estudiante', 'instructor', 'supervisor', 'usuario_control', 'administrador', name='rolusuario'), nullable=False),
+    sa.Column('estado', sa.Enum('activo', 'suspendido', 'pendiente_activacion', name='estadousuario'), nullable=False),
+    sa.Column('telefono', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
+    sa.Column('telefono_e164', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True),
+    sa.Column('whatsapp_opt_in', sa.Boolean(), nullable=False),
+    sa.Column('notif_prefs', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('hashed_password', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
+    sa.Column('password_reset_token', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('password_reset_expira', sa.DateTime(), nullable=True),
+    sa.Column('token_activacion', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('token_activacion_expira', sa.DateTime(), nullable=True),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_table('cursos',
     sa.Column('id', sa.Uuid(), nullable=False),
-    sa.Column('categoria_id', sa.Uuid(), nullable=False),
+    sa.Column('categoria_id', sa.Uuid(), nullable=True),
     sa.Column('instructor_id', sa.Uuid(), nullable=False),
     sa.Column('titulo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('slug', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('descripcion', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('estado', sa.Enum('BORRADOR', 'REVISION', 'PUBLICADO', 'ARCHIVADO', name='estadocurso'), nullable=False),
+    sa.Column('estado', sa.Enum('borrador', 'revision', 'publicado', 'archivado', name='estadocurso'), nullable=False),
+    sa.Column('marca', sa.String(length=20), server_default='ram', nullable=False),
     sa.Column('duracion_seg', sa.Integer(), nullable=False),
     sa.Column('calificacion_prom', sa.Float(), nullable=False),
     sa.Column('total_resenas', sa.Integer(), nullable=False),
     sa.Column('es_gratis', sa.Boolean(), nullable=False),
+    sa.Column('precio', sa.Numeric(precision=10, scale=2), nullable=True),
+    sa.Column('moneda', sa.String(length=3), server_default='MXN', nullable=False),
+    sa.Column('destacado', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('portada_url', sqlmodel.sql.sqltypes.AutoString(length=500), nullable=True),
+    sa.Column('bunny_library_id', sqlmodel.sql.sqltypes.AutoString(length=50), nullable=True),
+    sa.Column('bunny_collection_id', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('publicado_en', sa.DateTime(), nullable=True),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
@@ -72,7 +103,7 @@ def upgrade():
     op.create_table('eventos_sistema',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('actor_usuario_id', sa.Uuid(), nullable=True),
-    sa.Column('categoria', sa.Enum('AUTH', 'CRUD', 'ADMIN', 'SISTEMA', name='categoriaevento'), nullable=False),
+    sa.Column('categoria', sa.Enum('auth', 'crud', 'admin', 'sistema', name='categoriaevento'), nullable=False),
     sa.Column('accion', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
     sa.Column('entidad', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=True),
     sa.Column('entidad_id', sa.Uuid(), nullable=True),
@@ -83,15 +114,23 @@ def upgrade():
     sa.ForeignKeyConstraint(['actor_usuario_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('item',
+    sa.Column('title', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('description', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('owner_id', sa.Uuid(), nullable=False),
+    sa.ForeignKeyConstraint(['owner_id'], ['user.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('notificaciones',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('usuario_id', sa.Uuid(), nullable=False),
-    sa.Column('canal', sa.Enum('EMAIL', 'WHATSAPP', 'PUSH', 'INAPP', name='canalnotificacion'), nullable=False),
-    sa.Column('tipo', sa.Enum('INSCRIPCION', 'CERTIFICADO', 'SOLICITUD', 'SISTEMA', name='tiponotificacion'), nullable=False),
+    sa.Column('canal', sa.Enum('email', 'whatsapp', 'push', 'inapp', name='canalnotificacion'), nullable=False),
+    sa.Column('tipo', sa.Enum('inscripcion', 'certificado', 'solicitud', 'sistema', 'invitacion', name='tiponotificacion'), nullable=False),
     sa.Column('titulo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('cuerpo', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('estado', sa.Enum('PENDIENTE', 'ENVIADA', 'FALLIDA', 'LEIDA', name='estadonotificacion'), nullable=False),
-    sa.Column('proveedor', sa.Enum('TWILIO', 'EMAIL', 'INTERNAL', name='proveedornotificacion'), nullable=True),
+    sa.Column('estado', sa.Enum('pendiente', 'enviada', 'fallida', 'leida', name='estadonotificacion'), nullable=False),
+    sa.Column('proveedor', sa.Enum('twilio', 'email', 'internal', name='proveedornotificacion'), nullable=True),
     sa.Column('proveedor_message_id', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
@@ -119,7 +158,7 @@ def upgrade():
     sa.Column('solicitante_id', sa.Uuid(), nullable=False),
     sa.Column('titulo_solicitud', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('descripcion', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('estado', sa.Enum('ABIERTA', 'EN_REVISION', 'APROBADA', 'RECHAZADA', 'CERRADA', name='estadosolicitud'), nullable=False),
+    sa.Column('estado', sa.Enum('abierta', 'en_revision', 'aprobada', 'rechazada', 'cerrada', name='estadosolicitud'), nullable=False),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.Column('actualizado_en', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['organizacion_id'], ['organizaciones.id'], ondelete='CASCADE'),
@@ -130,7 +169,7 @@ def upgrade():
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('organizacion_id', sa.Uuid(), nullable=False),
     sa.Column('usuario_id', sa.Uuid(), nullable=False),
-    sa.Column('rol_org', sa.Enum('MIEMBRO', 'ADMIN_ORG', name='rolorganizacion'), nullable=False),
+    sa.Column('rol_org', sa.Enum('miembro', 'admin_org', name='rolorganizacion'), nullable=False),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['organizacion_id'], ['organizaciones.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['usuario_id'], ['user.id'], ),
@@ -144,7 +183,7 @@ def upgrade():
     sa.Column('estrellas', sa.Integer(), nullable=False),
     sa.Column('titulo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
     sa.Column('comentario', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('estado', sa.Enum('PUBLICA', 'OCULTA', 'PENDIENTE', name='estadocalificacion'), nullable=False),
+    sa.Column('estado', sa.Enum('publica', 'oculta', 'pendiente', name='estadocalificacion'), nullable=False),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.Column('actualizado_en', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['curso_id'], ['cursos.id'], ),
@@ -176,7 +215,7 @@ def upgrade():
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('usuario_id', sa.Uuid(), nullable=False),
     sa.Column('curso_id', sa.Uuid(), nullable=False),
-    sa.Column('estado', sa.Enum('ACTIVA', 'FINALIZADA', 'CANCELADO', name='estadoinscripcion'), nullable=False),
+    sa.Column('estado', sa.Enum('activa', 'finalizada', 'cancelado', name='estadoinscripcion'), nullable=False),
     sa.Column('inscrito_en', sa.DateTime(), nullable=False),
     sa.Column('ultimo_acceso_en', sa.DateTime(), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
@@ -185,6 +224,22 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('usuario_id', 'curso_id')
     )
+    op.create_table('invitaciones_curso',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('curso_id', sa.Uuid(), nullable=False),
+    sa.Column('email', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
+    sa.Column('token_hash', sqlmodel.sql.sqltypes.AutoString(length=64), nullable=False),
+    sa.Column('expira_en', sa.DateTime(), nullable=False),
+    sa.Column('usado_en', sa.DateTime(), nullable=True),
+    sa.Column('creado_por', sa.Uuid(), nullable=False),
+    sa.Column('creado_en', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['creado_por'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['curso_id'], ['cursos.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_invitaciones_curso_curso_id'), 'invitaciones_curso', ['curso_id'], unique=False)
+    op.create_index(op.f('ix_invitaciones_curso_email'), 'invitaciones_curso', ['email'], unique=False)
+    op.create_index(op.f('ix_invitaciones_curso_token_hash'), 'invitaciones_curso', ['token_hash'], unique=True)
     op.create_table('licencias_curso',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('organizacion_id', sa.Uuid(), nullable=False),
@@ -193,7 +248,7 @@ def upgrade():
     sa.Column('cupos_usados', sa.Integer(), nullable=False),
     sa.Column('inicia_en', sa.DateTime(), nullable=True),
     sa.Column('termina_en', sa.DateTime(), nullable=True),
-    sa.Column('estado', sa.Enum('ACTIVA', 'AGOTADA', 'EXPIRADA', name='estadolicencia'), nullable=False),
+    sa.Column('estado', sa.Enum('activa', 'agotada', 'expirada', name='estadolicencia'), nullable=False),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['curso_id'], ['cursos.id'], ),
@@ -210,6 +265,23 @@ def upgrade():
     sa.ForeignKeyConstraint(['curso_id'], ['cursos.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('pagos',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('usuario_id', sa.Uuid(), nullable=False),
+    sa.Column('curso_id', sa.Uuid(), nullable=False),
+    sa.Column('monto', sa.Numeric(precision=10, scale=2), nullable=False),
+    sa.Column('moneda', sa.String(length=3), server_default='MXN', nullable=False),
+    sa.Column('referencia_paypal', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
+    sa.Column('status', sa.Enum('pendiente', 'completado', 'fallido', 'cortesia', name='estadopago'), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['curso_id'], ['cursos.id'], ),
+    sa.ForeignKeyConstraint(['usuario_id'], ['user.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_pagos_curso_id'), 'pagos', ['curso_id'], unique=False)
+    op.create_index(op.f('ix_pagos_referencia_paypal'), 'pagos', ['referencia_paypal'], unique=False)
+    op.create_index(op.f('ix_pagos_usuario_id'), 'pagos', ['usuario_id'], unique=False)
     op.create_table('certificados',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('inscripcion_id', sa.Uuid(), nullable=False),
@@ -231,13 +303,14 @@ def upgrade():
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('modulo_id', sa.Uuid(), nullable=False),
     sa.Column('titulo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
-    sa.Column('tipo', sa.Enum('VIDEO', 'QUIZ', 'LECTURA', name='tipoleccion'), nullable=False),
+    sa.Column('tipo', sa.Enum('video', 'quiz', 'lectura', name='tipoleccion'), nullable=False),
     sa.Column('orden', sa.Integer(), nullable=False),
     sa.Column('duracion_seg', sa.Integer(), nullable=False),
     sa.Column('umbral_completado_pct', sa.Integer(), nullable=False),
     sa.Column('bunny_video_id', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=True),
     sa.Column('hls_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('thumbnail_url', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+    sa.Column('contenido', sa.Text(), nullable=True),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('creado_en', sa.DateTime(), nullable=False),
     sa.Column('actualizado_en', sa.DateTime(), nullable=True),
@@ -283,10 +356,23 @@ def upgrade():
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('inscripcion_id', 'leccion_id')
     )
+    op.create_table('quiz_intentos',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('inscripcion_id', sa.Uuid(), nullable=False),
+    sa.Column('leccion_id', sa.Uuid(), nullable=False),
+    sa.Column('aprobado', sa.Boolean(), nullable=False),
+    sa.Column('total_preguntas', sa.Integer(), nullable=False),
+    sa.Column('correctas', sa.Integer(), nullable=False),
+    sa.Column('creado_en', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['inscripcion_id'], ['inscripciones.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['leccion_id'], ['lecciones.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index('ix_quiz_intentos_inscripcion_leccion', 'quiz_intentos', ['inscripcion_id', 'leccion_id'], unique=False)
     op.create_table('recursos_leccion',
     sa.Column('id', sa.Uuid(), nullable=False),
     sa.Column('leccion_id', sa.Uuid(), nullable=False),
-    sa.Column('tipo', sa.Enum('PDF', 'LINK', 'ARCHIVO', name='tiporecurso'), nullable=False),
+    sa.Column('tipo', sa.Enum('pdf', 'link', 'archivo', 'docx', 'xlsx', 'pptx', name='tiporecurso'), nullable=False),
     sa.Column('titulo', sqlmodel.sql.sqltypes.AutoString(length=255), nullable=False),
     sa.Column('url', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
@@ -294,37 +380,39 @@ def upgrade():
     sa.ForeignKeyConstraint(['leccion_id'], ['lecciones.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
-    # Create enum types first for user columns
-    rolusuario = sa.Enum('ESTUDIANTE', 'INSTRUCTOR', 'USUARIO_CONTROL', 'ADMINISTRADOR', name='rolusuario')
-    rolusuario.create(op.get_bind(), checkfirst=True)
-    estadousuario = sa.Enum('ACTIVO', 'SUSPENDIDO', name='estadousuario')
-    estadousuario.create(op.get_bind(), checkfirst=True)
-
-    op.add_column('user', sa.Column('rol', rolusuario, nullable=False, server_default='ESTUDIANTE'))
-    op.add_column('user', sa.Column('estado', estadousuario, nullable=False, server_default='ACTIVO'))
-    op.add_column('user', sa.Column('telefono', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True))
-    op.add_column('user', sa.Column('telefono_e164', sqlmodel.sql.sqltypes.AutoString(length=20), nullable=True))
-    op.add_column('user', sa.Column('whatsapp_opt_in', sa.Boolean(), nullable=False, server_default=sa.text('false')))
-    op.add_column('user', sa.Column('notif_prefs', postgresql.JSONB(astext_type=sa.Text()), nullable=True))
+    op.create_table('quiz_respuestas',
+    sa.Column('id', sa.Uuid(), nullable=False),
+    sa.Column('intento_id', sa.Uuid(), nullable=False),
+    sa.Column('pregunta_id', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
+    sa.Column('opcion_id', sqlmodel.sql.sqltypes.AutoString(length=100), nullable=False),
+    sa.Column('es_correcta', sa.Boolean(), nullable=False),
+    sa.ForeignKeyConstraint(['intento_id'], ['quiz_intentos.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade():
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_column('user', 'notif_prefs')
-    op.drop_column('user', 'whatsapp_opt_in')
-    op.drop_column('user', 'telefono_e164')
-    op.drop_column('user', 'telefono')
-    op.drop_column('user', 'estado')
-    op.drop_column('user', 'rol')
+    op.drop_table('quiz_respuestas')
     op.drop_table('recursos_leccion')
+    op.drop_index('ix_quiz_intentos_inscripcion_leccion', table_name='quiz_intentos')
+    op.drop_table('quiz_intentos')
     op.drop_table('progreso_lecciones')
     op.drop_table('eventos_analytics')
     op.drop_table('votos_resena')
     op.drop_table('lecciones')
     op.drop_table('certificados')
+    op.drop_index(op.f('ix_pagos_usuario_id'), table_name='pagos')
+    op.drop_index(op.f('ix_pagos_referencia_paypal'), table_name='pagos')
+    op.drop_index(op.f('ix_pagos_curso_id'), table_name='pagos')
+    op.drop_table('pagos')
     op.drop_table('modulos')
     op.drop_table('licencias_curso')
+    op.drop_index(op.f('ix_invitaciones_curso_token_hash'), table_name='invitaciones_curso')
+    op.drop_index(op.f('ix_invitaciones_curso_email'), table_name='invitaciones_curso')
+    op.drop_index(op.f('ix_invitaciones_curso_curso_id'), table_name='invitaciones_curso')
+    op.drop_table('invitaciones_curso')
     op.drop_table('inscripciones')
     op.drop_table('curso_etiquetas')
     op.drop_table('comentarios_solicitud')
@@ -334,9 +422,12 @@ def downgrade():
     op.drop_index(op.f('ix_refresh_tokens_token_hash'), table_name='refresh_tokens')
     op.drop_table('refresh_tokens')
     op.drop_table('notificaciones')
+    op.drop_table('item')
     op.drop_table('eventos_sistema')
     op.drop_index(op.f('ix_cursos_slug'), table_name='cursos')
     op.drop_table('cursos')
+    op.drop_index(op.f('ix_user_email'), table_name='user')
+    op.drop_table('user')
     op.drop_table('organizaciones')
     op.drop_index(op.f('ix_etiquetas_slug'), table_name='etiquetas')
     op.drop_table('etiquetas')

@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
-from sqlalchemy import Column, UniqueConstraint
+from sqlalchemy import Column, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -35,7 +35,10 @@ class Organizacion(SQLModel, table=True):
     estado: EstadoOrganizacion = Field(default=EstadoOrganizacion.ACTIVA, sa_type=_estadoorg_type)
     email_contacto: str | None = Field(default=None, max_length=255)
     telefono_contacto: str | None = Field(default=None, max_length=20)
-    plan_de_cursos: str | None = Field(default=None)
+    plan_de_cursos: str | None = Field(
+        default=None,
+        sa_column=Column("plan_de_cursos", Text, nullable=True),
+    )
     fecha_compra: datetime | None = Field(default=None)
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     creado_en: datetime = Field(default_factory=datetime.utcnow)

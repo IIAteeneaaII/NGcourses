@@ -3,7 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 import sqlalchemy as sa
-from sqlalchemy import Column, Numeric, String, UniqueConstraint
+from sqlalchemy import Column, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -152,7 +152,10 @@ class Leccion(SQLModel, table=True):
     bunny_video_id: str | None = Field(default=None, max_length=255)
     hls_url: str | None = Field(default=None)
     thumbnail_url: str | None = Field(default=None)
-    contenido: str | None = Field(default=None)  # JSON string con QuizData para lecciones tipo quiz
+    contenido: str | None = Field(
+        default=None,
+        sa_column=Column("contenido", Text, nullable=True),
+    )  # JSON string con QuizData para lecciones tipo quiz
     metadata_: dict | None = Field(default=None, sa_column=Column("metadata", JSONB))
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime | None = Field(default=None)
