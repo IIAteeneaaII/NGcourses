@@ -102,7 +102,17 @@ class ApiClient {
 
     const response = await fetch(url, { method: 'POST', headers, body: formData });
     if (!response.ok) {
-      const error: ApiError = { detail: await response.text(), status: response.status };
+      let detail = 'Error desconocido';
+      try {
+        const text = await response.text();
+        try {
+          const body = JSON.parse(text);
+          detail = typeof body.detail === 'string' ? body.detail : JSON.stringify(body);
+        } catch {
+          detail = text || detail;
+        }
+      } catch { /* keep default */ }
+      const error: ApiError = { detail, status: response.status };
       throw error;
     }
     return response.json();
