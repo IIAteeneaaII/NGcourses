@@ -451,7 +451,8 @@ export default function EditarCursoAdminPage() {
     } catch (e) {
       setCoverUploadStatus('error');
       logError('admin/cursos/editar/uploadCover', e);
-      notify('error', 'No se pudo subir la imagen. Intenta de nuevo.');
+      const detail = (e as { detail?: string })?.detail;
+      notify('error', detail || 'No se pudo subir la imagen. Intenta de nuevo.');
     } finally {
       setIsUploadingCover(false);
     }
@@ -693,7 +694,7 @@ export default function EditarCursoAdminPage() {
                     </div>
                   ) : (
                     <label className={styles.uploadLabel}>
-                      <input type="file" accept="image/*" onChange={handleImageUpload} className={styles.fileInput} />
+                      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className={styles.fileInput} />
                       <div className={styles.uploadPlaceholder}>
                         <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
