@@ -118,7 +118,7 @@ jobs:
           cd ~
 
           if [ "${WIPE_DB:-false}" = "true" ]; then
-            echo "!!! WIPE_DB=true: destruyendo volumen de DB antes del deploy"
+            echo "!!! WIPE_DB=true: tirando containers + volumen local (media)"
             docker-compose -f docker-compose.prod.yml down -v
           fi
 
@@ -130,6 +130,9 @@ jobs:
           docker-compose -f docker-compose.prod.yml pull
 
           if [ "${WIPE_DB:-false}" = "true" ]; then
+            echo "!!! WIPE_DB=true: borrando esquema 'public' en RDS"
+            docker-compose -f docker-compose.prod.yml run --rm --no-deps prestart python app/wipe_schema.py
+
             echo "Levantando stack completo sobre DB vacia..."
             docker-compose -f docker-compose.prod.yml up -d
           else
