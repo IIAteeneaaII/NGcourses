@@ -5,12 +5,16 @@ Las preguntas/opciones se leen del campo `contenido` (JSON) de la Leccion.
 import uuid
 from datetime import datetime
 
+from sqlalchemy import Index
 from sqlmodel import Field, Relationship, SQLModel
 
 
 class QuizIntento(SQLModel, table=True):
     """Un intento del alumno en un quiz (lección tipo 'quiz')."""
     __tablename__ = "quiz_intentos"
+    __table_args__ = (
+        Index("ix_quiz_intentos_inscripcion_leccion", "inscripcion_id", "leccion_id"),
+    )
 
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     inscripcion_id: uuid.UUID = Field(foreign_key="inscripciones.id", nullable=False, ondelete="CASCADE")

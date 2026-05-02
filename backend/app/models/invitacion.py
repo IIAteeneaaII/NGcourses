@@ -12,6 +12,7 @@ class InvitacionCurso(SQLModel, table=True):
         foreign_key="cursos.id",
         nullable=False,
         index=True,
+        ondelete="CASCADE",
     )
     email: str = Field(max_length=255, index=True)
     token_hash: str = Field(max_length=64, index=True, unique=True)
