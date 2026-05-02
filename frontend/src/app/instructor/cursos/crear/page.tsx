@@ -91,7 +91,9 @@ export default function CrearCursoPage() {
   const [allowComments, setAllowComments] = useState(true);
   const [certificateEnabled, setCertificateEnabled] = useState(true);
   const [requireSequential, setRequireSequential] = useState(false);
-  const [esGratis, setEsGratis] = useState(false);
+  const [destacado, setDestacado] = useState(false);
+  const [precio, setPrecio] = useState<string>('');
+  const [moneda, setMoneda] = useState<string>('MXN');
 
   // Archivos pendientes de recursos, clave = lessonId (soporte multi-archivo)
   const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
@@ -124,6 +126,11 @@ export default function CrearCursoPage() {
         setCurrentStep(2);
         return;
       }
+      const precioNum = precio.trim() === '' ? null : Number(precio);
+      if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
+        setCreateError('El precio debe ser un número válido (0 o mayor)');
+        return;
+      }
       setIsCreating(true);
       setCreateError('');
       try {
@@ -133,7 +140,8 @@ export default function CrearCursoPage() {
           descripcion: description,
           ...(category ? { categoria_id: category } : {}),
           estado: 'borrador',
-          es_gratis: esGratis,
+          precio: precioNum,
+          moneda,
           nivel: level || undefined,
           lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
           requisitos: requisitos.trim() || undefined,
@@ -341,6 +349,7 @@ export default function CrearCursoPage() {
         estado: 'revision',
         titulo: title,
         descripcion: description,
+        destacado,
         nivel: level || undefined,
         lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
         requisitos: requisitos.trim() || undefined,
@@ -483,18 +492,30 @@ export default function CrearCursoPage() {
                   />
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontWeight: esGratis ? 700 : 400 }}>
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Precio</label>
                     <input
-                      type="checkbox"
-                      checked={esGratis}
-                      onChange={(e) => setEsGratis(e.target.checked)}
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={precio}
+                      onChange={(e) => setPrecio(e.target.value)}
+                      className={styles.input}
+                      placeholder="Vacio o 0 = curso gratuito"
                     />
-                    Curso gratuito
-                  </label>
-                  <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', marginTop: '0.375rem', display: 'block' }}>
-                    Si no marcas &quot;Curso gratuito&quot;, el curso será de paga y requerirá licencia para inscribirse.
-                  </small>
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                      Deja vacio o 0 para que el curso sea gratuito.
+                    </span>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Moneda</label>
+                    <select value={moneda} onChange={(e) => setMoneda(e.target.value)} className={styles.select}>
+                      <option value="MXN">MXN — Peso Mexicano</option>
+                      <option value="USD">USD — Dolar</option>
+                      <option value="EUR">EUR — Euro</option>
+                    </select>
+                  </div>
                 </div>
 
                 {createError && (
@@ -763,6 +784,14 @@ export default function CrearCursoPage() {
                     <div className={styles.checkboxContent}>
                       <span className={styles.checkboxTitle}>Avance secuencial</span>
                       <span className={styles.checkboxDescription}>Las lecciones deben completarse en orden</span>
+                    </div>
+                  </label>
+
+                  <label className={styles.checkboxLabel}>
+                    <input type="checkbox" checked={destacado} onChange={(e) => setDestacado(e.target.checked)} className={styles.checkbox} />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Mostrar en carrete</span>
+                      <span className={styles.checkboxDescription}>Aparecera en el carrete de cursos destacados de la pantalla de inicio</span>
                     </div>
                   </label>
                 </div>
