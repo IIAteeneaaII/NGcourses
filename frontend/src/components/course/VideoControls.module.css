@@ -154,6 +154,10 @@
   transition: background-color 0.2s ease;
   background-color: var(--color-accent-10);
   color: var(--color-text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .completeButton:hover {
@@ -166,6 +170,33 @@
 
 .completeButtonSuccess:hover {
   background-color: var(--color-success);
+}
+
+.certButton {
+  width: 100%;
+  margin-top: 0.625rem;
+  padding: 0.875rem;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  background-color: var(--color-secondary-30);
+  color: var(--color-text-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.certButton:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
+.certButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* Notas y Comentarios */
