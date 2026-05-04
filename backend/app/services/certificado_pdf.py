@@ -136,13 +136,13 @@ def _draw_signatures(c: rl_canvas.Canvas, marca: str) -> None:
     # ── Selección de firmas por marca ─────────────────────────────────────────
     if marca == "ram":
         bloques = [
-            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Director General"),
-            (cx_b, x1_b, x2_b, "director_general_mario.png",   "Ing. Mario  ",   "Director General"),
+            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Chief Executive Officer"),
+            (cx_b, x1_b, x2_b, "director_general_mario.png",   "Ing. Mario Martínez",   "Chief Operating Officer"),
         ]
     else:  # nextgen
         bloques = [
-            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Director General"),
-            (cx_b, x1_b, x2_b, "director_academico.png",       "Ing. Abraham Correa Romero", "Director Académico"),
+            (cx_a, x1_a, x2_a, "director_general_rodrigo.png", "Ing. Rodrigo Ojeda Santillán", "Chief Executive Officer"),
+            (cx_b, x1_b, x2_b, "director_academico.png",       "Ing. Abraham Correa Romero", "Chief Technology Officer"),
         ]
 
     for cx, x1, x2, fname, name, title in bloques:
@@ -167,7 +167,7 @@ def _draw_signatures(c: rl_canvas.Canvas, marca: str) -> None:
 def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
                course_title: str, issued_date: datetime) -> None:
 
-    # ── Título ────────────────────────────────────────────────────────────────
+    # ── Título ─────────l──────────────────────────────────────────────────────
     c.setFillColor(TEAL_DARK)
     c.setFont("Times-Bold", 30)
     _cx_text(c, "CERTIFICADO DE FINALIZACIÓN", 428)
@@ -201,10 +201,10 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
         else course_title[:max_chars - 1] + "…"
     c.setFillColor(TEXT_DARK)
     c.setFont("Helvetica-Bold", 16)
-    _cx_text(c, f"[{title_display.upper()}]", 290)
+    _cx_text(c, title_display.upper(), 290)
 
     # Línea bajo el curso
-    course_w = c.stringWidth(f"[{title_display.upper()}]", "Helvetica-Bold", 16)
+    course_w = c.stringWidth(title_display.upper(), "Helvetica-Bold", 16)
     course_half = min(course_w / 2 + 15, 260)
     _hline(c, CX - course_half, CX + course_half, 281, width=0.5, color=TEXT_LIGHT)
 
