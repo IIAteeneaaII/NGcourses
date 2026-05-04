@@ -266,7 +266,14 @@ export default function AlumnosInstructorPage() {
                         <td>{r.leccion_titulo}</td>
                         <td>
                           <span className={r.aprobado ? styles.badgeAprobado : styles.badgeReprobado}>
-                            {r.aprobado ? '✓ Aprobado' : '✗ Reprobado'}
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                              {r.aprobado ? (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                              ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                              )}
+                              {r.aprobado ? 'Aprobado' : 'Reprobado'}
+                            </span>
                           </span>
                         </td>
                         <td className={styles.dateCell}>{r.correctas}/{r.total_preguntas}</td>

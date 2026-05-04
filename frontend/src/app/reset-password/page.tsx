@@ -100,8 +100,9 @@ function ResetPasswordForm() {
                 ¡Contraseña actualizada! Redirigiendo...
               </span>
             </div>
-            <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-              ← Ir al inicio de sesión
+            <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Ir al inicio de sesión
             </Link>
           </div>
         ) : (
@@ -173,8 +174,9 @@ function ResetPasswordForm() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <p style={{ color: 'var(--color-error)', fontSize: '0.875rem', margin: 0 }}>{error}</p>
                   {(error.includes('expirado') || error.includes('válido')) && (
-                    <Link href="/forgot-password" style={{ color: '#00968f', fontSize: '13px', fontWeight: 600, textDecoration: 'none' }}>
-                      Solicitar nuevo enlace →
+                    <Link href="/forgot-password" style={{ color: '#00968f', fontSize: '13px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                      Solicitar nuevo enlace
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                     </Link>
                   )}
                 </div>
@@ -195,8 +197,9 @@ function ResetPasswordForm() {
             </form>
 
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-                ← Volver al inicio de sesión
+              <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                Volver al inicio de sesión
               </Link>
             </div>
           </>

@@ -42,8 +42,9 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
 
       <main className={styles.main}>
         <div className={styles.backButtonContainer}>
-          <Link href={backHref} className={styles.backButton}>
-            ← Volver
+          <Link href={backHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+            Volver
           </Link>
         </div>
 

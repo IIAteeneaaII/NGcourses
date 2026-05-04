@@ -69,8 +69,9 @@ export default function ForgotPasswordPage() {
             <p style={{ margin: '0 0 24px', color: 'rgba(11,27,43,.65)', fontSize: '15px', lineHeight: 1.5 }}>
               Si ese correo está registrado, recibirás un enlace para restablecer tu contraseña en los próximos minutos.
             </p>
-            <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-              ← Volver al inicio de sesión
+            <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Volver al inicio de sesión
             </Link>
           </div>
         ) : (
@@ -125,8 +126,9 @@ export default function ForgotPasswordPage() {
             </form>
 
             <div style={{ marginTop: '20px', textAlign: 'center' }}>
-              <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none' }}>
-                ← Volver al inicio de sesión
+              <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                Volver al inicio de sesión
               </Link>
             </div>
           </>

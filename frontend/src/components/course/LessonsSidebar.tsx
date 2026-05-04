@@ -55,9 +55,13 @@ export default function LessonsSidebar({
               <span className={styles.lessonName}>{lesson.name}</span>
               <span className={styles.lessonIcon}>
                 {lesson.completed ? (
-                  <span className={styles.checkIcon}>✓</span>
+                  <span className={styles.checkIcon}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                  </span>
                 ) : (
-                  <span className={styles.arrowIcon}>∨</span>
+                  <span className={styles.arrowIcon}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                  </span>
                 )}
               </span>
             </div>
@@ -77,9 +81,13 @@ export default function LessonsSidebar({
                     <span className={styles.lessonName}>{lesson.name}</span>
                     <span className={styles.lessonIcon}>
                       {lesson.completed ? (
-                        <span className={styles.checkIcon}>✓</span>
+                        <span className={styles.checkIcon}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                        </span>
                       ) : (
-                        <span className={styles.arrowIcon}>∨</span>
+                        <span className={styles.arrowIcon}>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                        </span>
                       )}
                     </span>
                   </div>

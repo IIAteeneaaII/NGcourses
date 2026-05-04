@@ -482,7 +482,7 @@ export default function CrearCursoPage() {
                 </span>
                 <span className={styles.stepName}>{step.name}</span>
                 {isStepMarkedComplete(step.id) && currentStep !== step.id && (
-                  <span className={styles.checkmark}>✓</span>
+                  <span className={styles.checkmark}><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
                 )}
               </button>
             ))}
@@ -662,12 +662,12 @@ export default function CrearCursoPage() {
                       )}
                       {coverUploadStatus === 'success' && (
                         <p style={{ marginTop: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
-                          ✓ Imagen guardada correctamente
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> Imagen guardada correctamente</span>
                         </p>
                       )}
                       {coverUploadStatus === 'error' && (
                         <p style={{ marginTop: '0.5rem', color: '#dc2626', fontSize: '0.875rem', fontWeight: 500 }}>
-                          ✗ Error al subir. Selecciona la imagen de nuevo para reintentar.
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg> Error al subir. Selecciona la imagen de nuevo para reintentar.</span>
                         </p>
                       )}
                     </div>
@@ -833,7 +833,7 @@ export default function CrearCursoPage() {
                                           />
                                           {pendingRecursoFiles[lesson.id]?.length
                                             ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
-                                            : '📎 Seleccionar archivos'}
+                                            : 'Seleccionar archivos'}
                                         </label>
                                         <button
                                           type="button"
@@ -1027,7 +1027,7 @@ export default function CrearCursoPage() {
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div className={styles.modalHeader}>
               <h2 className={styles.modalTitle}>Vista Previa del Curso</h2>
-              <button className={styles.closeButton} onClick={() => setShowPreview(false)}>×</button>
+              <button className={styles.closeButton} onClick={() => setShowPreview(false)}><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg></button>
             </div>
             <div className={styles.modalBody}>
               {coverImagePreview && (
@@ -1048,7 +1048,7 @@ export default function CrearCursoPage() {
                     <ul>
                       {module.lessons.map((lesson) => (
                         <li key={lesson.id}>
-                          {lesson.title || 'Sin título'}{lesson.bunnyVideoId ? ' ✓' : ''}
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>{lesson.title || 'Sin título'}{lesson.bunnyVideoId ? <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg> : null}</span>
                         </li>
                       ))}
                     </ul>
