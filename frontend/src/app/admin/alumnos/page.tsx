@@ -283,8 +283,10 @@ export default function AlumnosAdminPage() {
             <button
               className={styles.panelBackBtn}
               onClick={() => setPanel({ type: 'curso-alumnos', curso: panel.desde, inscripciones: [] })}
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
             >
-              ← Volver a alumnos de &ldquo;{panel.desde.titulo}&rdquo;
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Volver a alumnos de &ldquo;{panel.desde.titulo}&rdquo;
             </button>
           )}
           <ul className={styles.panelList}>
@@ -498,16 +500,20 @@ export default function AlumnosAdminPage() {
                     className={styles.pageBtn}
                     onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage === 1}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
                   >
-                    ← Anterior
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                    Anterior
                   </button>
                   <span className={styles.pageInfo}>{currentPage} / {totalPages}</span>
                   <button
                     className={styles.pageBtn}
                     onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage === totalPages}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
                   >
-                    Siguiente →
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                   </button>
                 </div>
               )}
@@ -606,7 +612,14 @@ export default function AlumnosAdminPage() {
                             <td>{r.leccion_titulo}</td>
                             <td>
                               <span className={`${styles.badge} ${r.aprobado ? styles.badgeActiva : styles.badgeCancelado}`}>
-                                {r.aprobado ? '✓ Aprobado' : '✗ Reprobado'}
+                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
+                                  {r.aprobado ? (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+                                  ) : (
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                  )}
+                                  {r.aprobado ? 'Aprobado' : 'Reprobado'}
+                                </span>
                               </span>
                             </td>
                             <td>{r.correctas}/{r.total_preguntas}</td>
@@ -624,16 +637,20 @@ export default function AlumnosAdminPage() {
                     className={styles.pageBtn}
                     onClick={() => setQuizPage((p) => Math.max(1, p - 1))}
                     disabled={quizPage === 1}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
                   >
-                    ← Anterior
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+                    Anterior
                   </button>
                   <span className={styles.pageInfo}>{quizPage} / {Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE)}</span>
                   <button
                     className={styles.pageBtn}
                     onClick={() => setQuizPage((p) => Math.min(Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE), p + 1))}
                     disabled={quizPage >= Math.ceil(quizResults.length / QUIZ_ITEMS_PER_PAGE)}
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}
                   >
-                    Siguiente →
+                    Siguiente
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" /></svg>
                   </button>
                 </div>
               )}

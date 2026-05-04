@@ -558,7 +558,7 @@ export default function EditarCursoInstructorPage() {
                                   />
                                   {pendingRecursoFiles[lesson.id]?.length
                                     ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
-                                    : '📎 Seleccionar archivos'}
+                                    : 'Seleccionar archivos'}
                                 </label>
                                 <button
                                   type="button"
