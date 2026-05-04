@@ -25,6 +25,9 @@ interface VideoControlsProps {
   resources?: Resource[];
   courseId?: string;
   lessonId?: string;
+  certFolio?: string | null;
+  onDownloadCert?: (folio: string) => void;
+  downloading?: boolean;
 }
 
 export default function VideoControls({
@@ -33,6 +36,9 @@ export default function VideoControls({
   resources,
   courseId,
   lessonId,
+  certFolio,
+  onDownloadCert,
+  downloading,
 }: VideoControlsProps) {
   const [activeTab, setActiveTab] = useState<'resumen' | 'recursos' | 'notas' | 'comentarios'>('resumen');
   const [isCompleted, setIsCompleted] = useState(false);
@@ -118,7 +124,9 @@ export default function VideoControls({
             {tab.charAt(0).toUpperCase() + tab.slice(1)}
           </button>
         ))}
-        <button className={styles.menuButton}>⋮</button>
+        <button className={styles.menuButton}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
+        </button>
       </div>
 
       {activeTab === 'recursos' && (
@@ -211,8 +219,25 @@ export default function VideoControls({
           onClick={handleMarkComplete}
           className={`${styles.completeButton} ${isCompleted ? styles.completeButtonSuccess : ''}`}
         >
-          {isCompleted ? '✓ Lección completada!' : 'Marcar lección como completada'}
+          {isCompleted && (
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
+          )}
+          {isCompleted ? 'Lección completada!' : 'Marcar lección como completada'}
         </button>
+        {certFolio && (
+          <button
+            className={styles.certButton}
+            disabled={downloading}
+            onClick={() => onDownloadCert?.(certFolio)}
+          >
+            {!downloading && (
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} style={{ flexShrink: 0 }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            )}
+            {downloading ? 'Descargando...' : 'Descargar certificado'}
+          </button>
+        )}
       </div>
     </div>
   );
