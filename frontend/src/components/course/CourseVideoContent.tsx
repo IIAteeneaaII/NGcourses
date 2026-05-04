@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import VideoPlayer from '@/components/video/VideoPlayer';
@@ -33,10 +33,21 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   const [progress, setProgress] = useState(course.progress);
   const [completionModal, setCompletionModal] = useState<CompletionModal | null>(null);
   const [downloading, setDownloading] = useState(false);
+  const [certFolio, setCertFolio] = useState<string | null>(null);
 
   // Para throttle del tracking: cada 10 segundos
   const lastSentTime = useRef<number>(0);
   const videoDuration = useRef<number>(0);
+
+  useEffect(() => {
+    if (initialCourse.progress !== 100) return;
+    (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>)
+      .then((resp) => {
+        const cert = resp.data.find((c) => c.curso_id === initialCourse.id && c.url_pdf);
+        if (cert) setCertFolio(cert.folio);
+      })
+      .catch(() => {});
+  }, [initialCourse.id, initialCourse.progress]);
 
   const resolvedLibraryId = bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '';
   const bunnyConfig = currentLesson && !currentLesson.videoUrl && currentLesson.videoId && resolvedLibraryId
@@ -70,6 +81,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
 
   const handleMarkComplete = async () => {
     if (!currentLesson) return;
+    if (currentLesson.completed) return;
 
     const updatedModules = course.modules.map((module) => ({
       ...module,
@@ -84,6 +96,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       0
     );
     const newProgress = Math.round((completedLessons / totalLessons) * 100);
+
+    const updatedLesson = updatedModules.flatMap((m) => m.lessons).find((l) => l.id === currentLesson.id);
+    if (updatedLesson) setCurrentLesson(updatedLesson);
 
     setCourse({ ...course, modules: updatedModules, progress: newProgress });
     setProgress(newProgress);
@@ -103,6 +118,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>);
         const cert = resp.data.find((c) => c.curso_id === course.id && c.url_pdf);
         setCompletionModal({ folio: cert?.folio ?? null, loading: false });
+        if (cert?.folio) setCertFolio(cert.folio);
       } catch (e) {
         logError('CourseVideoContent/completionModal', e);
         setCompletionModal({ folio: null, loading: false });
@@ -139,8 +155,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         </header>
         <div className={styles.main}>
           <div className={styles.backButtonContainer}>
-            <Link href={backHref ?? `/curso/${initialCourse.id}`} className={styles.backButton}>
-              ← Volver a información del curso
+            <Link href={backHref ?? `/curso/${initialCourse.id}`} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+              Volver a información del curso
             </Link>
           </div>
           <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
@@ -166,8 +183,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         <h1 className={styles.pageTitle}>Videos: {course.title}</h1>
 
         <div className={styles.backButtonContainer}>
-          <Link href={backHref ?? `/curso/${course.id}`} className={styles.backButton}>
-            ← Volver a información del curso
+          <Link href={backHref ?? `/curso/${course.id}`} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
+            Volver a información del curso
           </Link>
         </div>
 
@@ -201,6 +219,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                   resources={currentLesson.resources}
                   courseId={course.id}
                   lessonId={currentLesson.id}
+                  certFolio={certFolio}
+                  onDownloadCert={handleDescargarCert}
+                  downloading={downloading}
                 />
               </>
             )}
@@ -217,8 +238,10 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       {completionModal && (
         <div className={styles.modalOverlay} onClick={() => setCompletionModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.modalClose} onClick={() => setCompletionModal(null)}>×</button>
-            <div className={styles.modalIcon}>✓</div>
+            <button className={styles.modalClose} onClick={() => setCompletionModal(null)}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+            <div className={styles.modalIcon}><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
             <h2 className={styles.modalTitle}>¡Felicidades!</h2>
             <p className={styles.modalSubtitle}>Has completado el curso exitosamente.</p>
             <div className={styles.modalActions}>
