@@ -285,6 +285,10 @@ class ActivarCuentaBody(SQLModel):
     new_password: str
 
 
+class SolicitarReactivacionBody(SQLModel):
+    email: EmailStr
+
+
 @router.post("/empresa", dependencies=[Depends(require_admin_or_superuser)], response_model=UserPublic)
 def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> Any:
     """
@@ -351,6 +355,29 @@ def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
     session.add(user)
     session.commit()
     return Message(message="Cuenta activada correctamente")
+
+
+@router.post("/solicitar-reactivacion", response_model=Message)
+def solicitar_reactivacion(*, session: SessionDep, body: SolicitarReactivacionBody) -> Any:
+    """
+    Ruta pública. El empleado solicita un nuevo enlace de activación ingresando su correo.
+    Solo funciona si el usuario está en estado pendiente_activacion.
+    """
+    user = crud.get_user_by_email(session=session, email=body.email)
+    if not user or user.estado != EstadoUsuario.PENDIENTE_ACTIVACION:
+        return Message(message="Si el correo existe y está pendiente de activación, recibirás un nuevo enlace.")
+
+    token = secrets.token_urlsafe(32)
+    user.token_activacion = token
+    user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    session.add(user)
+    session.commit()
+
+    if settings.emails_enabled:
+        email_data = generate_activacion_email(email_to=user.email, token=token)
+        send_email(email_to=user.email, subject=email_data.subject, html_content=email_data.html_content)
+
+    return Message(message="Si el correo existe y está pendiente de activación, recibirás un nuevo enlace.")
 
 
 @router.post("/{user_id}/reenviar-activacion", dependencies=[Depends(require_admin_or_superuser)], response_model=Message)
