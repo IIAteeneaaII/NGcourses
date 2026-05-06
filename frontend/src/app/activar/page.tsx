@@ -14,6 +14,10 @@ function ActivarForm() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState('');
+  const [tokenExpirado, setTokenExpirado] = useState(false);
+  const [emailReenvio, setEmailReenvio] = useState('');
+  const [reenvioLoading, setReenvioLoading] = useState(false);
+  const [reenvioMsg, setReenvioMsg] = useState('');
 
   useEffect(() => {
     if (!token) setError('El enlace no es válido. Contacta al administrador.');
@@ -43,7 +47,7 @@ function ActivarForm() {
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         const detail: string = body.detail ?? '';
-        if (detail === 'Token expirado') throw new Error('El enlace ha expirado. Contacta al administrador para que reenvíe la invitación.');
+        if (detail === 'Token expirado') { setTokenExpirado(true); return; }
         if (detail === 'Token inválido') throw new Error('El enlace no es válido. Contacta al administrador.');
         throw new Error(detail || 'Error al activar la cuenta.');
       }
@@ -53,6 +57,23 @@ function ActivarForm() {
       setError(err instanceof Error ? err.message : 'Error inesperado.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSolicitarReenvio = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setReenvioLoading(true);
+    try {
+      await fetch('/api/v1/users/solicitar-reactivacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emailReenvio }),
+      });
+      setReenvioMsg('Si tu correo está registrado y pendiente de activación, recibirás un nuevo enlace en breve.');
+    } catch {
+      setReenvioMsg('Ocurrió un error. Intenta de nuevo o contacta al administrador.');
+    } finally {
+      setReenvioLoading(false);
     }
   };
 
@@ -81,7 +102,45 @@ function ActivarForm() {
           </span>
         </div>
 
-        {done ? (
+        {tokenExpirado ? (
+          <div>
+            <h2 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#0B1B2B' }}>
+              Enlace expirado
+            </h2>
+            <p style={{ margin: '0 0 20px', color: 'rgba(11,27,43,.65)', fontSize: '14px' }}>
+              Tu enlace de activación ha expirado. Ingresa tu correo corporativo y te enviaremos uno nuevo.
+            </p>
+            {reenvioMsg ? (
+              <div style={{ padding: '12px 16px', background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '12px' }}>
+                <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>{reenvioMsg}</span>
+              </div>
+            ) : (
+              <form onSubmit={handleSolicitarReenvio} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '14px', background: 'white', border: '1px solid rgba(0,150,143,.16)', padding: '13px 16px' }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1B2B" strokeWidth="1.8" style={{ opacity: 0.6, flexShrink: 0 }}>
+                    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M22 6l-10 7L2 6" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <input
+                    type="email"
+                    required
+                    placeholder="empleado@empresa.com"
+                    value={emailReenvio}
+                    onChange={(e) => setEmailReenvio(e.target.value)}
+                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={reenvioLoading}
+                  style={{ border: 0, width: '100%', padding: '13px 16px', borderRadius: '14px', fontWeight: 700, color: 'white', background: 'var(--color-accent-10)', cursor: reenvioLoading ? 'not-allowed' : 'pointer', fontSize: '1rem', opacity: reenvioLoading ? 0.7 : 1 }}
+                >
+                  {reenvioLoading ? 'Enviando...' : 'Solicitar nuevo enlace'}
+                </button>
+              </form>
+            )}
+          </div>
+        ) : done ? (
           <div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
