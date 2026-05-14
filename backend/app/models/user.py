@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 import sqlalchemy as sa
-from pydantic import EmailStr
+from pydantic import ConfigDict, EmailStr
 from sqlalchemy import Column
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
@@ -38,10 +38,21 @@ class UserRegister(SQLModel):
     full_name: str | None = Field(default=None, max_length=255)
 
 
-# Properties to receive via API on update, all are optional
-class UserUpdate(UserBase):
-    email: EmailStr | None = Field(default=None, max_length=255)  # type: ignore
+# Properties to receive via API on update — deliberadamente NO hereda UserBase
+# para evitar mass assignment de is_superuser. Campos de privilegio excluidos.
+class UserUpdate(SQLModel):
+    model_config = ConfigDict(extra="forbid")
+
+    email: EmailStr | None = Field(default=None, max_length=255)
+    full_name: str | None = Field(default=None, max_length=255)
     password: str | None = Field(default=None, min_length=8, max_length=128)
+    is_active: bool | None = None
+    rol: RolUsuario | None = None
+    estado: EstadoUsuario | None = None
+    telefono: str | None = Field(default=None, max_length=20)
+    telefono_e164: str | None = Field(default=None, max_length=20)
+    whatsapp_opt_in: bool | None = None
+    notif_prefs: dict | None = None
 
 
 class UserUpdateMe(SQLModel):
