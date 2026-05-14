@@ -278,6 +278,19 @@ COVERS_DIR = "/app/app/media/covers"
 ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
 MAX_IMAGE_SIZE = 5 * 1024 * 1024  # 5 MB
 
+_IMAGE_MAGIC = (
+    b"\xff\xd8\xff",       # JPEG
+    b"\x89PNG\r\n\x1a\n",  # PNG
+    b"GIF8",               # GIF
+)
+
+def _check_magic_image(data: bytes) -> bool:
+    for sig in _IMAGE_MAGIC:
+        if data[: len(sig)] == sig:
+            return True
+    # WEBP: "RIFF" at 0-3 and "WEBP" at 8-11
+    return len(data) >= 12 and data[:4] == b"RIFF" and data[8:12] == b"WEBP"
+
 
 @router.post("/{curso_id}/cover", response_model=CursoPublic)
 async def upload_cover(
@@ -300,6 +313,8 @@ async def upload_cover(
     contents = await file.read()
     if len(contents) > MAX_IMAGE_SIZE:
         raise HTTPException(status_code=400, detail="La imagen excede el tamaño máximo de 5MB.")
+    if not _check_magic_image(contents):
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use JPEG, PNG o WEBP.")
 
     ext = (file.filename or "cover.jpg").rsplit(".", 1)[-1].lower()
     if ext not in ("jpg", "jpeg", "png", "webp", "gif"):
@@ -750,6 +765,15 @@ _EXT_TO_TIPO = {
 }
 MAX_RECURSO_SIZE = 20 * 1024 * 1024  # 20 MB
 
+_RECURSO_MAGIC = (
+    b"%PDF",              # PDF
+    b"PK\x03\x04",       # DOCX/XLSX/PPTX (ZIP-based Office)
+    b"\xd0\xcf\x11\xe0", # DOC/XLS/PPT (OLE/CFB)
+)
+
+def _check_magic_recurso(data: bytes) -> bool:
+    return any(data[: len(sig)] == sig for sig in _RECURSO_MAGIC)
+
 
 @router.post(
     "/{curso_id}/modulos/{modulo_id}/lecciones/{leccion_id}/recursos/upload",
@@ -771,6 +795,8 @@ async def upload_recurso(
     contents = await file.read()
     if len(contents) > MAX_RECURSO_SIZE:
         raise HTTPException(status_code=400, detail="El archivo excede el tamaño máximo de 20MB.")
+    if not _check_magic_recurso(contents):
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Use PDF, DOCX, XLSX o PPTX.")
 
     ext = (file.filename or "archivo").rsplit(".", 1)[-1].lower()
     tipo = _EXT_TO_TIPO.get(ext, "archivo")
