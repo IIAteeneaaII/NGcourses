@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import EmailStr
 from sqlmodel import SQLModel, col, delete, func, select
 
@@ -14,6 +14,7 @@ from app.api.deps import (
     SessionDep,
     require_admin_or_superuser,
 )
+from app.core.limiter import limiter
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password
 from app.models import (
@@ -186,7 +187,8 @@ def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
+@limiter.limit("10/minute")
+def register_user(request: Request, session: SessionDep, user_in: UserRegister) -> Any:
     """
     Create new user without the need to be logged in.
     """
@@ -227,6 +229,7 @@ def read_user_by_id(
 def update_user(
     *,
     session: SessionDep,
+    current_user: AdminOrSuperuser,
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
@@ -240,6 +243,16 @@ def update_user(
             status_code=404,
             detail="The user with this id does not exist in the system",
         )
+
+    # Defensa en profundidad: solo superusers pueden modificar cuentas de admin
+    payload = user_in.model_dump(exclude_unset=True)
+    if ("rol" in payload or "is_active" in payload) and not current_user.is_superuser:
+        if db_user.rol == RolUsuario.ADMINISTRADOR:
+            raise HTTPException(
+                status_code=403,
+                detail="Solo superuser puede modificar cuentas de administrador",
+            )
+
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
@@ -334,7 +347,8 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
 
 
 @router.post("/activar", response_model=Message)
-def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
+@limiter.limit("10/minute")
+def activar_cuenta(request: Request, session: SessionDep, body: ActivarCuentaBody) -> Any:
     """
     Ruta pública. El empleado establece su contraseña y activa su cuenta.
     El token se invalida al usarse (uso único).
@@ -358,7 +372,8 @@ def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
 
 
 @router.post("/solicitar-reactivacion", response_model=Message)
-def solicitar_reactivacion(*, session: SessionDep, body: SolicitarReactivacionBody) -> Any:
+@limiter.limit("5/hour")
+def solicitar_reactivacion(request: Request, *, session: SessionDep, body: SolicitarReactivacionBody) -> Any:
     """
     Ruta pública. El empleado solicita un nuevo enlace de activación ingresando su correo.
     Solo funciona si el usuario está en estado pendiente_activacion.
