@@ -1,16 +1,23 @@
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 
 from app.api.deps import SessionDep
+from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import (
     User,
     UserPublic,
 )
 
-router = APIRouter(tags=["private"], prefix="/private")
+
+def _require_local_env() -> None:
+    if settings.ENVIRONMENT != "local":
+        raise HTTPException(status_code=404, detail="Not found")
+
+
+router = APIRouter(tags=["private"], prefix="/private", dependencies=[Depends(_require_local_env)])
 
 
 class PrivateUserCreate(BaseModel):

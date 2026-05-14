@@ -83,7 +83,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H 44.250.178.54 >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
 
       - name: Sync backend env (.env.prod) on EC2
         env:
@@ -96,9 +96,9 @@ jobs:
             printf 'PAYPAL_SECRET=%s\n' "$PAYPAL_SECRET"
             printf 'PAYPAL_MODE=%s\n' "${PAYPAL_MODE:-sandbox}"
           } > paypal.env
-          scp -i ~/.ssh/deploy_key paypal.env ec2-user@44.250.178.54:~/paypal.env
+          scp -i ~/.ssh/deploy_key paypal.env ec2-user@${{ secrets.EC2_HOST }}:~/paypal.env
           rm paypal.env
-          ssh -i ~/.ssh/deploy_key ec2-user@44.250.178.54 bash <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key ec2-user@${{ secrets.EC2_HOST }} bash <<'REMOTE'
           set -euo pipefail
           cd ~
           touch .env.prod
@@ -113,7 +113,7 @@ jobs:
         env:
           WIPE_DB: ${{ inputs.wipe_db }}
         run: |
-          ssh -i ~/.ssh/deploy_key ec2-user@44.250.178.54 "WIPE_DB=${WIPE_DB:-false} bash -s" <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key ec2-user@${{ secrets.EC2_HOST }} "WIPE_DB=${WIPE_DB:-false} bash -s" <<'REMOTE'
           set -euo pipefail
           cd ~
 
