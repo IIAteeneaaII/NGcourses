@@ -1,5 +1,3 @@
-import secrets
-import warnings
 from typing import Annotated, Any, Literal
 
 from pydantic import (
@@ -31,9 +29,9 @@ class Settings(BaseSettings):
         extra="ignore",
     )
     API_V1_STR: str = "/api/v1"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
-    # 60 minutes * 24 hours * 8 days = 8 days
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8
+    SECRET_KEY: str  # Sin default — Pydantic lanza error si no está en .env
+    # 2 horas. FND-007: reducido de 8 días. Implementar refresh token con Redis como mejora futura.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
     FRONTEND_HOST: str = "http://localhost:3000"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
 
@@ -128,15 +126,13 @@ class Settings(BaseSettings):
         return "https://api-m.sandbox.paypal.com"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
-        if value == "changethis":
-            message = (
-                f'The value of {var_name} is "changethis", '
-                "for security, please change it, at least for deployments."
+        if not value or value in ("changethis", "secret", ""):
+            raise ValueError(
+                f"{var_name} inválida — no usar valores default. "
+                f"Generar con: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
             )
-            if self.ENVIRONMENT == "local":
-                warnings.warn(message, stacklevel=1)
-            else:
-                raise ValueError(message)
+        if len(value) < 32:
+            raise ValueError(f"{var_name} debe tener al menos 32 caracteres")
 
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
