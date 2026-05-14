@@ -10,6 +10,7 @@ UMBRAL_COMPLETADO_PCT: int = 90  # Porcentaje mínimo para marcar una lección c
 FOLIO_TOKEN_BYTES: int = 6      # Bytes para generar el folio del certificado (12 chars hex)
 INVITACION_EXPIRACION_DIAS: int = 7  # Días de validez de un enlace de invitación
 
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import Session, select, func
 
 from app.core.security import get_password_hash, verify_password
@@ -605,7 +606,16 @@ def check_and_emit_certificate(
     inscripcion.estado = EstadoInscripcion.FINALIZADA
     session.add(inscripcion)
 
-    session.commit()
+    # FND-009: si dos requests concurrentes pasan el check, el unique constraint
+    # en inscripcion_id rechaza el segundo — devolver el existente en ese caso.
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return session.exec(
+            select(Certificado).where(Certificado.inscripcion_id == inscripcion_id)
+        ).first()
+
     session.refresh(certificado)
 
     # Generar PDF del certificado (no-fatal: el registro ya está guardado)
