@@ -1,0 +1,12 @@
+services:
+  adminer:
+    image: adminer
+    restart: "no"
+    networks:
+      - default
+    depends_on:
+      - db
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+    ports:
+      - "8080:8080"
