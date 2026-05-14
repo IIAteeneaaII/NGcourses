@@ -1,14 +1,10 @@
-// Rutas relativas → proxeadas por Next.js rewrites a BACKEND_URL (server-side)
+// Rutas relativas → proxeadas por Next.js a BACKEND_URL (server-side)
+// Las cookies HttpOnly se envían automáticamente en requests same-origin (FND-003)
 const API_URL = '';
 
 export interface ApiError {
   detail: string;
   status: number;
-}
-
-function getToken(): string | null {
-  if (typeof window === 'undefined') return null;
-  return localStorage.getItem('access_token');
 }
 
 class ApiClient {
@@ -23,16 +19,11 @@ class ApiClient {
     options?: RequestInit
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const token = getToken();
 
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options?.headers as Record<string, string>),
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     const response = await fetch(url, {
       ...options,
@@ -93,14 +84,10 @@ class ApiClient {
 
   async uploadFile<T>(endpoint: string, file: File, fieldName = 'file'): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
-    const token = getToken();
     const formData = new FormData();
     formData.append(fieldName, file);
 
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const response = await fetch(url, { method: 'POST', headers, body: formData });
+    const response = await fetch(url, { method: 'POST', body: formData });
     if (!response.ok) {
       let detail = 'Error desconocido';
       try {
@@ -118,8 +105,8 @@ class ApiClient {
     return response.json();
   }
 
-  /** Login con OAuth2 form data */
-  async loginForm(email: string, password: string): Promise<{ access_token: string; token_type: string }> {
+  /** Login con OAuth2 form data — el backend emite cookie HttpOnly con el JWT */
+  async loginForm(email: string, password: string): Promise<import('@/lib/auth').AuthUser> {
     const url = `${this.baseUrl}/api/v1/login/access-token`;
     const body = new URLSearchParams({ username: email, password });
 
@@ -130,7 +117,15 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error: ApiError = { detail: await response.text(), status: response.status };
+      let detail = 'Error desconocido';
+      try {
+        const text = await response.text();
+        try {
+          const b = JSON.parse(text);
+          detail = typeof b.detail === 'string' ? b.detail : text;
+        } catch { detail = text || detail; }
+      } catch { /* noop */ }
+      const error: ApiError = { detail, status: response.status };
       throw error;
     }
 
@@ -187,13 +182,10 @@ export const cursosApi = {
     apiClient.post(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos`, data),
   uploadRecurso: async (curso_id: string, modulo_id: string, leccion_id: string, file: File, titulo?: string) => {
     const url = `${API_URL}/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/upload`;
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     const form = new FormData();
     form.append('file', file);
     if (titulo) form.append('titulo', titulo);
-    const headers: Record<string, string> = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-    const response = await fetch(url, { method: 'POST', headers, body: form });
+    const response = await fetch(url, { method: 'POST', body: form });
     if (!response.ok) {
       const error: ApiError = { detail: await response.text(), status: response.status };
       throw error;
@@ -310,11 +302,8 @@ export const certificadosApi = {
   mis: () => apiClient.get('/api/v1/certificados/me'),
   verificar: (folio: string) => apiClient.get(`/api/v1/certificados/verificar/${folio}`),
   descargar: async (folio: string): Promise<void> => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('access_token') : null;
     const url = `${API_URL}/api/v1/certificados/descargar/${folio}`;
-    const response = await fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    });
+    const response = await fetch(url);
     if (!response.ok) {
       let detail = 'Error al descargar el certificado';
       try { const b = await response.json(); detail = b.detail ?? detail; } catch { /* noop */ }

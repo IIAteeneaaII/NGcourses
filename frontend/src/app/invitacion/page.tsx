@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 import { authApi, invitacionesApi, usersApi } from '@/lib/api/client';
+import { setRolCookies } from '@/lib/auth';
 
 import styles from './page.module.css';
 
@@ -144,9 +145,9 @@ function InvitacionContent() {
 
     setOnboardingSaving(true);
     try {
-      // 1. Autenticar con contraseña temporal para obtener token
-      const { access_token } = await authApi.login(data.email, data.password_temporal!);
-      localStorage.setItem('access_token', access_token);
+      // 1. Autenticar — el backend emite cookie HttpOnly, devuelve AuthUser
+      const loggedUser = await authApi.login(data.email, data.password_temporal!);
+      setRolCookies(loggedUser.rol, loggedUser.is_superuser);
 
       // 2. Actualizar nombre y teléfono
       await usersApi.updateMe({

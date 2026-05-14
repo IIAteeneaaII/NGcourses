@@ -18,11 +18,7 @@ export default function ProfileSetupGate({ children }: { children: React.ReactNo
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('access_token');
-    if (!token) {
-      setChecked(true);
-      return;
-    }
+    // La cookie HttpOnly la envía el browser automáticamente — no necesitamos leer localStorage
     authApi.me()
       .then((u) => setUser(u as UserMe))
       .catch(() => {})
