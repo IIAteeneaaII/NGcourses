@@ -2,8 +2,8 @@ from collections.abc import Generator
 from typing import Annotated
 
 import jwt
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Cookie, Depends, HTTPException, Request, status
+from fastapi.security.utils import get_authorization_scheme_param
 from jwt.exceptions import InvalidTokenError
 from pydantic import ValidationError
 from sqlmodel import Session
@@ -14,10 +14,6 @@ from app.core.db import engine
 from app.models import TokenPayload, User
 from app.models._enums import RolUsuario
 
-reusable_oauth2 = OAuth2PasswordBearer(
-    tokenUrl=f"{settings.API_V1_STR}/login/access-token"
-)
-
 
 def get_db() -> Generator[Session, None, None]:
     with Session(engine) as session:
@@ -25,10 +21,25 @@ def get_db() -> Generator[Session, None, None]:
 
 
 SessionDep = Annotated[Session, Depends(get_db)]
-TokenDep = Annotated[str, Depends(reusable_oauth2)]
 
 
-def get_current_user(session: SessionDep, token: TokenDep) -> User:
+def get_current_user(
+    session: SessionDep,
+    request: Request,
+    access_token: Annotated[str | None, Cookie()] = None,
+) -> User:
+    # Leer token desde cookie HttpOnly (FND-003), con fallback a Bearer para Swagger/API
+    token = access_token
+    if not token:
+        auth = request.headers.get("Authorization", "")
+        scheme, param = get_authorization_scheme_param(auth)
+        if scheme.lower() == "bearer":
+            token = param
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="No autenticado",
+        )
     try:
         payload = jwt.decode(
             token, settings.SECRET_KEY, algorithms=[security.ALGORITHM]
