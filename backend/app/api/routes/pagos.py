@@ -30,12 +30,14 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, CurrentUser, SessionDep
 from app.models._enums import EstadoPago
 from app.models.contenido import Curso
+from app.models.inscripcion import Inscripcion
 from app.models.pago import (
     ConfirmarPagoRequest,
     ConfirmarPagoResponse,
     CortesiaRequest,
     CrearOrdenRequest,
     CrearOrdenResponse,
+    Pago,
     PagoPublic,
     PagosPublic,
 )
@@ -166,27 +168,25 @@ def confirmar_pago(
             detail=f"PayPal no completo el cobro (status={paypal_status})",
         )
 
-    # Marcar pago completado
-    pago = crud.update_pago_status(
-        session=session,
-        pago=pago,
-        status=EstadoPago.COMPLETADO,
-        referencia_paypal=body.paypal_order_id,
-    )
-
-    # Crear inscripcion si no existe
+    # FND-010: commit atómico — pago COMPLETADO + inscripción en una sola transacción
     insc = crud.get_inscripcion_by_usuario_curso(
         session=session, usuario_id=pago.usuario_id, curso_id=pago.curso_id
     )
+    pago.status = EstadoPago.COMPLETADO
+    pago.referencia_paypal = body.paypal_order_id
+    session.add(pago)
     if not insc:
-        insc = crud.create_inscripcion(
-            session=session, usuario_id=pago.usuario_id, curso_id=pago.curso_id
-        )
+        insc = Inscripcion(usuario_id=pago.usuario_id, curso_id=pago.curso_id)
+        session.add(insc)
+    session.commit()
+    session.refresh(pago)
+    if insc:
+        session.refresh(insc)
 
     return ConfirmarPagoResponse(
         pago_id=pago.id,
         status=pago.status,
-        inscripcion_id=insc.id,
+        inscripcion_id=insc.id if insc else None,
     )
 
 
@@ -242,22 +242,24 @@ def cortesia(
     ):
         raise HTTPException(status_code=409, detail="El usuario ya tiene acceso a este curso")
 
-    pago = crud.create_pago_pendiente(
-        session=session,
+    # FND-010: commit atómico — pago CORTESIA + inscripción en una sola transacción
+    insc = crud.get_inscripcion_by_usuario_curso(
+        session=session, usuario_id=body.usuario_id, curso_id=body.curso_id
+    )
+    pago = Pago(
         usuario_id=body.usuario_id,
         curso_id=body.curso_id,
         monto=Decimal("0.00"),
         moneda=curso.moneda or "MXN",
         status=EstadoPago.CORTESIA,
     )
-
-    insc = crud.get_inscripcion_by_usuario_curso(
-        session=session, usuario_id=body.usuario_id, curso_id=body.curso_id
-    )
+    session.add(pago)
     if not insc:
-        insc = crud.create_inscripcion(
-            session=session, usuario_id=body.usuario_id, curso_id=body.curso_id
-        )
+        insc = Inscripcion(usuario_id=body.usuario_id, curso_id=body.curso_id)
+        session.add(insc)
+    session.commit()
+    session.refresh(pago)
+    session.refresh(insc)
 
     return ConfirmarPagoResponse(
         pago_id=pago.id,
