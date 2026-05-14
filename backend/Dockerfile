@@ -43,4 +43,7 @@ COPY ./tests /app/tests
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
+RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
+USER appuser
+
 CMD ["sh", "-c", "fastapi run --workers ${WEB_CONCURRENCY:-4} app/main.py"]
