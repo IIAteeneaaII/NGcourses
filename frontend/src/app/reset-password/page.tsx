@@ -2,11 +2,14 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 
 function ResetPasswordForm() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token') ?? '';
+  const [token, setToken] = useState('');
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    setToken(hash.startsWith('#token=') ? hash.slice(7) : '');
+  }, []);
 
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
