@@ -43,6 +43,7 @@ COPY ./tests /app/tests
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync
 
+RUN mkdir -p /app/app/media/covers /app/app/media/recursos /app/app/media/certificados
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
 USER appuser
 
