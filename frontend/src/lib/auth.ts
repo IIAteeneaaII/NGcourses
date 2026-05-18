@@ -21,8 +21,9 @@ export interface AuthUser {
 // Cookies no-HttpOnly para que el middleware (server-side) pueda leer el rol.
 // El JWT real se maneja como HttpOnly cookie emitida por el backend (FND-003).
 export function setRolCookies(rol: string, isSuperuser: boolean): void {
-  document.cookie = `user_rol=${rol}; path=/; SameSite=Strict`;
-  document.cookie = `user_superuser=${isSuperuser ? '1' : '0'}; path=/; SameSite=Strict`;
+  const secure = window.location.protocol === 'https:' ? '; Secure' : '';
+  document.cookie = `user_rol=${rol}; path=/; SameSite=Strict${secure}`;
+  document.cookie = `user_superuser=${isSuperuser ? '1' : '0'}; path=/; SameSite=Strict${secure}`;
 }
 
 export function clearRolCookies(): void {
