@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ActivarCuentaSchema } from '@/schemas/auth';
 
 function ActivarForm() {
   const searchParams = useSearchParams();
@@ -26,16 +27,11 @@ function ActivarForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+    const validation = ActivarCuentaSchema.safeParse({ password, confirm });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
       return;
     }
-    if (password !== confirm) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch('/api/v1/users/activar', {

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { usersApi } from '@/lib/api/client';
+import { ProfileSetupSchema } from '@/schemas/profile';
 
 interface Props {
   currentEmail: string;
@@ -19,24 +20,11 @@ export default function ProfileSetupModal({ currentEmail, onComplete }: Props) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (fullName.trim().length < 2) {
-      setError('El nombre debe tener al menos 2 caracteres.');
+    const validation = ProfileSetupSchema.safeParse({ fullName, currentPassword, newPassword, confirmPassword });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
       return;
     }
-    if (!currentPassword) {
-      setError('Ingresa tu contraseña actual.');
-      return;
-    }
-    if (newPassword.length < 8) {
-      setError('La nueva contraseña debe tener al menos 8 caracteres.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-
     setLoading(true);
     try {
       await usersApi.updateMe({ full_name: fullName.trim() });

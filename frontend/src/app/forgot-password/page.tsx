@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import styles from '../page.module.css';
+import { ForgotPasswordSchema } from '@/schemas/auth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -13,6 +14,11 @@ export default function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const validation = ForgotPasswordSchema.safeParse({ email });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch(`/api/v1/password-recovery/${encodeURIComponent(email)}`, {

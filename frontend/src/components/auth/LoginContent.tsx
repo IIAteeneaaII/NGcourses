@@ -5,6 +5,7 @@ import styles from './LoginContent.module.css';
 import { login } from '@/lib/auth';
 import { cursosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
+import { LoginSchema } from '@/schemas/auth';
 
 interface ApiCursoDestacado {
   id: string;
@@ -63,6 +64,11 @@ export default function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const validation = LoginSchema.safeParse({ email, password });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
+      return;
+    }
     setLoading(true);
     try {
       const user = await login(email, password);

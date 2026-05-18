@@ -5,6 +5,7 @@ import ProfileContent from '@/components/profile/ProfileContent';
 import { authApi, cursosApi, inscripcionesApi, usersApi } from '@/lib/api/client';
 import type { UserProfile, UserStatistics, CourseInProgress } from '@/types/course';
 import styles from './page.module.css';
+import { EditProfileSchema, ChangePasswordSchema } from '@/schemas/profile';
 
 interface ApiUser {
   id: string;
@@ -137,8 +138,13 @@ export default function PerfilPage() {
 
   const handleSaveEdit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setSaving(true);
     setSaveError('');
+    const validation = EditProfileSchema.safeParse(editForm);
+    if (!validation.success) {
+      setSaveError(validation.error.issues[0].message);
+      return;
+    }
+    setSaving(true);
     try {
       const updated = await usersApi.updateMe({
         email: editForm.email,
@@ -159,9 +165,11 @@ export default function PerfilPage() {
   const handleChangePassword = async () => {
     setPwdError('');
     setPwdOk('');
-    if (!pwdForm.nueva || !pwdForm.current) { setPwdError('Completa todos los campos.'); return; }
-    if (pwdForm.nueva !== pwdForm.confirmar) { setPwdError('Las contraseñas no coinciden.'); return; }
-    if (pwdForm.nueva.length < 8) { setPwdError('La contraseña debe tener al menos 8 caracteres.'); return; }
+    const validation = ChangePasswordSchema.safeParse(pwdForm);
+    if (!validation.success) {
+      setPwdError(validation.error.issues[0].message);
+      return;
+    }
     setSavingPwd(true);
     try {
       await usersApi.changePassword({ current_password: pwdForm.current, new_password: pwdForm.nueva });
