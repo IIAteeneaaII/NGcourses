@@ -80,6 +80,9 @@ jobs:
     env:
       EC2_HOST: ${{ secrets.EC2_HOST }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Configure SSH key
         run: |
           EC2=$(printf '%s' "$EC2_HOST" | tr -d '[:space:]')
@@ -88,6 +91,10 @@ jobs:
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$EC2" >> ~/.ssh/known_hosts
           echo "EC2_IP=$EC2" >> "$GITHUB_ENV"
+
+      - name: Sync docker-compose.prod.yml on EC2
+        run: |
+          scp -i ~/.ssh/deploy_key docker-compose.prod.yml "ec2-user@${EC2_IP}:~/docker-compose.prod.yml"
 
       - name: Sync backend env (.env.prod) on EC2
         env:
