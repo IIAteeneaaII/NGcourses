@@ -37,6 +37,10 @@ services:
       - "80:3000"
     environment:
       - BACKEND_URL=http://backend:8000
+      # Poner en "true" cuando el sitio se sirva tras un dominio con HTTPS/TLS.
+      # Activa 'upgrade-insecure-requests' en la CSP y el header HSTS.
+      # En "false" mientras se acceda por http://<IP> (si no, se rompen los assets).
+      - ENABLE_HTTPS=false
     depends_on:
       backend:
         condition: service_healthy

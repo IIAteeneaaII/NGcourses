@@ -19,6 +19,12 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // Activar solo cuando el sitio se sirve detrás de HTTPS (dominio + TLS).
+    // Mientras se acceda por http:// (IP de EC2 sin certificado), estas dos
+    // directivas rompen la carga de assets: 'upgrade-insecure-requests'
+    // reescribe los sub-recursos a https:// y el navegador no los puede pedir.
+    const httpsEnabled = process.env.ENABLE_HTTPS === 'true';
+
     const csp = [
       "default-src 'self'",
       "script-src 'self' https://www.paypal.com https://www.paypalobjects.com",
@@ -30,7 +36,7 @@ const nextConfig: NextConfig = {
       "base-uri 'self'",
       "form-action 'self'",
       "frame-ancestors 'none'",
-      "upgrade-insecure-requests",
+      ...(httpsEnabled ? ["upgrade-insecure-requests"] : []),
     ].join('; ');
 
     return [
@@ -42,7 +48,10 @@ const nextConfig: NextConfig = {
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
           { key: 'Content-Security-Policy', value: csp },
-          { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
+          // HSTS solo tiene sentido sobre HTTPS; el navegador lo ignora en HTTP.
+          ...(httpsEnabled
+            ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]
+            : []),
         ],
       },
     ];
