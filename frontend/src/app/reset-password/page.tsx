@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { ResetPasswordSchema } from '@/schemas/auth';
 
 function ResetPasswordForm() {
   const [token, setToken] = useState('');
@@ -25,16 +26,11 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres.');
+    const validation = ResetPasswordSchema.safeParse({ password, confirm });
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
       return;
     }
-    if (password !== confirm) {
-      setError('Las contraseñas no coinciden.');
-      return;
-    }
-
     setLoading(true);
     try {
       const res = await fetch('/api/v1/reset-password/', {

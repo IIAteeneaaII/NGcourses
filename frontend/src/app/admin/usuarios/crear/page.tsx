@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { organizacionesApi } from '@/lib/api/client';
+import { CreateUserSchema } from '@/schemas/user';
 
 interface Organizacion {
   id: string;
@@ -26,6 +27,11 @@ export default function CrearUsuarioEmpresaPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const validation = CreateUserSchema.safeParse(form);
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
+      return;
+    }
     setLoading(true);
     try {
       const body: Record<string, unknown> = {

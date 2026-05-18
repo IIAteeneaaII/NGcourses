@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/client';
 import styles from './page.module.css';
+import { EditUserSchema } from '@/schemas/user';
 
 interface ApiUser {
   id: string;
@@ -68,9 +69,14 @@ export default function EditarUsuarioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
     setError('');
     setSuccess(false);
+    const validation = EditUserSchema.safeParse(form);
+    if (!validation.success) {
+      setError(validation.error.issues[0].message);
+      return;
+    }
+    setSaving(true);
     try {
       const payload: Record<string, unknown> = {
         full_name: form.full_name || null,
