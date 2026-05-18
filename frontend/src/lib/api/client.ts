@@ -9,14 +9,26 @@ export interface ApiError {
 
 class ApiClient {
   private baseUrl: string;
+  private _refreshInProgress: Promise<boolean> | null = null;
 
   constructor(baseUrl: string) {
     this.baseUrl = baseUrl;
   }
 
+  private tryRefresh(): Promise<boolean> {
+    if (!this._refreshInProgress) {
+      this._refreshInProgress = fetch('/api/v1/login/refresh-token', { method: 'POST' })
+        .then(r => r.ok)
+        .catch(() => false)
+        .finally(() => { this._refreshInProgress = null; });
+    }
+    return this._refreshInProgress;
+  }
+
   private async request<T>(
     endpoint: string,
-    options?: RequestInit
+    options?: RequestInit,
+    skipRefresh = false,
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
@@ -31,6 +43,19 @@ class ApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401 && !skipRefresh && typeof window !== 'undefined') {
+        const refreshed = await this.tryRefresh();
+        if (refreshed) {
+          return this.request<T>(endpoint, options, true);
+        }
+        // Refresh fallido: limpiar cookies de rol y redirigir al login
+        ['user_rol', 'user_superuser'].forEach(k => {
+          document.cookie = `${k}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+        });
+        window.location.href = '/?error=session_expired';
+        return undefined as T;
+      }
+
       let detail = 'Error desconocido';
       try {
         const text = await response.text();
