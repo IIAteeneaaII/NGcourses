@@ -358,7 +358,12 @@ def activar_cuenta(request: Request, session: SessionDep, body: ActivarCuentaBod
     if not user:
         raise HTTPException(status_code=400, detail="Token inválido")
 
-    if user.token_activacion_expira is None or datetime.now(timezone.utc) > user.token_activacion_expira.replace(tzinfo=timezone.utc):
+    expira = user.token_activacion_expira
+    if expira is None:
+        raise HTTPException(status_code=400, detail="Token expirado")
+    if expira.tzinfo is None:
+        expira = expira.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expira:
         raise HTTPException(status_code=400, detail="Token expirado")
 
     user.hashed_password = get_password_hash(body.new_password)
