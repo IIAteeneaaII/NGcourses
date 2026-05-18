@@ -5,9 +5,10 @@ services:
   media-init:
     image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-backend:latest'
     user: "0"
-    command: >
-      sh -c "mkdir -p /app/app/media/covers /app/app/media/recursos /app/app/media/certificados
-             && chown -R 1000:1000 /app/app/media"
+    command:
+      - sh
+      - -c
+      - mkdir -p /app/app/media/covers /app/app/media/recursos /app/app/media/certificados && chown -R 1000:1000 /app/app/media
     volumes:
       - media_data:/app/app/media
 
