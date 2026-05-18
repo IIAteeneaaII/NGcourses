@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   skipTrailingSlashRedirect: true,
@@ -31,7 +32,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://*.b-cdn.net https://www.paypalobjects.com https://www.paypal.com https://t.paypal.com",
-      "connect-src 'self' https://video.bunnycdn.com https://api-m.sandbox.paypal.com https://api-m.paypal.com https://www.paypal.com https://t.paypal.com",
+      "connect-src 'self' https://video.bunnycdn.com https://api-m.sandbox.paypal.com https://api-m.paypal.com https://www.paypal.com https://t.paypal.com https://*.sentry.io https://*.ingest.sentry.io",
       "frame-src https://www.paypal.com https://www.sandbox.paypal.com",
       "object-src 'none'",
       "base-uri 'self'",
@@ -59,4 +60,15 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withSentryConfig(nextConfig, {
+  // Silenciar output del CLI de Sentry durante la build
+  silent: !process.env.CI,
+  // No subir source maps si no hay auth token configurado
+  sourcemaps: {
+    disable: !process.env.SENTRY_AUTH_TOKEN,
+  },
+  // Usar tunnelRoute evita que el navegador bloquee requests a Sentry
+  // tunnelRoute: '/monitoring', // habilitar si se necesita CSP estricto sin *.sentry.io
+  disableLogger: true,
+  automaticVercelMonitors: false,
+});
