@@ -49,10 +49,13 @@ class ApiClient {
           return this.request<T>(endpoint, options, true);
         }
         // Refresh fallido: limpiar cookies de rol y redirigir al login
+        // Solo redirigir si no estamos ya en la raíz (evita loop infinito)
         ['user_rol', 'user_superuser'].forEach(k => {
           document.cookie = `${k}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         });
-        window.location.href = '/?error=session_expired';
+        if (window.location.pathname !== '/') {
+          window.location.href = '/?error=session_expired';
+        }
         return undefined as T;
       }
 
