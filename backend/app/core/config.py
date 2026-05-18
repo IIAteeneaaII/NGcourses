@@ -30,8 +30,8 @@ class Settings(BaseSettings):
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str  # Sin default — Pydantic lanza error si no está en .env
-    # 2 horas. FND-007: reducido de 8 días. Implementar refresh token con Redis como mejora futura.
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 horas
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:3000"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
     ENABLE_HTTPS: bool = False  # True cuando el sitio se sirva detrás de TLS

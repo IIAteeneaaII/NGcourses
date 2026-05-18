@@ -2,7 +2,7 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Response
+from fastapi import APIRouter, Cookie, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import select
@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.security import get_password_hash
 from app.models import Message, NewPassword, Token, User, UserPublic
+from app.models.sistema import RefreshToken
 from app.utils import (
     generate_reset_password_email,
     send_email,
@@ -51,14 +52,114 @@ def login_access_token(
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
+
+    raw_rt = security.create_refresh_token_raw()
+    rt_hash = security.hash_token(raw_rt)
+    ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+          or (request.client.host if request.client else None))
+    rt = RefreshToken(
+        usuario_id=user.id,
+        token_hash=rt_hash,
+        expira_en=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        ip_creacion=ip,
+    )
+    session.add(rt)
+    session.commit()
+    response.set_cookie(
+        key="refresh_token",
+        value=raw_rt,
+        httponly=True,
+        secure=settings.ENABLE_HTTPS,
+        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
     return UserPublic.model_validate(user)
 
 
 @router.post("/logout")
-def logout(response: Response) -> Message:
-    """Cierra sesión eliminando la cookie HttpOnly del JWT."""
+def logout(
+    response: Response,
+    session: SessionDep,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+) -> Message:
+    """Cierra sesión revocando el refresh token y eliminando ambas cookies."""
+    if refresh_token:
+        rt_hash = security.hash_token(refresh_token)
+        rt = session.exec(select(RefreshToken).where(RefreshToken.token_hash == rt_hash)).first()
+        if rt and rt.revocado_en is None:
+            rt.revocado_en = datetime.now(timezone.utc)
+            session.add(rt)
+            session.commit()
     response.delete_cookie("access_token", path="/")
+    response.delete_cookie("refresh_token", path="/")
     return Message(message="Sesión cerrada")
+
+
+@router.post("/login/refresh-token")
+@limiter.limit("20/minute")
+def refresh_access_token(
+    request: Request,
+    response: Response,
+    session: SessionDep,
+    refresh_token: Annotated[str | None, Cookie()] = None,
+) -> Message:
+    """Rota el refresh token y emite un nuevo access token sin re-login (FND-007)."""
+    if not refresh_token:
+        raise HTTPException(status_code=401, detail="No autenticado")
+
+    rt_hash = security.hash_token(refresh_token)
+    rt = session.exec(select(RefreshToken).where(RefreshToken.token_hash == rt_hash)).first()
+
+    if not rt or rt.revocado_en is not None:
+        raise HTTPException(status_code=401, detail="Token de renovación inválido")
+
+    expira = rt.expira_en
+    if expira.tzinfo is None:
+        expira = expira.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expira:
+        raise HTTPException(status_code=401, detail="Token de renovación expirado")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    new_token = security.create_access_token(rt.usuario_id, expires_delta=access_token_expires)
+    response.set_cookie(
+        key="access_token",
+        value=new_token,
+        httponly=True,
+        secure=settings.ENABLE_HTTPS,
+        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/",
+    )
+
+    new_raw = security.create_refresh_token_raw()
+    new_hash = security.hash_token(new_raw)
+    ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+          or (request.client.host if request.client else None))
+
+    rt.revocado_en = datetime.now(timezone.utc)
+    rt.reemplazado_por_token_hash = new_hash
+    session.add(rt)
+
+    new_rt = RefreshToken(
+        usuario_id=rt.usuario_id,
+        token_hash=new_hash,
+        expira_en=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        ip_creacion=ip,
+    )
+    session.add(new_rt)
+    session.commit()
+
+    response.set_cookie(
+        key="refresh_token",
+        value=new_raw,
+        httponly=True,
+        secure=settings.ENABLE_HTTPS,
+        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+        path="/",
+    )
+    return Message(message="Token renovado")
 
 
 @router.post("/login/test-token", response_model=UserPublic)
