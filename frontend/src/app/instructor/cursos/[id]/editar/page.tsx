@@ -41,8 +41,16 @@ interface ApiCurso {
   id: string;
   titulo: string;
   descripcion: string | null;
+  nivel?: string;
   categoria_id?: string;
+  portada_url?: string | null;
+  estado?: string;
   modulos: ApiModulo[];
+  precio?: number | string | null;
+  moneda?: string;
+  lo_que_aprenderas?: string[];
+  requisitos?: string;
+  destacado?: boolean;
 }
 
 interface RecursoItem {
@@ -72,11 +80,22 @@ interface Module {
   isExpanded: boolean;
 }
 
+const STEPS = [
+  { id: 1, name: 'Info Básica', icon: '1' },
+  { id: 2, name: 'Portada', icon: '2' },
+  { id: 3, name: 'Estructura', icon: '3' },
+  { id: 4, name: 'Configuración', icon: '4' },
+  { id: 5, name: 'Guardar', icon: '5' },
+];
+
 export default function EditarCursoInstructorPage() {
   const router = useRouter();
   const params = useParams();
   const courseId = params.id as string;
 
+  const [currentStep, setCurrentStep] = useState(1);
+
+  // Step 1
   const [courseTitle, setCourseTitle] = useState('');
   const [courseDescription, setCourseDescription] = useState('');
   const [category, setCategory] = useState('');
@@ -84,9 +103,33 @@ export default function EditarCursoInstructorPage() {
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [isCreatingCategory, setIsCreatingCategory] = useState(false);
+  const [level, setLevel] = useState('');
+  const [loQueAprenderas, setLoQueAprenderas] = useState('');
+  const [requisitos, setRequisitos] = useState('');
+  const [precio, setPrecio] = useState('');
+  const [moneda, setMoneda] = useState('MXN');
+  const [saveError, setSaveError] = useState('');
+
+  // Step 2
+  const [coverImagePreview, setCoverImagePreview] = useState('');
+  const [coverUploadStatus, setCoverUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+
+  // Step 3
   const [modules, setModules] = useState<Module[]>([]);
+  const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
+  const [choosingForModule, setChoosingForModule] = useState<string | null>(null);
+
+  // Step 4
+  const [allowComments, setAllowComments] = useState(true);
+  const [certificateEnabled, setCertificateEnabled] = useState(true);
+  const [requireSequential, setRequireSequential] = useState(false);
+  const [destacado, setDestacado] = useState(false);
+
+  // General
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingReview, setIsSendingReview] = useState(false);
+  const [cursoEstado, setCursoEstado] = useState('borrador');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const notify = React.useCallback((type: 'success' | 'error', message: string) => {
@@ -104,6 +147,14 @@ export default function EditarCursoInstructorPage() {
       setCourseTitle(curso.titulo);
       setCourseDescription(curso.descripcion || '');
       setCategory(curso.categoria_id || '');
+      setLevel(curso.nivel || '');
+      if (curso.precio != null) setPrecio(String(curso.precio));
+      if (curso.moneda) setMoneda(curso.moneda);
+      if (curso.portada_url) setCoverImagePreview(curso.portada_url);
+      if (curso.lo_que_aprenderas?.length) setLoQueAprenderas(curso.lo_que_aprenderas.join('\n'));
+      if (curso.requisitos) setRequisitos(curso.requisitos);
+      setDestacado(!!curso.destacado);
+      if (curso.estado) setCursoEstado(curso.estado);
       setModules(
         (curso.modulos || []).map((m) => ({
           id: m.id,
@@ -119,11 +170,13 @@ export default function EditarCursoInstructorPage() {
             recursos: l.recursos || [],
             showRecursos: false,
             newRecursoTitulo: '',
-            quizData: l.contenido ? (() => { try { return JSON.parse(l.contenido!); } catch { return { preguntas: [] }; } })() : { preguntas: [] },
+            quizData: l.contenido
+              ? (() => { try { return JSON.parse(l.contenido!); } catch { return { preguntas: [] }; } })()
+              : { preguntas: [] },
           })),
         }))
       );
-    }).catch((e) => logError('instructor/cursos/editar/autoSave', e)).finally(() => setLoading(false));
+    }).catch((e) => logError('instructor/cursos/editar/load', e)).finally(() => setLoading(false));
   }, [courseId]);
 
   const handleCategoryChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -152,6 +205,20 @@ export default function EditarCursoInstructorPage() {
     }
   };
 
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setCoverImagePreview(URL.createObjectURL(file));
+    setCoverUploadStatus('uploading');
+    try {
+      await cursosApi.uploadCover(courseId, file);
+      setCoverUploadStatus('success');
+    } catch {
+      setCoverUploadStatus('error');
+    }
+  };
+
+  // Módulos
   const addModule = async () => {
     try {
       const resp = await cursosApi.createModulo(courseId, {
@@ -176,7 +243,7 @@ export default function EditarCursoInstructorPage() {
   };
 
   const deleteModule = async (moduleId: string) => {
-    if (!confirm('Eliminar este modulo y todas sus lecciones?')) return;
+    if (!confirm('¿Eliminar este módulo y todas sus lecciones?')) return;
     try {
       await cursosApi.deleteModulo(courseId, moduleId);
       setModules((prev) => prev.filter((m) => m.id !== moduleId));
@@ -234,7 +301,7 @@ export default function EditarCursoInstructorPage() {
   };
 
   const deleteLesson = async (moduleId: string, lessonId: string) => {
-    if (!confirm('Eliminar esta leccion?')) return;
+    if (!confirm('¿Eliminar esta lección?')) return;
     try {
       await cursosApi.deleteLeccion(courseId, moduleId, lessonId);
       setModules((prev) => prev.map((m) =>
@@ -253,9 +320,6 @@ export default function EditarCursoInstructorPage() {
       } : m
     ));
   };
-
-  const [pendingRecursoFiles, setPendingRecursoFiles] = useState<Record<string, File[]>>({});
-  const [choosingForModule, setChoosingForModule] = useState<string | null>(null);
 
   const handleRecursoFileSelect = (lessonId: string, files: FileList) => {
     setPendingRecursoFiles((prev) => ({ ...prev, [lessonId]: Array.from(files) }));
@@ -310,21 +374,88 @@ export default function EditarCursoInstructorPage() {
     }
   }, [courseId]);
 
+  const doSave = async (): Promise<void> => {
+    const precioNum = precio.trim() === '' ? null : Number(precio);
+    if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
+      throw new Error('El precio debe ser un número válido (0 o mayor)');
+    }
+    await cursosApi.update(courseId, {
+      titulo: courseTitle,
+      descripcion: courseDescription,
+      nivel: level || undefined,
+      precio: precioNum,
+      moneda,
+      lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
+      requisitos: requisitos.trim() || undefined,
+      destacado,
+      ...(category ? { categoria_id: category } : {}),
+    });
+    await Promise.all(modules.map(async (m) => {
+      await cursosApi.updateModulo(courseId, m.id, { titulo: m.title, descripcion: m.description });
+      await Promise.all(m.lessons.map((l) =>
+        cursosApi.updateLeccion(courseId, m.id, l.id, { titulo: l.title, es_visible: l.isVisible })
+      ));
+    }));
+  };
+
+  const handleNext = async () => {
+    if (currentStep === 1) {
+      setSaveError('');
+      const precioNum = precio.trim() === '' ? null : Number(precio);
+      if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
+        setSaveError('El precio debe ser un número válido (0 o mayor)');
+        return;
+      }
+      setIsSaving(true);
+      try {
+        await cursosApi.update(courseId, {
+          titulo: courseTitle,
+          descripcion: courseDescription,
+          nivel: level || undefined,
+          precio: precioNum,
+          moneda,
+          lo_que_aprenderas: loQueAprenderas.split('\n').map((s) => s.trim()).filter(Boolean),
+          requisitos: requisitos.trim() || undefined,
+          ...(category ? { categoria_id: category } : {}),
+        });
+        setCurrentStep(2);
+      } catch {
+        setSaveError('Error al guardar la información básica');
+      } finally {
+        setIsSaving(false);
+      }
+      return;
+    }
+    if (currentStep < 5) setCurrentStep(currentStep + 1);
+  };
+
+  const handlePrev = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await cursosApi.update(courseId, { titulo: courseTitle, descripcion: courseDescription, ...(category ? { categoria_id: category } : {}) });
-      await Promise.all(modules.map(async (m) => {
-        await cursosApi.updateModulo(courseId, m.id, { titulo: m.title, descripcion: m.description });
-        await Promise.all(m.lessons.map((l) =>
-          cursosApi.updateLeccion(courseId, m.id, l.id, { titulo: l.title, es_visible: l.isVisible })
-        ));
-      }));
+      await doSave();
       notify('success', 'Cambios guardados correctamente');
     } catch {
       notify('error', 'Error al guardar los cambios');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSendToReview = async () => {
+    setIsSendingReview(true);
+    try {
+      await doSave();
+      await cursosApi.update(courseId, { estado: 'revision' });
+      setCursoEstado('revision');
+      notify('success', 'Curso enviado a revisión');
+    } catch {
+      notify('error', 'Error al enviar a revisión');
+    } finally {
+      setIsSendingReview(false);
     }
   };
 
@@ -347,257 +478,548 @@ export default function EditarCursoInstructorPage() {
           {notification.message}
         </div>
       )}
-      <div className={styles.headerBar}>
-        <button className={styles.backButton} onClick={() => router.push('/instructor/cursos')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Volver a cursos
-        </button>
-        <button className={styles.saveButton} onClick={handleSave} disabled={isSaving}>
-          {isSaving ? 'Guardando...' : 'Guardar cambios'}
-        </button>
+
+      <div className={styles.pageHeader}>
+        <div className={styles.headerLeft}>
+          <button className={styles.returnButton} onClick={() => router.push('/instructor/cursos')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Volver a cursos
+          </button>
+          <h1 className={styles.pageTitle}>Editar Curso</h1>
+        </div>
       </div>
 
-      <div className={styles.contentCard}>
-        <div className={styles.cardHeader}>
-          <div className={styles.courseInfo}>
-            <input
-              type="text"
-              value={courseTitle}
-              onChange={(e) => setCourseTitle(e.target.value)}
-              className={styles.pageTitle}
-              placeholder="Titulo del curso"
-            />
-            <textarea
-              value={courseDescription}
-              onChange={(e) => setCourseDescription(e.target.value)}
-              className={styles.courseDescription}
-              placeholder="Descripcion del curso"
-              rows={2}
-            />
-            <div className={styles.categoryGroup}>
-              <label className={styles.categoryLabel}>Categoría</label>
-              {!showNewCatInput ? (
-                <select value={category} onChange={handleCategoryChange} className={styles.categorySelect}>
-                  <option value="">Sin categoría</option>
-                  {categories.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-                  ))}
-                  <option value="__new__">+ Crear nueva categoría...</option>
-                </select>
-              ) : (
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+      <div className={styles.contentWrapper}>
+        <aside className={styles.sidebar}>
+          <nav className={styles.stepNav}>
+            {STEPS.map((step) => (
+              <button
+                key={step.id}
+                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''}`}
+                onClick={() => setCurrentStep(step.id)}
+              >
+                <span className={styles.stepIcon}>{step.icon}</span>
+                <span className={styles.stepName}>{step.name}</span>
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <main className={styles.mainContent}>
+          <div className={styles.formContainer}>
+
+            {/* Step 1: Info Básica */}
+            {currentStep === 1 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Información Básica</h2>
+                <p className={styles.stepDescription}>Edita la información fundamental del curso</p>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Título del curso <span className={styles.required}>*</span></label>
                   <input
                     type="text"
-                    className={styles.categoryInput}
-                    placeholder="Nombre de la nueva categoría"
-                    value={newCategoryName}
-                    onChange={(e) => setNewCategoryName(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
-                    autoFocus
-                    disabled={isCreatingCategory}
-                    aria-label="Nombre de la nueva categoría"
-                    style={{ flex: 1 }}
+                    value={courseTitle}
+                    onChange={(e) => setCourseTitle(e.target.value)}
+                    className={styles.input}
+                    placeholder="Ej: Facturación Electrónica Avanzada"
                   />
-                  <button
-                    type="button"
-                    onClick={handleCreateCategory}
-                    disabled={!newCategoryName.trim() || isCreatingCategory}
-                    style={{ padding: '0.5rem 1rem', background: 'var(--color-secondary-30)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
-                  >
-                    {isCreatingCategory ? 'Creando...' : 'Crear'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
-                    style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
-                    aria-label="Cancelar crear categoría"
-                  >
-                    ✕
-                  </button>
                 </div>
-              )}
-            </div>
-          </div>
-          <div className={styles.courseStats}>
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>{modules.length}</span>
-              <span className={styles.statLabel}>Modulos</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statNumber}>{totalLessons}</span>
-              <span className={styles.statLabel}>Lecciones</span>
-            </div>
-          </div>
-        </div>
 
-        <div className={styles.sectionTitle}>Estructura del curso</div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Descripción <span className={styles.required}>*</span></label>
+                  <textarea
+                    value={courseDescription}
+                    onChange={(e) => setCourseDescription(e.target.value)}
+                    className={styles.textarea}
+                    rows={5}
+                    placeholder="Describe el contenido y objetivos del curso..."
+                  />
+                </div>
 
-        <div className={styles.modulesContainer}>
-          {modules.map((module, moduleIndex) => (
-            <div key={module.id} className={styles.moduleCard}>
-              <div className={styles.moduleHeader}>
-                <button className={styles.expandButton} onClick={() => toggleModuleExpand(module.id)}>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-                    className={module.isExpanded ? styles.rotated : ''}>
-                    <path d="M9 18l6-6-6-6" />
-                  </svg>
-                </button>
-                <div className={styles.moduleNumber}>{moduleIndex + 1}</div>
-                <input
-                  type="text"
-                  value={module.title}
-                  onChange={(e) => updateModuleLocal(module.id, { title: e.target.value })}
-                  className={styles.moduleTitleInput}
-                  placeholder="Titulo del modulo"
-                />
-                <span className={styles.lessonCount}>{module.lessons.length} lecciones</span>
-                <button className={styles.deleteModuleButton} onClick={() => deleteModule(module.id)} title="Eliminar modulo">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
-                  </svg>
-                </button>
-              </div>
-
-              {module.isExpanded && (
-                <div className={styles.moduleContent}>
-                  <div className={styles.moduleDescriptionGroup}>
-                    <textarea
-                      value={module.description}
-                      onChange={(e) => updateModuleLocal(module.id, { description: e.target.value })}
-                      className={styles.moduleDescriptionInput}
-                      placeholder="Descripcion del modulo (opcional)"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className={styles.lessonsContainer}>
-                    {module.lessons.map((lesson, lessonIndex) => (
-                      <div key={lesson.id} className={styles.lessonCard}>
-                        <div className={styles.lessonHeader}>
-                          <span className={styles.lessonNumber}>{lessonIndex + 1}</span>
-                          <input
-                            type="text"
-                            value={lesson.title}
-                            onChange={(e) => updateLessonLocal(module.id, lesson.id, { title: e.target.value })}
-                            className={styles.lessonTitleInput}
-                            placeholder="Titulo de la leccion"
-                          />
-                          <label className={styles.toggleLabel}>
-                            <input
-                              type="checkbox"
-                              checked={lesson.isVisible}
-                              onChange={(e) => updateLessonLocal(module.id, lesson.id, { isVisible: e.target.checked })}
-                              className={styles.toggleInput}
-                            />
-                            <span className={styles.toggleSlider}></span>
-                          </label>
-                          <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar leccion">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <path d="M18 6L6 18M6 6l12 12" />
-                            </svg>
-                          </button>
-                        </div>
-                        <div className={styles.lessonInputs}>
-                          {lesson.tipo === 'video' ? (
-                            <VideoUploadButton
-                              cursoId={courseId}
-                              moduloId={module.id}
-                              leccionId={lesson.id}
-                              currentBunnyVideoId={lesson.bunnyVideoId}
-                              onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
-                            />
-                          ) : (
-                            <QuizBuilder
-                              quizData={lesson.quizData}
-                              onChange={(qd) => updateLessonLocal(module.id, lesson.id, { quizData: qd })}
-                              onSave={(data) => cursosApi.saveQuizData(courseId, module.id, lesson.id, data).catch((e) => logError('instructor/cursos/editar/autoSave', e))}
-                            />
-                          )}
-                          {/* Recursos adicionales */}
-                          <button
-                            type="button"
-                            className={styles.toggleRecursosBtn}
-                            onClick={() => updateLessonRecursoField(module.id, lesson.id, 'showRecursos', !lesson.showRecursos)}
-                          >
-                            {lesson.showRecursos ? '▲' : '▼'} Recursos ({lesson.recursos.length})
-                          </button>
-                          {lesson.showRecursos && (
-                            <div className={styles.recursosSection}>
-                              {lesson.recursos.map((r) => (
-                                <div key={r.id} className={styles.recursoItem}>
-                                  <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
-                                  <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
-                                    {r.titulo}
-                                  </a>
-                                  <button
-                                    type="button"
-                                    className={styles.deleteRecursoBtn}
-                                    onClick={() => deleteRecurso(module.id, lesson.id, r.id)}
-                                  >✕</button>
-                                </div>
-                              ))}
-                              <div className={styles.addRecursoForm}>
-                                <input
-                                  type="text"
-                                  placeholder="Nombre del recurso (opcional)"
-                                  value={lesson.newRecursoTitulo}
-                                  onChange={(e) => updateLessonRecursoField(module.id, lesson.id, 'newRecursoTitulo', e.target.value)}
-                                  className={styles.recursoInput}
-                                />
-                                <label className={styles.recursoFileLabel}>
-                                  <input
-                                    type="file"
-                                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-                                    multiple
-                                    style={{ display: 'none' }}
-                                    onChange={(e) => {
-                                      if (e.target.files?.length) handleRecursoFileSelect(lesson.id, e.target.files);
-                                    }}
-                                  />
-                                  {pendingRecursoFiles[lesson.id]?.length
-                                    ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
-                                    : 'Seleccionar archivos'}
-                                </label>
-                                <button
-                                  type="button"
-                                  className={styles.addRecursoBtn}
-                                  onClick={() => addRecurso(module.id, lesson)}
-                                  disabled={!pendingRecursoFiles[lesson.id]?.length}
-                                >
-                                  + Subir recurso
-                                </button>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-
-                    {choosingForModule === module.id ? (
-                      <LessonTypeSelector
-                        onSelect={(tipo) => confirmAddLesson(module.id, tipo)}
-                        onCancel={() => setChoosingForModule(null)}
-                      />
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Categoría</label>
+                    {!showNewCatInput ? (
+                      <select value={category} onChange={handleCategoryChange} className={styles.select}>
+                        <option value="">Sin categoría</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>{cat.nombre}</option>
+                        ))}
+                        <option value="__new__">+ Crear nueva categoría...</option>
+                      </select>
                     ) : (
-                    <button className={styles.addLessonButton} onClick={() => setChoosingForModule(module.id)}>
-                      + Agregar lección
-                    </button>
+                      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                        <input
+                          type="text"
+                          className={styles.input}
+                          placeholder="Nombre de la nueva categoría"
+                          value={newCategoryName}
+                          onChange={(e) => setNewCategoryName(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleCreateCategory(); } }}
+                          autoFocus
+                          disabled={isCreatingCategory}
+                          aria-label="Nombre de la nueva categoría"
+                          style={{ flex: 1 }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleCreateCategory}
+                          disabled={!newCategoryName.trim() || isCreatingCategory}
+                          style={{ padding: '0.5rem 1rem', background: 'var(--color-secondary-30)', color: 'white', border: 'none', borderRadius: '0.5rem', cursor: 'pointer', fontWeight: 600, whiteSpace: 'nowrap' }}
+                        >
+                          {isCreatingCategory ? 'Creando...' : 'Crear'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
+                          style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
+                          aria-label="Cancelar crear categoría"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     )}
                   </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Nivel <span className={styles.required}>*</span></label>
+                    <select value={level} onChange={(e) => setLevel(e.target.value)} className={styles.select}>
+                      <option value="">Seleccionar nivel</option>
+                      <option value="principiante">Principiante</option>
+                      <option value="intermedio">Intermedio</option>
+                      <option value="avanzado">Avanzado</option>
+                    </select>
+                  </div>
                 </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Lo que aprenderás</label>
+                  <textarea
+                    value={loQueAprenderas}
+                    onChange={(e) => setLoQueAprenderas(e.target.value)}
+                    className={styles.textarea}
+                    rows={4}
+                    placeholder={'Escribe un punto por línea, por ejemplo:\nIdentificar procesos de facturación\nUsar herramientas de gestión'}
+                  />
+                  <small style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem' }}>Un elemento por línea</small>
+                </div>
+
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Requisitos previos</label>
+                  <textarea
+                    value={requisitos}
+                    onChange={(e) => setRequisitos(e.target.value)}
+                    className={styles.textarea}
+                    rows={3}
+                    placeholder="Ej: Conocimientos básicos de computación, acceso a internet..."
+                  />
+                </div>
+
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Precio</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={precio}
+                      onChange={(e) => setPrecio(e.target.value)}
+                      className={styles.input}
+                      placeholder="Vacio o 0 = curso gratuito"
+                    />
+                    <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                      Deja vacio o 0 para que el curso sea gratuito.
+                    </span>
+                  </div>
+                  <div className={styles.formGroup}>
+                    <label className={styles.label}>Moneda</label>
+                    <select value={moneda} onChange={(e) => setMoneda(e.target.value)} className={styles.select}>
+                      <option value="MXN">MXN — Peso Mexicano</option>
+                      <option value="USD">USD — Dolar</option>
+                      <option value="EUR">EUR — Euro</option>
+                    </select>
+                  </div>
+                </div>
+
+                {saveError && (
+                  <p style={{ color: 'red', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7' }}>
+                    {saveError}
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Step 2: Portada */}
+            {currentStep === 2 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Imagen de Portada</h2>
+                <p className={styles.stepDescription}>Sube una imagen atractiva para tu curso (recomendado: 1200x675px)</p>
+
+                <div className={styles.uploadArea}>
+                  {coverImagePreview ? (
+                    <div className={styles.imagePreview}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
+                      <button
+                        className={styles.removeImageButton}
+                        onClick={() => { setCoverImagePreview(''); setCoverUploadStatus('idle'); }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                        </svg>
+                        Cambiar imagen
+                      </button>
+                      {coverUploadStatus === 'uploading' && (
+                        <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Subiendo imagen al servidor...
+                        </p>
+                      )}
+                      {coverUploadStatus === 'success' && (
+                        <p style={{ marginTop: '0.5rem', color: '#16a34a', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Imagen guardada correctamente
+                        </p>
+                      )}
+                      {coverUploadStatus === 'error' && (
+                        <p style={{ marginTop: '0.5rem', color: '#dc2626', fontSize: '0.875rem', fontWeight: 500 }}>
+                          Error al subir. Selecciona la imagen de nuevo para reintentar.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <label className={styles.uploadLabel}>
+                      <input
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        onChange={handleImageUpload}
+                        className={styles.fileInput}
+                      />
+                      <div className={styles.uploadPlaceholder}>
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                        </svg>
+                        <p className={styles.uploadText}>Haz clic para subir una imagen</p>
+                        <p className={styles.uploadHint}>PNG, JPG o WEBP (máx. 5MB)</p>
+                      </div>
+                    </label>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Estructura */}
+            {currentStep === 3 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Estructura del Curso</h2>
+                <p className={styles.stepDescription}>Administra módulos, lecciones, videos y recursos.</p>
+
+                <div className={styles.modulesContainer}>
+                  {modules.map((module, moduleIndex) => (
+                    <div key={module.id} className={styles.moduleCard}>
+                      <div className={styles.moduleHeader}>
+                        <button className={styles.expandButton} onClick={() => toggleModuleExpand(module.id)}>
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                            className={module.isExpanded ? styles.rotated : ''}>
+                            <path d="M9 18l6-6-6-6" />
+                          </svg>
+                        </button>
+                        <div className={styles.moduleNumber}>{moduleIndex + 1}</div>
+                        <input
+                          type="text"
+                          value={module.title}
+                          onChange={(e) => updateModuleLocal(module.id, { title: e.target.value })}
+                          className={styles.moduleTitleInput}
+                          placeholder="Titulo del modulo"
+                        />
+                        <span className={styles.lessonCount}>{module.lessons.length} lecciones</span>
+                        <button className={styles.deleteModuleButton} onClick={() => deleteModule(module.id)} title="Eliminar modulo">
+                          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+                          </svg>
+                        </button>
+                      </div>
+
+                      {module.isExpanded && (
+                        <div className={styles.moduleContent}>
+                          <div className={styles.moduleDescriptionGroup}>
+                            <textarea
+                              value={module.description}
+                              onChange={(e) => updateModuleLocal(module.id, { description: e.target.value })}
+                              className={styles.moduleDescriptionInput}
+                              placeholder="Descripcion del modulo (opcional)"
+                              rows={2}
+                            />
+                          </div>
+
+                          <div className={styles.lessonsContainer}>
+                            {module.lessons.map((lesson, lessonIndex) => (
+                              <div key={lesson.id} className={styles.lessonCard}>
+                                <div className={styles.lessonHeader}>
+                                  <span className={styles.lessonNumber}>{lessonIndex + 1}</span>
+                                  <input
+                                    type="text"
+                                    value={lesson.title}
+                                    onChange={(e) => updateLessonLocal(module.id, lesson.id, { title: e.target.value })}
+                                    className={styles.lessonTitleInput}
+                                    placeholder="Titulo de la leccion"
+                                  />
+                                  <label className={styles.toggleLabel}>
+                                    <input
+                                      type="checkbox"
+                                      checked={lesson.isVisible}
+                                      onChange={(e) => updateLessonLocal(module.id, lesson.id, { isVisible: e.target.checked })}
+                                      className={styles.toggleInput}
+                                    />
+                                    <span className={styles.toggleSlider}></span>
+                                  </label>
+                                  <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar leccion">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <path d="M18 6L6 18M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </div>
+                                <div className={styles.lessonInputs}>
+                                  {lesson.tipo === 'video' ? (
+                                    <VideoUploadButton
+                                      cursoId={courseId}
+                                      moduloId={module.id}
+                                      leccionId={lesson.id}
+                                      currentBunnyVideoId={lesson.bunnyVideoId}
+                                      onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
+                                    />
+                                  ) : (
+                                    <QuizBuilder
+                                      quizData={lesson.quizData}
+                                      onChange={(qd) => updateLessonLocal(module.id, lesson.id, { quizData: qd })}
+                                      onSave={(data) => cursosApi.saveQuizData(courseId, module.id, lesson.id, data).catch((e) => logError('instructor/cursos/editar/quiz', e))}
+                                    />
+                                  )}
+                                  <button
+                                    type="button"
+                                    className={styles.toggleRecursosBtn}
+                                    onClick={() => updateLessonRecursoField(module.id, lesson.id, 'showRecursos', !lesson.showRecursos)}
+                                  >
+                                    {lesson.showRecursos ? '▲' : '▼'} Recursos ({lesson.recursos.length})
+                                  </button>
+                                  {lesson.showRecursos && (
+                                    <div className={styles.recursosSection}>
+                                      {lesson.recursos.map((r) => (
+                                        <div key={r.id} className={styles.recursoItem}>
+                                          <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
+                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                            {r.titulo}
+                                          </a>
+                                          <button
+                                            type="button"
+                                            className={styles.deleteRecursoBtn}
+                                            onClick={() => deleteRecurso(module.id, lesson.id, r.id)}
+                                          >✕</button>
+                                        </div>
+                                      ))}
+                                      <div className={styles.addRecursoForm}>
+                                        <input
+                                          type="text"
+                                          placeholder="Nombre del recurso (opcional)"
+                                          value={lesson.newRecursoTitulo}
+                                          onChange={(e) => updateLessonRecursoField(module.id, lesson.id, 'newRecursoTitulo', e.target.value)}
+                                          className={styles.recursoInput}
+                                        />
+                                        <label className={styles.recursoFileLabel}>
+                                          <input
+                                            type="file"
+                                            accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
+                                            multiple
+                                            style={{ display: 'none' }}
+                                            onChange={(e) => {
+                                              if (e.target.files?.length) handleRecursoFileSelect(lesson.id, e.target.files);
+                                            }}
+                                          />
+                                          {pendingRecursoFiles[lesson.id]?.length
+                                            ? `${pendingRecursoFiles[lesson.id].length} archivo(s) seleccionado(s)`
+                                            : 'Seleccionar archivos'}
+                                        </label>
+                                        <button
+                                          type="button"
+                                          className={styles.addRecursoBtn}
+                                          onClick={() => addRecurso(module.id, lesson)}
+                                          disabled={!pendingRecursoFiles[lesson.id]?.length}
+                                        >
+                                          + Subir recurso
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+
+                            {choosingForModule === module.id ? (
+                              <LessonTypeSelector
+                                onSelect={(tipo) => confirmAddLesson(module.id, tipo)}
+                                onCancel={() => setChoosingForModule(null)}
+                              />
+                            ) : (
+                              <button className={styles.addLessonButton} onClick={() => setChoosingForModule(module.id)}>
+                                + Agregar lección
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+
+                  <button className={styles.addModuleButton} onClick={addModule}>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M12 5v14M5 12h14" />
+                    </svg>
+                    Agregar modulo
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 4: Configuración */}
+            {currentStep === 4 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Configuración</h2>
+                <p className={styles.stepDescription}>Ajusta las opciones adicionales del curso</p>
+
+                <div className={styles.configSection}>
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={allowComments}
+                      onChange={(e) => setAllowComments(e.target.checked)}
+                    />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Permitir comentarios</span>
+                      <span className={styles.checkboxDescription}>Los estudiantes podrán dejar comentarios en las lecciones</span>
+                    </div>
+                  </label>
+
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={certificateEnabled}
+                      onChange={(e) => setCertificateEnabled(e.target.checked)}
+                    />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Certificado de finalización</span>
+                      <span className={styles.checkboxDescription}>Los estudiantes recibirán un certificado al completar el curso</span>
+                    </div>
+                  </label>
+
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={requireSequential}
+                      onChange={(e) => setRequireSequential(e.target.checked)}
+                    />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Avance secuencial</span>
+                      <span className={styles.checkboxDescription}>Los estudiantes deben completar cada lección antes de avanzar</span>
+                    </div>
+                  </label>
+
+                  <label className={styles.checkboxLabel}>
+                    <input
+                      type="checkbox"
+                      className={styles.checkbox}
+                      checked={destacado}
+                      onChange={(e) => setDestacado(e.target.checked)}
+                    />
+                    <div className={styles.checkboxContent}>
+                      <span className={styles.checkboxTitle}>Destacar curso</span>
+                      <span className={styles.checkboxDescription}>Aparecerá en el carrete de cursos destacados de la pantalla de inicio</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            )}
+
+            {/* Step 5: Guardar */}
+            {currentStep === 5 && (
+              <div className={styles.stepContent}>
+                <h2 className={styles.stepTitle}>Guardar</h2>
+                <p className={styles.stepDescription}>Revisa el resumen y guarda los cambios</p>
+
+                <div className={styles.summaryGrid}>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Título</span>
+                    <span className={styles.summaryValue}>{courseTitle || '—'}</span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Nivel</span>
+                    <span className={styles.summaryValue}>{level || 'Sin nivel'}</span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Precio</span>
+                    <span className={styles.summaryValue}>
+                      {precio.trim() === '' || precio === '0' ? 'Gratuito' : `${precio} ${moneda}`}
+                    </span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Módulos</span>
+                    <span className={styles.summaryValue}>{modules.length}</span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Lecciones</span>
+                    <span className={styles.summaryValue}>{totalLessons}</span>
+                  </div>
+                  <div className={styles.summaryCard}>
+                    <span className={styles.summaryLabel}>Estado</span>
+                    <span className={styles.summaryValue}>{cursoEstado}</span>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                  <button
+                    className={styles.nextButton}
+                    onClick={handleSave}
+                    disabled={isSaving || isSendingReview}
+                    style={{ minWidth: '160px' }}
+                  >
+                    {isSaving ? 'Guardando...' : 'Guardar cambios'}
+                  </button>
+                  {cursoEstado === 'borrador' && (
+                    <button
+                      className={styles.publishButton}
+                      onClick={handleSendToReview}
+                      disabled={isSaving || isSendingReview}
+                      style={{ minWidth: '180px' }}
+                    >
+                      {isSendingReview ? 'Enviando...' : 'Enviar a revisión'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Navegación entre pasos */}
+            <div className={styles.navigationButtons}>
+              <button
+                className={styles.backButton}
+                onClick={handlePrev}
+                disabled={currentStep === 1}
+              >
+                Anterior
+              </button>
+              {currentStep < 5 && (
+                <button
+                  className={styles.nextButton}
+                  onClick={handleNext}
+                  disabled={isSaving}
+                >
+                  {currentStep === 1 && isSaving ? 'Guardando...' : 'Siguiente'}
+                </button>
               )}
             </div>
-          ))}
-
-          <button className={styles.addModuleButton} onClick={addModule}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Agregar modulo
-          </button>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
