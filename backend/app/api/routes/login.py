@@ -111,7 +111,12 @@ def reset_password(request: Request, session: SessionDep, body: NewPassword) -> 
     if not user:
         raise HTTPException(status_code=400, detail="Invalid token")
 
-    if user.password_reset_expira is None or datetime.now(timezone.utc) > user.password_reset_expira.replace(tzinfo=timezone.utc):
+    expira = user.password_reset_expira
+    if expira is None:
+        raise HTTPException(status_code=400, detail="Token expired")
+    if expira.tzinfo is None:
+        expira = expira.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expira:
         raise HTTPException(status_code=400, detail="Token expired")
 
     if not user.is_active:
