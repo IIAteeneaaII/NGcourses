@@ -1,8 +1,22 @@
 services:
 
+  # Garantiza que el volumen media_data tenga permisos correctos para appuser (uid 1000).
+  # Necesario porque Docker inicializa volúmenes nuevos como root y el backend corre no-root.
+  media-init:
+    image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-backend:latest'
+    user: "0"
+    command: >
+      sh -c "mkdir -p /app/app/media/covers /app/app/media/recursos /app/app/media/certificados
+             && chown -R 1000:1000 /app/app/media"
+    volumes:
+      - media_data:/app/app/media
+
   prestart:
     image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-backend:latest'
     command: bash scripts/prestart.sh
+    depends_on:
+      media-init:
+        condition: service_completed_successfully
     env_file:
       - .env.prod
     environment:
