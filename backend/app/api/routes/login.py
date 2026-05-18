@@ -53,27 +53,30 @@ def login_access_token(
         path="/",
     )
 
-    raw_rt = security.create_refresh_token_raw()
-    rt_hash = security.hash_token(raw_rt)
-    ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-          or (request.client.host if request.client else None))
-    rt = RefreshToken(
-        usuario_id=user.id,
-        token_hash=rt_hash,
-        expira_en=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        ip_creacion=ip,
-    )
-    session.add(rt)
-    session.commit()
-    response.set_cookie(
-        key="refresh_token",
-        value=raw_rt,
-        httponly=True,
-        secure=settings.ENABLE_HTTPS,
-        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
-        max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
-        path="/",
-    )
+    try:
+        raw_rt = security.create_refresh_token_raw()
+        rt_hash = security.hash_token(raw_rt)
+        ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
+              or (request.client.host if request.client else None))
+        rt = RefreshToken(
+            usuario_id=user.id,
+            token_hash=rt_hash,
+            expira_en=datetime.now(timezone.utc) + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            ip_creacion=ip,
+        )
+        session.add(rt)
+        session.commit()
+        response.set_cookie(
+            key="refresh_token",
+            value=raw_rt,
+            httponly=True,
+            secure=settings.ENABLE_HTTPS,
+            samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+            max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
+            path="/",
+        )
+    except Exception:
+        session.rollback()
     return UserPublic.model_validate(user)
 
 
@@ -85,12 +88,15 @@ def logout(
 ) -> Message:
     """Cierra sesión revocando el refresh token y eliminando ambas cookies."""
     if refresh_token:
-        rt_hash = security.hash_token(refresh_token)
-        rt = session.exec(select(RefreshToken).where(RefreshToken.token_hash == rt_hash)).first()
-        if rt and rt.revocado_en is None:
-            rt.revocado_en = datetime.now(timezone.utc)
-            session.add(rt)
-            session.commit()
+        try:
+            rt_hash = security.hash_token(refresh_token)
+            rt = session.exec(select(RefreshToken).where(RefreshToken.token_hash == rt_hash)).first()
+            if rt and rt.revocado_en is None:
+                rt.revocado_en = datetime.now(timezone.utc)
+                session.add(rt)
+                session.commit()
+        except Exception:
+            session.rollback()
     response.delete_cookie("access_token", path="/")
     response.delete_cookie("refresh_token", path="/")
     return Message(message="Sesión cerrada")
