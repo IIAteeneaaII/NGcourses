@@ -42,13 +42,12 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Inactive user")
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = security.create_access_token(user.id, expires_delta=access_token_expires)
-    is_prod = settings.ENVIRONMENT != "local"
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=is_prod,
-        samesite="strict" if is_prod else "lax",
+        secure=settings.ENABLE_HTTPS,
+        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )

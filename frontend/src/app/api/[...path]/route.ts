@@ -51,13 +51,26 @@ async function handler(
     });
   }
 
+  const httpsEnabled = process.env.ENABLE_HTTPS === 'true';
+  const skip = ['transfer-encoding', 'connection', 'keep-alive', 'set-cookie'];
+
   const responseHeaders = new Headers();
   response.headers.forEach((value, key) => {
-    const skip = ['transfer-encoding', 'connection', 'keep-alive'];
     if (!skip.includes(key.toLowerCase())) {
       responseHeaders.set(key, value);
     }
   });
+
+  // Reenviar Set-Cookie quitando el flag Secure cuando el sitio corre en HTTP.
+  // Sin esto el browser descarta silenciosamente la cookie HttpOnly del JWT.
+  const setCookies: string[] =
+    typeof (response.headers as { getSetCookie?: () => string[] }).getSetCookie === 'function'
+      ? (response.headers as { getSetCookie: () => string[] }).getSetCookie()
+      : [];
+  for (const cookie of setCookies) {
+    const processed = httpsEnabled ? cookie : cookie.replace(/;\s*Secure/gi, '');
+    responseHeaders.append('set-cookie', processed);
+  }
 
   return new NextResponse(response.body, {
     status: response.status,
