@@ -57,6 +57,34 @@ def create_user(*, session: Session, user_create: UserCreate) -> User:
     session.refresh(db_obj)
     return db_obj
 
+def create_user_by_admin(
+    *, session: Session, user_create: UserCreate
+) -> tuple[User, str]:
+    """Crea usuario desde el panel admin.
+    Ignora la password del form, asigna una aleatoria, y genera reset_token.
+    Retorna (user, reset_token) — el token se envía por email, nunca se expone."""
+    import secrets
+    from datetime import timedelta, timezone
+
+    # Password aleatoria — el usuario nunca la usa directamente
+    placeholder = secrets.token_urlsafe(16)
+    db_obj = User.model_validate(
+        user_create,
+        update={"hashed_password": get_password_hash(placeholder)}
+    )
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+
+    # Token de reset para que el usuario establezca su propia contraseña
+    reset_token = secrets.token_urlsafe(32)
+    db_obj.password_reset_token = reset_token
+    db_obj.password_reset_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    session.add(db_obj)
+    session.commit()
+    session.refresh(db_obj)
+
+    return db_obj, reset_token
 
 def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     user_data = user_in.model_dump(exclude_unset=True)
@@ -954,23 +982,33 @@ def reenviar_invitacion(
 def get_or_create_user_by_email(
     *, session: Session, email: str, organizacion_id: uuid.UUID | None = None
 ) -> tuple[User, bool, str | None]:
-    """Retorna (usuario, creado, contraseña_temporal).
-    contraseña_temporal solo tiene valor cuando creado=True; de lo contrario None.
-    Si se pasa organizacion_id y el usuario no pertenece a esa org, se vincula."""
+    """Retorna (usuario, creado, reset_token).
+    reset_token solo tiene valor cuando creado=True; es un token de un solo uso
+    para que el usuario establezca su contraseña. Nunca se expone la contraseña."""
     user = get_user_by_email(session=session, email=email)
     if user:
         if organizacion_id is not None:
             _ensure_user_in_org(session=session, user_id=user.id, organizacion_id=organizacion_id)
         return user, False, None
-    temp_password = email  # La contraseña inicial es el propio email del usuario
+
+    # Contraseña aleatoria, el usuario nunca la usa directamente
+    temp_password = secrets.token_urlsafe(16)
     user_create = UserCreate(email=email, password=temp_password, rol=RolUsuario.ESTUDIANTE)
     new_user = create_user(session=session, user_create=user_create)
+
+    # Generar token de reset para que el usuario establezca su propia contraseña
+    reset_token = secrets.token_urlsafe(32)
+    new_user.password_reset_token = reset_token
+    new_user.password_reset_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    session.add(new_user)
+    session.commit()
+    session.refresh(new_user)
+
     if organizacion_id is not None:
         _ensure_user_in_org(
             session=session, user_id=new_user.id, organizacion_id=organizacion_id
         )
-    return new_user, True, temp_password
-
+    return new_user, True, reset_token
 
 def _ensure_user_in_org(
     *, session: Session, user_id: uuid.UUID, organizacion_id: uuid.UUID,
@@ -1443,3 +1481,17 @@ def cursos_con_pago_del_usuario(
         Pago.status.in_([EstadoPago.COMPLETADO, EstadoPago.CORTESIA]),  # type: ignore[attr-defined]
     )
     return {row for row in session.exec(stmt).all()}
+
+
+
+def reenviar_invitacion(*, session: Session, invitacion_id: uuid.UUID) -> tuple[Any, str]:
+    inv = get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
+    if not inv:  # ← AGREGAR ESTO
+        raise HTTPException(status_code=404, detail="Invitación no encontrada")
+    raw_token = secrets.token_urlsafe(32)
+    inv.token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
+    inv.expira_en = datetime.utcnow() + timedelta(days=INVITACION_EXPIRACION_DIAS)
+    session.add(inv)
+    session.commit()
+    session.refresh(inv)
+    return inv, raw_token
