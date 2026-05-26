@@ -3,7 +3,7 @@ import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import EmailStr
 from sqlmodel import SQLModel, col, delete, func, select
 
@@ -15,7 +15,8 @@ from app.api.deps import (
     require_admin_or_superuser,
 )
 from app.core.config import settings
-from app.core.security import get_password_hash, verify_password
+from app.core.security import get_password_hash, verify_password, limiter
+
 from app.models import (
     Item,
     Message,
@@ -30,94 +31,71 @@ from app.models import (
 )
 from app.models._enums import EstadoUsuario, RolOrganizacion, RolUsuario
 from app.models.organizacion import UsuarioOrganizacion
-from app.utils import generate_activacion_email, generate_new_account_email, send_email
+from app.utils import (
+    generate_activacion_email,
+    generate_reset_password_email,
+    send_email,
+)
 
 router = APIRouter(prefix="/users", tags=["users"])
 
 
-@router.get(
-    "/",
-    dependencies=[Depends(require_admin_or_superuser)],
-    response_model=UsersPublic,
-)
+@router.get("/", dependencies=[Depends(require_admin_or_superuser)], response_model=UsersPublic)
 def read_users(
     session: SessionDep,
-    skip: int = 0,
-    limit: int = 100,
+    skip: int = 0, limit: int = 100,
     rol: RolUsuario | None = None,
     estado: EstadoUsuario | None = None,
     search: str | None = None,
 ) -> Any:
-    """
-    Retrieve users. Soporta filtros: ?rol=&estado=&search=
-    """
     query = select(User)
     count_query = select(func.count()).select_from(User)
-
     filters = []
-    if rol:
-        filters.append(User.rol == rol)
-    if estado:
-        filters.append(User.estado == estado)
-    if search:
-        filters.append(User.email.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%"))  # type: ignore
-
+    if rol:     filters.append(User.rol == rol)
+    if estado:  filters.append(User.estado == estado)
+    if search:  filters.append(User.email.ilike(f"%{search}%") | User.full_name.ilike(f"%{search}%"))
     for f in filters:
         query = query.where(f)
         count_query = count_query.where(f)
-
     count = session.exec(count_query).one()
     users = session.exec(query.offset(skip).limit(limit)).all()
-
     return UsersPublic(data=users, count=count)
 
 
 @router.post("/", response_model=UserPublic)
-def create_user(*, session: SessionDep, user_in: UserCreate, current_user: AdminOrSuperuser) -> Any:
-    """
-    Create new user.
-    """
-    # Evitar escalada de privilegios: solo un superusuario puede crear otros superusuarios
+def create_user(
+    *, session: SessionDep, user_in: UserCreate, current_user: AdminOrSuperuser
+) -> Any:
+    """Crea usuario desde panel admin. Nunca envía contraseña por email — envía link de reset."""
     if not current_user.is_superuser and user_in.is_superuser:
-        raise HTTPException(
-            status_code=403,
-            detail="Solo el superusuario puede crear otros superusuarios",
-        )
-
+        raise HTTPException(status_code=403, detail="Solo el superusuario puede crear otros superusuarios")
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system.",
-        )
+        raise HTTPException(status_code=400, detail="The user with this email already exists in the system.")
 
-    user = crud.create_user(session=session, user_create=user_in)
-    if settings.emails_enabled and user_in.email:
-        email_data = generate_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
+    # FND-034: create_user_by_admin ignora la password del form y genera reset_token
+    new_user, reset_token = crud.create_user_by_admin(session=session, user_create=user_in)
+
+    if settings.emails_enabled:
+        email_data = generate_reset_password_email(
+            email_to=new_user.email,
+            email=new_user.email,
+            token=reset_token,
         )
         send_email(
-            email_to=user_in.email,
+            email_to=new_user.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
-    return user
+    return new_user
 
 
 @router.patch("/me", response_model=UserPublic)
-def update_user_me(
-    *, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser
-) -> Any:
-    """
-    Update own user.
-    """
-
+def update_user_me(*, session: SessionDep, user_in: UserUpdateMe, current_user: CurrentUser) -> Any:
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != current_user.id:
-            raise HTTPException(
-                status_code=409, detail="User with this email already exists"
-            )
+            raise HTTPException(status_code=409, detail="User with this email already exists")
     user_data = user_in.model_dump(exclude_unset=True)
     current_user.sqlmodel_update(user_data)
     session.add(current_user)
@@ -127,20 +105,12 @@ def update_user_me(
 
 
 @router.patch("/me/password", response_model=Message)
-def update_password_me(
-    *, session: SessionDep, body: UpdatePassword, current_user: CurrentUser
-) -> Any:
-    """
-    Update own password.
-    """
+def update_password_me(*, session: SessionDep, body: UpdatePassword, current_user: CurrentUser) -> Any:
     if not verify_password(body.current_password, current_user.hashed_password):
         raise HTTPException(status_code=400, detail="Incorrect password")
     if body.current_password == body.new_password:
-        raise HTTPException(
-            status_code=400, detail="New password cannot be the same as the current one"
-        )
-    hashed_password = get_password_hash(body.new_password)
-    current_user.hashed_password = hashed_password
+        raise HTTPException(status_code=400, detail="New password cannot be the same as the current one")
+    current_user.hashed_password = get_password_hash(body.new_password)
     session.add(current_user)
     session.commit()
     return Message(message="Password updated successfully")
@@ -158,7 +128,6 @@ class UserMePublic(UserPublic):
 
 @router.get("/me", response_model=UserMePublic)
 def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
-    """Get current user with organization info."""
     info = crud.get_organizacion_of_user(session=session, user_id=current_user.id)
     org_public: UserOrgInfo | None = None
     if info:
@@ -173,106 +142,78 @@ def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
 
 @router.delete("/me", response_model=Message)
 def delete_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
-    """
-    Delete own user.
-    """
     if current_user.is_superuser:
-        raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
-        )
+        raise HTTPException(status_code=403, detail="Super users are not allowed to delete themselves")
     session.delete(current_user)
     session.commit()
     return Message(message="User deleted successfully")
 
 
 @router.post("/signup", response_model=UserPublic)
-def register_user(session: SessionDep, user_in: UserRegister) -> Any:
-    """
-    Create new user without the need to be logged in.
-    """
+@limiter.limit("10/minute")  # FND-002
+def register_user(request: Request, session: SessionDep, user_in: UserRegister) -> Any:
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
-        raise HTTPException(
-            status_code=400,
-            detail="The user with this email already exists in the system",
-        )
+        raise HTTPException(status_code=400, detail="The user with this email already exists in the system")
     user_create = UserCreate.model_validate(user_in)
     user = crud.create_user(session=session, user_create=user_create)
     return user
 
 
 @router.get("/{user_id}", response_model=UserPublic)
-def read_user_by_id(
-    user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser
-) -> Any:
-    """
-    Get a specific user by id.
-    """
+def read_user_by_id(user_id: uuid.UUID, session: SessionDep, current_user: CurrentUser) -> Any:
     user = session.get(User, user_id)
     if user == current_user:
         return user
     if not current_user.is_superuser and current_user.rol != RolUsuario.ADMINISTRADOR:
-        raise HTTPException(
-            status_code=403,
-            detail="The user doesn't have enough privileges",
-        )
+        raise HTTPException(status_code=403, detail="The user doesn't have enough privileges")
     return user
 
 
-@router.patch(
-    "/{user_id}",
-    dependencies=[Depends(require_admin_or_superuser)],
-    response_model=UserPublic,
-)
+@router.patch("/{user_id}", dependencies=[Depends(require_admin_or_superuser)], response_model=UserPublic)
 def update_user(
     *,
     session: SessionDep,
+    current_user: AdminOrSuperuser,  # FND-001: necesario para el guard
     user_id: uuid.UUID,
     user_in: UserUpdate,
 ) -> Any:
-    """
-    Update a user.
-    """
-
     db_user = session.get(User, user_id)
     if not db_user:
-        raise HTTPException(
-            status_code=404,
-            detail="The user with this id does not exist in the system",
-        )
+        raise HTTPException(status_code=404, detail="The user with this id does not exist in the system")
+
+    # FND-001: guard runtime — admin no puede promover a administrador ni modificar admins
+    payload = user_in.model_dump(exclude_unset=True)
+    if not current_user.is_superuser:
+        if payload.get("rol") == RolUsuario.ADMINISTRADOR:
+            raise HTTPException(status_code=403, detail="Solo superuser puede otorgar rol de administrador")
+        if db_user.rol == RolUsuario.ADMINISTRADOR and ("rol" in payload or "is_active" in payload):
+            raise HTTPException(status_code=403, detail="Solo superuser puede modificar cuentas de administrador")
+
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)
         if existing_user and existing_user.id != user_id:
-            raise HTTPException(
-                status_code=409, detail="User with this email already exists"
-            )
+            raise HTTPException(status_code=409, detail="User with this email already exists")
 
     db_user = crud.update_user(session=session, db_user=db_user, user_in=user_in)
     return db_user
 
 
 @router.delete("/{user_id}", dependencies=[Depends(require_admin_or_superuser)])
-def delete_user(
-    session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID
-) -> Message:
-    """
-    Delete a user.
-    """
+def delete_user(session: SessionDep, current_user: CurrentUser, user_id: uuid.UUID) -> Message:
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     if user == current_user:
-        raise HTTPException(
-            status_code=403, detail="Super users are not allowed to delete themselves"
-        )
-    session.exec(delete(Item).where(col(Item.owner_id) == user_id))  # type: ignore
-    session.exec(delete(UsuarioOrganizacion).where(col(UsuarioOrganizacion.usuario_id) == user_id))  # type: ignore
+        raise HTTPException(status_code=403, detail="Super users are not allowed to delete themselves")
+    session.exec(delete(Item).where(col(Item.owner_id) == user_id))
+    session.exec(delete(UsuarioOrganizacion).where(col(UsuarioOrganizacion.usuario_id) == user_id))
     session.delete(user)
     session.commit()
     return Message(message="User deleted successfully")
 
 
-# ── RF-12: Alta de usuarios por empresa ────────────────────────────────────────
+# ── RF-12 ──────────────────────────────────────────────────────────────────
 
 class UserEmpresaCreate(SQLModel):
     email: EmailStr
@@ -291,10 +232,6 @@ class SolicitarReactivacionBody(SQLModel):
 
 @router.post("/empresa", dependencies=[Depends(require_admin_or_superuser)], response_model=UserPublic)
 def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> Any:
-    """
-    Crea un usuario empresarial con estado pendiente_activacion.
-    Envía correo con link de activación (72h).
-    """
     existing = crud.get_user_by_email(session=session, email=user_in.email)
     if existing:
         raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
@@ -313,9 +250,10 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
         token_activacion_expira=datetime.now(timezone.utc) + timedelta(hours=72),
     )
     session.add(user)
-    session.flush()  # INSERT user antes de la membresía para satisfacer el FK
+    session.flush()
 
     if user_in.organizacion_id:
+        from app.models.organizacion import UsuarioOrganizacion
         membresia = UsuarioOrganizacion(
             organizacion_id=user_in.organizacion_id,
             usuario_id=user.id,
@@ -334,17 +272,18 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
 
 
 @router.post("/activar", response_model=Message)
-def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
-    """
-    Ruta pública. El empleado establece su contraseña y activa su cuenta.
-    El token se invalida al usarse (uso único).
-    """
+@limiter.limit("10/minute")  # FND-002
+def activar_cuenta(request: Request, session: SessionDep, body: ActivarCuentaBody) -> Any:
     user = session.exec(select(User).where(User.token_activacion == body.token)).first()
-
     if not user:
         raise HTTPException(status_code=400, detail="Token inválido")
 
-    if user.token_activacion_expira is None or datetime.now(timezone.utc) > user.token_activacion_expira.replace(tzinfo=timezone.utc):
+    expira = user.token_activacion_expira
+    if expira is None:
+        raise HTTPException(status_code=400, detail="Token expirado")
+    if expira.tzinfo is None:
+        expira = expira.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expira:
         raise HTTPException(status_code=400, detail="Token expirado")
 
     user.hashed_password = get_password_hash(body.new_password)
@@ -358,11 +297,8 @@ def activar_cuenta(session: SessionDep, body: ActivarCuentaBody) -> Any:
 
 
 @router.post("/solicitar-reactivacion", response_model=Message)
-def solicitar_reactivacion(*, session: SessionDep, body: SolicitarReactivacionBody) -> Any:
-    """
-    Ruta pública. El empleado solicita un nuevo enlace de activación ingresando su correo.
-    Solo funciona si el usuario está en estado pendiente_activacion.
-    """
+@limiter.limit("5/hour")  # FND-002
+def solicitar_reactivacion(request: Request, *, session: SessionDep, body: SolicitarReactivacionBody) -> Any:
     user = crud.get_user_by_email(session=session, email=body.email)
     if not user or user.estado != EstadoUsuario.PENDIENTE_ACTIVACION:
         return Message(message="Si el correo existe y está pendiente de activación, recibirás un nuevo enlace.")
@@ -382,9 +318,6 @@ def solicitar_reactivacion(*, session: SessionDep, body: SolicitarReactivacionBo
 
 @router.post("/{user_id}/reenviar-activacion", dependencies=[Depends(require_admin_or_superuser)], response_model=Message)
 def reenviar_activacion(*, session: SessionDep, user_id: uuid.UUID) -> Any:
-    """
-    Regenera el token de activación y reenvía el correo.
-    """
     user = session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")

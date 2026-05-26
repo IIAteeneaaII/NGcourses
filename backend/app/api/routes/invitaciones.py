@@ -1,7 +1,8 @@
 import hashlib
 import logging
+import secrets  # ← AGREGAR
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone  # ← agregar timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -11,6 +12,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models._enums import EstadoInscripcion
+from app.utils import generate_reset_password_email, send_email  # ← AGREGAR
 
 logger = logging.getLogger(__name__)
 
@@ -56,7 +58,9 @@ class CanjearResponse(SQLModel):
     curso_titulo: str
     email: str
     usuario_creado: bool
-    password_temporal: str | None = None  # Solo si la cuenta fue creada en este momento
+    # password_temporal ELIMINADO: ya no se expone nunca en la respuesta.
+    # Si se creó cuenta nueva, el usuario recibe un email con link para
+    # establecer su contraseña.
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -65,7 +69,7 @@ class CanjearResponse(SQLModel):
 def _estado_invitacion(inv: Any) -> str:
     if inv.usado_en is not None:
         return "usada"
-    if inv.expira_en < datetime.utcnow():
+    if inv.expira_en < datetime.now(timezone.utc):  # ← timezone-aware
         return "expirada"
     return "pendiente"
 
@@ -92,7 +96,7 @@ def canjear_invitacion(
     body: CanjearRequest,
 ) -> Any:
     """Endpoint público. Canjea un token de invitación, crea la cuenta si es
-    nuevo usuario, y retorna la contraseña temporal para mostrarla en pantalla."""
+    nuevo usuario, y envía email con link para establecer contraseña."""
     token_hash = hashlib.sha256(body.token.encode()).hexdigest()
     inv = crud.get_invitacion_by_token_hash(session=session, token_hash=token_hash)
 
@@ -100,30 +104,42 @@ def canjear_invitacion(
         raise HTTPException(status_code=404, detail="Invitación no válida")
     if inv.usado_en is not None:
         raise HTTPException(status_code=409, detail="Esta invitación ya fue utilizada")
-    if inv.expira_en < datetime.utcnow():
+    if inv.expira_en < datetime.now(timezone.utc):  # ← timezone-aware
         raise HTTPException(status_code=410, detail="Esta invitación ha expirado")
 
-    # Si el creador de la invitación pertenece a una organización (supervisor),
-    # el usuario canjeado queda automáticamente vinculado a esa organización.
     org_info = crud.get_organizacion_of_user(
         session=session, user_id=inv.creado_por
     )
     creador_org_id = org_info[0].id if org_info else None
 
-    # Crear cuenta si no existe — la contraseña se retorna solo en este momento
-    user, usuario_creado, password_temporal = crud.get_or_create_user_by_email(
+    # crud ahora retorna reset_token (no password_temporal)
+    user, usuario_creado, reset_token = crud.get_or_create_user_by_email(
         session=session, email=inv.email, organizacion_id=creador_org_id,
     )
 
     db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
     curso_titulo = db_curso.titulo if db_curso else ""
 
+    # Si se creó cuenta nueva: enviar email con link para establecer contraseña
+    # La contraseña temporal NUNCA se retorna en la respuesta ni se muestra en pantalla
+    if usuario_creado and reset_token and settings.emails_enabled:
+        email_data = generate_reset_password_email(
+            email_to=user.email,
+            email=user.email,
+            token=reset_token,
+        )
+        send_email(
+            email_to=user.email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
     # Si ya está inscrito: marcar usado y retornar
     existing = crud.get_inscripcion_by_usuario_curso(
         session=session, usuario_id=user.id, curso_id=inv.curso_id
     )
     if existing:
-        inv.usado_en = datetime.utcnow()
+        inv.usado_en = datetime.now(timezone.utc)  # ← timezone-aware
         session.add(inv)
         session.commit()
         return CanjearResponse(
@@ -132,7 +148,7 @@ def canjear_invitacion(
             curso_titulo=curso_titulo,
             email=inv.email,
             usuario_creado=usuario_creado,
-            password_temporal=password_temporal,
+            # password_temporal eliminado
         )
 
     inscripcion = crud.canjear_invitacion(
@@ -144,7 +160,7 @@ def canjear_invitacion(
         curso_titulo=curso_titulo,
         email=inv.email,
         usuario_creado=usuario_creado,
-        password_temporal=password_temporal,
+        # password_temporal eliminado
     )
 
 
