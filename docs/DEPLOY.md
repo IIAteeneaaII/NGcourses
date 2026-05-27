@@ -12,7 +12,7 @@ Las migraciones Alembic corren solas dentro del servicio `prestart` del compose,
 
 ### 1. OIDC Provider en AWS
 
-Si la cuenta `314679576825` todavía no tiene el provider de GitHub:
+Si la cuenta `<AWS_ACCOUNT_ID>` todavía no tiene el provider de GitHub:
 
 ```bash
 aws iam create-open-id-connect-provider \
@@ -31,7 +31,7 @@ aws iam create-open-id-connect-provider \
   "Statement": [{
     "Effect": "Allow",
     "Principal": {
-      "Federated": "arn:aws:iam::314679576825:oidc-provider/token.actions.githubusercontent.com"
+      "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
     },
     "Action": "sts:AssumeRoleWithWebIdentity",
     "Condition": {
@@ -68,8 +68,8 @@ aws iam create-open-id-connect-provider \
         "ecr:BatchGetImage"
       ],
       "Resource": [
-        "arn:aws:ecr:us-west-2:314679576825:repository/ngcourses-frontend",
-        "arn:aws:ecr:us-west-2:314679576825:repository/ngcourses-backend"
+        "arn:aws:ecr:us-west-2:<AWS_ACCOUNT_ID>:repository/ngcourses-frontend",
+        "arn:aws:ecr:us-west-2:<AWS_ACCOUNT_ID>:repository/ngcourses-backend"
       ]
     }
   ]
@@ -82,7 +82,7 @@ En `Settings → Secrets and variables → Actions → New repository secret`:
 
 | Secret | Valor |
 | --- | --- |
-| `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::314679576825:role/GitHubActionsDeployRole` |
+| `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHubActionsDeployRole` |
 | `EC2_HOST` | `44.250.178.54` |
 | `EC2_USER` | `ec2-user` |
 | `EC2_SSH_KEY` | Contenido completo de `ngcourses-key.pem` (incluyendo `-----BEGIN ...-----` y `-----END ...-----`) |
@@ -98,9 +98,9 @@ aws ecr describe-images --repository-name ngcourses-frontend --region us-west-2 
 
 # Volver a un SHA anterior
 SHA=abc1234...
-docker pull 314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA
-docker tag 314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA \
-          314679576825.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:latest
+docker pull <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA
+docker tag <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA \
+          <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:latest
 docker compose -f docker-compose.prod.yml up -d frontend
 ```
 
@@ -119,3 +119,4 @@ curl http://44.250.178.54:8000/api/v1/utils/health-check/
 ssh -i ngcourses-key.pem ec2-user@44.250.178.54 \
   'docker compose -f docker-compose.prod.yml ps'
 ```
+
