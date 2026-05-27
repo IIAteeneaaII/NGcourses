@@ -1,7 +1,7 @@
 services:
 
   prestart:
-    image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-backend:latest'
+    image: "${ECR_REGISTRY}/${DOCKER_IMAGE_BACKEND}:latest"
     command: bash scripts/prestart.sh
     env_file:
       - .env.prod
@@ -9,7 +9,7 @@ services:
       - POSTGRES_SERVER=ngcourses-db.cri26yqcirpz.us-west-2.rds.amazonaws.com
 
   backend:
-    image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-backend:latest'
+    image: "${ECR_REGISTRY}/${DOCKER_IMAGE_FRONTEND}:latest"
     restart: always
     depends_on:
       prestart:
@@ -31,7 +31,7 @@ services:
       retries: 5
 
   frontend:
-    image: '[AWS_ECR_REGISTRY_REDACTED]/ngcourses-frontend:latest'
+    image: "${ECR_REGISTRY}/${DOCKER_IMAGE_FRONTEND}:latest"
     restart: always
     ports:
       - "80:3000"
@@ -43,3 +43,4 @@ services:
 
 volumes:
   media_data:
+
