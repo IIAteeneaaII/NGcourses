@@ -4,7 +4,7 @@ const isDev = process.env.NODE_ENV !== "production";
 
 const apiHttpOrigins = [
   "http://localhost:8000",
-  "http://44.250.178.54:8000",
+  "https://api.nextgenia.lat",
 ];
 
 const cspDirectives = [
@@ -72,9 +72,8 @@ const nextConfig: NextConfig = {
         pathname: "/**",
       },
       {
-        protocol: "http",
-        hostname: "44.250.178.54",
-        port: "8000",
+        protocol: "https",
+        hostname: "api.nextgenia.lat",
         pathname: "/**",
       },
       {
