@@ -6,7 +6,7 @@
 set -euo pipefail
 
 AWS_REGION="us-west-2"
-AWS_ACCOUNT="314679576825"
+AWS_REGION="${AWS_REGION:-us-west-2}"
 ECR_REPO="${AWS_ACCOUNT}.dkr.ecr.${AWS_REGION}.amazonaws.com/ngcourses-frontend"
 IMAGE_TAG="latest"
 SERVER="ec2-user@44.250.178.54"
@@ -42,7 +42,7 @@ cd ~
 
 echo "  Login a ECR..."
 aws ecr get-login-password --region us-west-2 \
-  | docker login --username AWS --password-stdin 314679576825.dkr.ecr.us-west-2.amazonaws.com 2>&1 | grep -v WARNING
+  | docker login --username AWS --password-stdin $ECR_REGISTRY 2>&1 | grep -v WARNING
 
 echo "  Pulling nueva imagen..."
 docker-compose -f docker-compose.prod.yml pull frontend
@@ -59,3 +59,4 @@ echo ""
 echo "================================================"
 echo " ✓ Deploy completado exitosamente"
 echo "================================================"
+
