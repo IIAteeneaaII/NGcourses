@@ -1,122 +1,73 @@
-# Deploy automático a AWS
+# Deploy a AWS EC2 (nextgenia.lat)
 
-Cada `push` a `main` que toque `frontend/`, `backend/` o `docker-compose.prod.yml` dispara el workflow [.github/workflows/deploy.yml](../.github/workflows/deploy.yml), que:
+Despliegue de la EC2 **propia** (cuenta `582367504828`), build **en el servidor** (sin ECR).
+Cada `push` a `main` que toque `frontend/`, `backend/` o los compose dispara
+[.github/workflows/deploy.yml](../.github/workflows/deploy.yml), que:
 
-1. Buildea las imágenes de frontend y backend en paralelo.
-2. Las sube a ECR con dos tags: `latest` y el SHA del commit.
-3. Hace SSH al EC2, pull de las imágenes nuevas y restart del stack via `docker compose`.
+1. Empaqueta el commit (`git archive`) y lo copia por SSH a la EC2.
+2. Lo extrae en `~/NGcourses` (preserva `.env.prod`, que no está en git).
+3. Hace `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build`.
 
-Las migraciones Alembic corren solas dentro del servicio `prestart` del compose, así que no hay que orquestarlas desde el workflow.
+Las migraciones Alembic corren solas dentro del servicio `prestart` del compose
+(el `backend` depende de que termine correctamente), así que no se orquestan desde el workflow.
 
-## Setup inicial (una sola vez)
+## Arquitectura
 
-### 1. OIDC Provider en AWS
+- **Traefik** (reverse proxy + Let's Encrypt) en `docker-compose.traefik.yml`, red externa
+  `traefik-public`. Rutea por subdominio: `app.${DOMAIN}` → frontend, `api.${DOMAIN}` → backend,
+  `traefik.${DOMAIN}` → dashboard.
+- **App** en `docker-compose.prod.yml`: `frontend` (Next.js, build local), `backend` (FastAPI),
+  `db` (PostgreSQL local, volumen `app-db-data`), `prestart` (migraciones).
+- El frontend usa un **proxy BFF** (`/api/*` → `BACKEND_URL` server-side), por eso el navegador
+  solo habla con `app.${DOMAIN}` (sin CORS).
 
-Si la cuenta `<AWS_ACCOUNT_ID>` todavía no tiene el provider de GitHub:
+## Setup inicial (una sola vez en una EC2 nueva)
 
-```bash
-aws iam create-open-id-connect-provider \
-  --url https://token.actions.githubusercontent.com \
-  --client-id-list sts.amazonaws.com \
-  --thumbprint-list 6938fd4d98bab03faadb97b34396831e3780aea1
-```
+1. Instalar Docker, crear swap, clonar el repo en `~/NGcourses`.
+2. `docker network create traefik-public`.
+3. Crear `~/NGcourses/.env.prod` (ver `.env.prod.example`) con los valores reales.
+4. Levantar Traefik: `docker compose -f docker-compose.traefik.yml --env-file .env.prod up -d`.
+5. Primer arranque de la app: `docker compose -f docker-compose.prod.yml --env-file .env.prod up -d --build`.
 
-### 2. IAM Role `GitHubActionsDeployRole`
+## GitHub Secrets requeridos
 
-**Trust policy** (solo permite a workflows del repo en la rama `main`):
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [{
-    "Effect": "Allow",
-    "Principal": {
-      "Federated": "arn:aws:iam::<AWS_ACCOUNT_ID>:oidc-provider/token.actions.githubusercontent.com"
-    },
-    "Action": "sts:AssumeRoleWithWebIdentity",
-    "Condition": {
-      "StringEquals": {
-        "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
-      },
-      "StringLike": {
-        "token.actions.githubusercontent.com:sub": "repo:IIAteeneaaII/NGcourses:ref:refs/heads/main"
-      }
-    }
-  }]
-}
-```
-
-**Permissions policy** (push a los dos repos de ECR):
-
-```json
-{
-  "Version": "2012-10-17",
-  "Statement": [
-    {
-      "Effect": "Allow",
-      "Action": "ecr:GetAuthorizationToken",
-      "Resource": "*"
-    },
-    {
-      "Effect": "Allow",
-      "Action": [
-        "ecr:BatchCheckLayerAvailability",
-        "ecr:InitiateLayerUpload",
-        "ecr:UploadLayerPart",
-        "ecr:CompleteLayerUpload",
-        "ecr:PutImage",
-        "ecr:BatchGetImage"
-      ],
-      "Resource": [
-        "arn:aws:ecr:us-west-2:<AWS_ACCOUNT_ID>:repository/ngcourses-frontend",
-        "arn:aws:ecr:us-west-2:<AWS_ACCOUNT_ID>:repository/ngcourses-backend"
-      ]
-    }
-  ]
-}
-```
-
-### 3. GitHub Secrets
-
-En `Settings → Secrets and variables → Actions → New repository secret`:
+En `Settings → Secrets and variables → Actions` (requiere rol **Admin** del repo):
 
 | Secret | Valor |
 | --- | --- |
-| `AWS_DEPLOY_ROLE_ARN` | `arn:aws:iam::<AWS_ACCOUNT_ID>:role/GitHubActionsDeployRole` |
-| `EC2_HOST` | `44.250.178.54` |
-| `EC2_USER` | `ec2-user` |
-| `EC2_SSH_KEY` | Contenido completo de `ngcourses-key.pem` (incluyendo `-----BEGIN ...-----` y `-----END ...-----`) |
+| `EC2_HOST` | IP/EIP pública de la EC2 |
+| `EC2_USER` | usuario SSH (`ubuntu` en Ubuntu) |
+| `EC2_SSH_KEY` | contenido completo del `.pem` (incluye `-----BEGIN/END-----`) |
 
-## Rollback
+## DNS (Namecheap / proveedor del dominio)
 
-Desde el EC2:
+Registros **A** apuntando a la EIP de la EC2:
 
-```bash
-# Listar SHAs disponibles en ECR
-aws ecr describe-images --repository-name ngcourses-frontend --region us-west-2 \
-  --query 'imageDetails[*].imageTags' --output table
+- `app` → EIP  (**requerido**, único punto de entrada de la app)
+- `api` → EIP  (recomendado: webhooks Bunny/PayPal y acceso directo al API)
+- `traefik` → EIP  (opcional: dashboard)
 
-# Volver a un SHA anterior
-SHA=abc1234...
-docker pull <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA
-docker tag <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:$SHA \
-          <AWS_ACCOUNT_ID>.dkr.ecr.us-west-2.amazonaws.com/ngcourses-frontend:latest
-docker compose -f docker-compose.prod.yml up -d frontend
-```
-
-## Pausar el auto-deploy
-
-- **Temporal**: `Actions → Deploy to AWS → ··· → Disable workflow`.
-- **Permanente**: borrar `.github/workflows/deploy.yml`.
-
-El script local `scripts/deploy-frontend.sh` queda como fallback manual.
+Si se usa Cloudflare, los registros deben ir en **"DNS only"** (sin proxy) para que funcione
+el challenge TLS de Let's Encrypt. Tras propagar el DNS, Traefik emite los certificados solo.
 
 ## Verificación post-deploy
 
 ```bash
-curl -I http://44.250.178.54/
-curl http://44.250.178.54:8000/api/v1/utils/health-check/
-ssh -i ngcourses-key.pem ec2-user@44.250.178.54 \
-  'docker compose -f docker-compose.prod.yml ps'
+ssh -i <key.pem> <user>@<EIP> 'cd ~/NGcourses && docker compose -f docker-compose.prod.yml --env-file .env.prod ps'
+# health del backend (dentro del contenedor; no expone puerto al host):
+ssh -i <key.pem> <user>@<EIP> 'docker exec ngcourses-backend-1 curl -s http://localhost:8000/api/v1/utils/health-check/'
 ```
 
+## Rollback
+
+El build es del código del commit desplegado. Para volver atrás: hacer `git revert`/checkout del
+commit estable en `main` (re-dispara el deploy) o, en el server, `git`-extraer una versión previa
+y re-`up -d --build`.
+
+## Pausar el auto-deploy
+
+- **Temporal**: `Actions → Deploy to EC2 → ··· → Disable workflow`.
+- **Permanente**: borrar `.github/workflows/deploy.yml`.
+
+> Nota: `scripts/deploy-frontend.sh` y el flujo basado en ECR quedaron **obsoletos** (eran de la
+> infra del ex-empleado). No usar.
