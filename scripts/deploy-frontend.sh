@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# ⚠️ OBSOLETO — Este script pertenece a la infra vieja del ex-empleado (ECR + EC2 44.250.178.54).
+# El deploy actual es build-en-servidor sin ECR via .github/workflows/deploy.yml (ver docs/DEPLOY.md).
+# Se conserva solo como referencia histórica. NO usar.
+#
 # deploy-frontend.sh — Build, push a ECR y deploy al servidor
 # Uso: ./scripts/deploy-frontend.sh
 # Requiere: AWS CLI configurado, Docker corriendo, acceso SSH con ngcourses-key.pem
