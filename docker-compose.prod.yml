@@ -80,6 +80,8 @@ services:
     restart: always
     environment:
       - BACKEND_URL=http://backend:8000
+      # Activa HSTS + upgrade-insecure-requests en next.config.ts (ya hay TLS via Traefik)
+      - ENABLE_HTTPS=true
     depends_on:
       backend:
         condition: service_healthy

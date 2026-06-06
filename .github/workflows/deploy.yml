@@ -1,4 +1,9 @@
-name: Deploy to AWS
+name: Deploy to EC2 (nextgenia.lat)
+
+# Auto-deploy a la EC2 propia (cuenta 582367504828) en cada push a main.
+# Modelo B: el codigo se copia a la EC2 y se BUILDEA ahi (sin ECR).
+# Requiere Secrets del repo: EC2_HOST, EC2_USER, EC2_SSH_KEY.
+# El archivo .env.prod NO esta en git: debe existir ya en ~/NGcourses del server.
 
 on:
   push:
@@ -7,162 +12,81 @@ on:
       - 'frontend/**'
       - 'backend/**'
       - 'docker-compose.prod.yml'
+      - 'docker-compose.traefik.yml'
       - '.github/workflows/deploy.yml'
   workflow_dispatch:
-    inputs:
-      wipe_db:
-        description: 'DESTRUCTIVO: tirar volumen de DB antes del deploy. Solo usar cuando el historial de Alembic se reescriba (ej. squash de migraciones).'
-        type: boolean
-        default: false
 
 concurrency:
   group: deploy-production
   cancel-in-progress: false
 
-permissions:
-  id-token: write
-  contents: read
-
-env:
-  AWS_REGION: us-west-2
-  ECR_REGISTRY: [AWS_ECR_REGISTRY_REDACTED]
-
 jobs:
-  build-and-push:
-    name: Build & push (${{ matrix.service }})
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - service: frontend
-            context: ./frontend
-            repo: ngcourses-frontend
-          - service: backend
-            context: ./backend
-            repo: ngcourses-backend
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build and push image
-        uses: docker/build-push-action@v6
-        with:
-          context: ${{ matrix.context }}
-          push: true
-          tags: |
-            ${{ env.ECR_REGISTRY }}/${{ matrix.repo }}:latest
-            ${{ env.ECR_REGISTRY }}/${{ matrix.repo }}:${{ github.sha }}
-          cache-from: type=gha,scope=${{ matrix.service }}
-          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
-          build-args: |
-            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-            NEXT_PUBLIC_PAYPAL_CLIENT_ID=${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
-            NEXT_PUBLIC_PAYPAL_MODE=${{ secrets.NEXT_PUBLIC_PAYPAL_MODE }}
-            NEXT_PUBLIC_PAYPAL_CURRENCY=${{ secrets.NEXT_PUBLIC_PAYPAL_CURRENCY }}
-
   deploy:
-    name: Deploy on EC2
-    needs: build-and-push
+    name: Build & deploy on EC2
     runs-on: ubuntu-latest
     env:
+      EC2_USER: ${{ secrets.EC2_USER }}
       EC2_HOST: ${{ secrets.EC2_HOST }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Configure SSH key
+      - name: Configure SSH
         run: |
-          EC2=$(printf '%s' "$EC2_HOST" | tr -d '[:space:]')
+          if [ -z "${EC2_HOST}" ] || [ -z "${EC2_USER}" ] || [ -z "${{ secrets.EC2_SSH_KEY }}" ]; then
+            echo "::error::Faltan Secrets EC2_HOST / EC2_USER / EC2_SSH_KEY en el repo." >&2
+            exit 1
+          fi
           mkdir -p ~/.ssh
-          echo "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$EC2" >> ~/.ssh/known_hosts
+          EC2=$(printf '%s' "$EC2_HOST" | tr -d '[:space:]')
+          ssh-keyscan -H "$EC2" >> ~/.ssh/known_hosts 2>/dev/null
           echo "EC2_IP=$EC2" >> "$GITHUB_ENV"
 
-      - name: Sync docker-compose.prod.yml on EC2
-        run: |
-          scp -i ~/.ssh/deploy_key docker-compose.prod.yml "ec2-user@${EC2_IP}:~/docker-compose.prod.yml"
+      - name: Package repo (commit actual)
+        run: git archive --format=tar.gz -o /tmp/ngcourses.tar.gz HEAD
 
-      - name: Sync backend env (.env.prod) on EC2
-        env:
-          PAYPAL_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_PAYPAL_CLIENT_ID }}
-          PAYPAL_SECRET: ${{ secrets.PAYPAL_SECRET }}
-          PAYPAL_MODE: ${{ secrets.NEXT_PUBLIC_PAYPAL_MODE }}
+      - name: Copy to EC2
+        run: scp -i ~/.ssh/deploy_key /tmp/ngcourses.tar.gz "${EC2_USER}@${EC2_IP}:/tmp/ngcourses.tar.gz"
+
+      - name: Deploy (build & up on EC2)
         run: |
-          {
-            printf 'PAYPAL_CLIENT_ID=%s\n' "$PAYPAL_CLIENT_ID"
-            printf 'PAYPAL_SECRET=%s\n' "$PAYPAL_SECRET"
-            printf 'PAYPAL_MODE=%s\n' "${PAYPAL_MODE:-sandbox}"
-          } > paypal.env
-          scp -i ~/.ssh/deploy_key paypal.env "ec2-user@${EC2_IP}:~/paypal.env"
-          rm paypal.env
-          ssh -i ~/.ssh/deploy_key "ec2-user@${EC2_IP}" bash <<'REMOTE'
+          ssh -i ~/.ssh/deploy_key "${EC2_USER}@${EC2_IP}" 'bash -s' <<'REMOTE'
           set -euo pipefail
-          cd ~
-          touch .env.prod
-          grep -v '^PAYPAL_CLIENT_ID=\|^PAYPAL_SECRET=\|^PAYPAL_MODE=' .env.prod > .env.prod.tmp || true
-          mv .env.prod.tmp .env.prod
-          printf '\n' >> .env.prod
-          cat paypal.env >> .env.prod
-          rm paypal.env
-          REMOTE
+          APP_DIR="$HOME/NGcourses"
+          mkdir -p "$APP_DIR"
 
-      - name: SSH and restart compose
-        env:
-          WIPE_DB: ${{ inputs.wipe_db }}
-        run: |
-          ssh -i ~/.ssh/deploy_key "ec2-user@${EC2_IP}" "WIPE_DB=${WIPE_DB:-false} bash -s" <<'REMOTE'
-          set -euo pipefail
-          cd ~
+          # Extraer el codigo nuevo sobre el directorio (preserva .env.prod, gitignored)
+          tar -xzf /tmp/ngcourses.tar.gz -C "$APP_DIR"
+          rm -f /tmp/ngcourses.tar.gz
+          cd "$APP_DIR"
 
-          if [ "${WIPE_DB:-false}" = "true" ]; then
-            echo "!!! WIPE_DB=true: tirando containers + volumen local (media)"
-            docker-compose -f docker-compose.prod.yml down -v
+          if [ ! -f .env.prod ]; then
+            echo "ERROR: falta .env.prod en $APP_DIR (no esta en git; debe existir en el server)" >&2
+            exit 1
           fi
 
-          echo "Login to ECR..."
-          aws ecr get-login-password --region us-west-2 \
-            | docker login --username AWS --password-stdin [AWS_ECR_REGISTRY_REDACTED]
+          # docker compose v2 (plugin) o v1 (binario)
+          if docker compose version >/dev/null 2>&1; then DC="docker compose"; else DC="docker-compose"; fi
 
-          echo "Pulling new images..."
-          docker-compose -f docker-compose.prod.yml pull
+          # Red externa de Traefik (idempotente)
+          docker network inspect traefik-public >/dev/null 2>&1 || docker network create traefik-public
 
-          if [ "${WIPE_DB:-false}" = "true" ]; then
-            echo "!!! WIPE_DB=true: borrando esquema 'public' en RDS"
-            docker-compose -f docker-compose.prod.yml run --rm --no-deps prestart python app/wipe_schema.py
-
-            echo "Levantando stack completo sobre DB vacia..."
-            docker-compose -f docker-compose.prod.yml up -d
-          else
-            echo "Running media-init (fix volume permissions)..."
-            docker-compose -f docker-compose.prod.yml run --rm --no-deps media-init
-
-            echo "Running migrations..."
-            docker-compose -f docker-compose.prod.yml run --rm --no-deps prestart
-
-            echo "Recreating backend (to pick up env changes)..."
-            docker-compose -f docker-compose.prod.yml up -d --force-recreate --no-deps backend
-
-            echo "Restarting other services..."
-            docker-compose -f docker-compose.prod.yml up -d
+          # Asegurar Traefik arriba (no se recrea si ya corre; recrear a mano si cambia su compose)
+          if ! docker ps --format '{{.Names}}' | grep -q '^ngcourses-traefik-1$'; then
+            echo ">> Levantando Traefik..."
+            $DC -f docker-compose.traefik.yml --env-file .env.prod up -d
           fi
 
-          echo "Status:"
-          docker-compose -f docker-compose.prod.yml ps
+          # Build + arranque de la app. 'prestart' corre las migraciones Alembic
+          # automaticamente (backend depende de su finalizacion correcta).
+          echo ">> Build & up de la app (esto puede tardar varios minutos)..."
+          $DC -f docker-compose.prod.yml --env-file .env.prod up -d --build
 
-          echo "Pruning dangling images..."
+          echo ">> Estado de los servicios:"
+          $DC -f docker-compose.prod.yml --env-file .env.prod ps
+
+          echo ">> Limpieza de imagenes huerfanas..."
           docker image prune -f
           REMOTE

@@ -25,3 +25,6 @@ npm-debug.log*
 
 # Permisos de claude
 .claude/
+
+# Contexto local del proyecto (NO subir: contiene EIP, IDs de cuenta AWS, infra)
+ncourses.md
