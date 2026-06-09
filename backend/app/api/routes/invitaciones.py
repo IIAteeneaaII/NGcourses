@@ -2,7 +2,7 @@ import hashlib
 import logging
 import secrets  # ← AGREGAR
 import uuid
-from datetime import datetime, timezone  # ← agregar timezone
+from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
@@ -69,7 +69,7 @@ class CanjearResponse(SQLModel):
 def _estado_invitacion(inv: Any) -> str:
     if inv.usado_en is not None:
         return "usada"
-    if inv.expira_en < datetime.now(timezone.utc):  # ← timezone-aware
+    if inv.expira_en < datetime.utcnow():
         return "expirada"
     return "pendiente"
 
@@ -104,7 +104,7 @@ def canjear_invitacion(
         raise HTTPException(status_code=404, detail="Invitación no válida")
     if inv.usado_en is not None:
         raise HTTPException(status_code=409, detail="Esta invitación ya fue utilizada")
-    if inv.expira_en < datetime.now(timezone.utc):  # ← timezone-aware
+    if inv.expira_en < datetime.utcnow():
         raise HTTPException(status_code=410, detail="Esta invitación ha expirado")
 
     org_info = crud.get_organizacion_of_user(
@@ -139,7 +139,7 @@ def canjear_invitacion(
         session=session, usuario_id=user.id, curso_id=inv.curso_id
     )
     if existing:
-        inv.usado_en = datetime.now(timezone.utc)  # ← timezone-aware
+        inv.usado_en = datetime.utcnow()
         session.add(inv)
         session.commit()
         return CanjearResponse(
