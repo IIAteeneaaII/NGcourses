@@ -11,10 +11,11 @@ from sqlmodel import SQLModel, func, select
 logger = logging.getLogger(__name__)
 
 from app import crud
-from app.api.deps import CurrentUser, InstructorOrAbove, SessionDep, get_current_active_superuser
+from app.api.deps import AdminOrSuperuser, CurrentUser, SessionDep, get_current_active_superuser
 from app.core.config import settings
 from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
 from app.models.inscripcion import Inscripcion
+from app.models.user import User
 from app.models.contenido import (
     BunnyVideoInitResponse,
     BunnyVideoStatusResponse,
@@ -159,6 +160,23 @@ def get_curso(
     if not is_admin and not is_owner and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
+    # Acceso al CONTENIDO reproducible: admin/instructor siempre; el alumno solo
+    # con inscripción ACTIVA. Sin inscripción activa (o cancelada/dada de baja)
+    # se devuelve la estructura como preview, pero sin video/quiz/recursos.
+    # Esto hace que "dar de baja del curso" revoque el acceso de verdad.
+    inscripcion = crud.get_inscripcion_by_usuario_curso(
+        session=session, usuario_id=current_user.id, curso_id=curso_id
+    )
+    # Activa = cursando; finalizada = completado (puede repasar/ver certificado).
+    # Cancelado (dado de baja) o sin inscripción → sin acceso al contenido.
+    tiene_acceso_contenido = (
+        is_admin or is_owner
+        or (
+            inscripcion is not None
+            and inscripcion.estado in {EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA}
+        )
+    )
+
     # Cargar módulos y lecciones en 2 queries (evita N+1) — ISO 25010 §6.4
     modulos_db = crud.get_modulos(session=session, curso_id=curso_id)
     lecciones_map = crud.get_lecciones_for_modulos(
@@ -167,10 +185,19 @@ def get_curso(
     modulos = []
     for m in modulos_db:
         modulo_data = ModuloPublic.model_validate(m, from_attributes=True)
-        modulo_data.lecciones = [
-            LeccionPublic.model_validate(l, from_attributes=True)
-            for l in lecciones_map.get(m.id, [])
-        ]
+        lecciones = []
+        for l in lecciones_map.get(m.id, []):
+            lp = LeccionPublic.model_validate(l, from_attributes=True)
+            if not tiene_acceso_contenido:
+                # Preview: se conservan título/orden/duración/tipo, pero NO el
+                # contenido consumible (URL de video, datos de quiz, recursos).
+                lp.hls_url = None
+                lp.bunny_video_id = None
+                lp.thumbnail_url = None
+                lp.contenido = None
+                lp.recursos = []
+            lecciones.append(lp)
+        modulo_data.lecciones = lecciones
         modulos.append(modulo_data)
 
     curso_data = CursoDetalle.model_validate(db_curso, from_attributes=True)
@@ -338,6 +365,35 @@ async def upload_cover(
 
 # ── Módulos ───────────────────────────────────────────────────────────────────
 
+
+def _tiene_acceso_contenido(session: SessionDep, current_user: User, db_curso: Any) -> bool:
+    """True si el usuario puede ver el CONTENIDO reproducible del curso:
+    admin/instructor propietario siempre; alumno solo con inscripción activa o
+    finalizada. Cancelado (dado de baja) o sin inscripción → False."""
+    is_admin = current_user.is_superuser or current_user.rol in {
+        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+    }
+    if is_admin or current_user.id == db_curso.instructor_id:
+        return True
+    insc = crud.get_inscripcion_by_usuario_curso(
+        session=session, usuario_id=current_user.id, curso_id=db_curso.id
+    )
+    return insc is not None and insc.estado in {
+        EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA
+    }
+
+
+def _strip_leccion_sin_acceso(lp: "LeccionPublic", tiene_acceso: bool) -> "LeccionPublic":
+    """Quita el contenido consumible (video/quiz/recursos) si no hay acceso."""
+    if not tiene_acceso:
+        lp.hls_url = None
+        lp.bunny_video_id = None
+        lp.thumbnail_url = None
+        lp.contenido = None
+        lp.recursos = []
+    return lp
+
+
 @router.get("/{curso_id}/modulos", response_model=list[ModuloPublic])
 def list_modulos(
     curso_id: uuid.UUID,
@@ -349,12 +405,16 @@ def list_modulos(
     if not db_curso:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
+    tiene_acceso = _tiene_acceso_contenido(session, current_user, db_curso)
     modulos_db = crud.get_modulos(session=session, curso_id=curso_id)
     result = []
     for m in modulos_db:
         lecciones = crud.get_lecciones(session=session, modulo_id=m.id)
         modulo_data = ModuloPublic.model_validate(m, from_attributes=True)
-        modulo_data.lecciones = [LeccionPublic.model_validate(l, from_attributes=True) for l in lecciones]
+        modulo_data.lecciones = [
+            _strip_leccion_sin_acceso(LeccionPublic.model_validate(l, from_attributes=True), tiene_acceso)
+            for l in lecciones
+        ]
         result.append(modulo_data)
     return result
 
@@ -447,8 +507,13 @@ def list_lecciones(
     if not db_modulo or db_modulo.curso_id != curso_id:
         raise HTTPException(status_code=404, detail="Módulo no encontrado")
 
+    db_curso = crud.get_curso(session=session, curso_id=curso_id)
+    tiene_acceso = bool(db_curso) and _tiene_acceso_contenido(session, current_user, db_curso)
     lecciones = crud.get_lecciones(session=session, modulo_id=modulo_id)
-    return [LeccionPublic.model_validate(l, from_attributes=True) for l in lecciones]
+    return [
+        _strip_leccion_sin_acceso(LeccionPublic.model_validate(l, from_attributes=True), tiene_acceso)
+        for l in lecciones
+    ]
 
 
 @router.post("/{curso_id}/modulos/{modulo_id}/lecciones", response_model=LeccionPublic, status_code=201)
@@ -842,7 +907,10 @@ def delete_recurso(
     return Message(message="Recurso eliminado exitosamente")
 
 
-# ── Invitaciones por curso (instructor) ───────────────────────────────────────
+# ── Invitaciones por curso (solo admin) ───────────────────────────────────────
+# NOTA: el instructor NO puede enviar invitaciones; su flujo se limita a crear el
+# curso y solicitar su publicación. Las invitaciones a alumnos las gestionan el
+# administrador (este router y /invitaciones/*) y el supervisor (/supervisor/*).
 
 
 class _InvitarBody(SQLModel):
@@ -893,7 +961,7 @@ def invitar_a_curso(
     *,
     curso_id: uuid.UUID,
     session: SessionDep,
-    current_user: InstructorOrAbove,
+    current_user: AdminOrSuperuser,
     body: _InvitarBody,
 ) -> Any:
     """Envía invitaciones por email para un curso propio del instructor."""
@@ -947,7 +1015,7 @@ def listar_invitaciones_curso_instructor(
     *,
     curso_id: uuid.UUID,
     session: SessionDep,
-    current_user: InstructorOrAbove,
+    current_user: AdminOrSuperuser,
 ) -> Any:
     """Lista las invitaciones de un curso propio del instructor."""
     _require_curso_instructor_access(session, curso_id, current_user)
@@ -971,7 +1039,7 @@ def reenviar_invitacion_curso(
     curso_id: uuid.UUID,
     invitacion_id: uuid.UUID,
     session: SessionDep,
-    current_user: InstructorOrAbove,
+    current_user: AdminOrSuperuser,
 ) -> Any:
     """Reenvía una invitación de un curso propio del instructor."""
     curso = _require_curso_instructor_access(session, curso_id, current_user)
@@ -1003,7 +1071,7 @@ def revocar_invitacion_curso(
     curso_id: uuid.UUID,
     invitacion_id: uuid.UUID,
     session: SessionDep,
-    current_user: InstructorOrAbove,
+    current_user: AdminOrSuperuser,
 ) -> None:
     """Revoca una invitación pendiente de un curso propio del instructor."""
     _require_curso_instructor_access(session, curso_id, current_user)

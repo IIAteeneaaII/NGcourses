@@ -40,6 +40,9 @@ class ApiClient {
     const response = await fetch(url, {
       ...options,
       headers,
+      // Nunca servir datos autenticados desde caché del navegador: evita que,
+      // tras revocar acceso/baja de curso, una respuesta vieja siga vigente.
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -53,7 +56,13 @@ class ApiClient {
         ['user_rol', 'user_superuser'].forEach(k => {
           document.cookie = `${k}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         });
-        if (window.location.pathname !== '/') {
+        // No botar al login en rutas públicas: un visitante sin sesión que abre
+        // p.ej. /activar o /invitacion no debe ser redirigido a session_expired
+        // por la sonda de sesión global (ProfileSetupGate -> authApi.me()).
+        const publicPrefixes = ['/invitacion', '/activar', '/reset-password', '/forgot-password'];
+        const path = window.location.pathname;
+        const isPublic = path === '/' || publicPrefixes.some((p) => path.startsWith(p));
+        if (!isPublic) {
           window.location.href = '/?error=session_expired';
         }
         return undefined as T;
@@ -347,17 +356,6 @@ export const certificadosApi = {
     document.body.removeChild(a);
     URL.revokeObjectURL(objectUrl);
   },
-};
-
-export const instructorInvitacionesApi = {
-  enviar: (curso_id: string, emails: string[]) =>
-    apiClient.post(`/api/v1/cursos/${curso_id}/invitaciones`, { emails }),
-  listar: (curso_id: string) =>
-    apiClient.get(`/api/v1/cursos/${curso_id}/invitaciones`),
-  reenviar: (curso_id: string, inv_id: string) =>
-    apiClient.post(`/api/v1/cursos/${curso_id}/invitaciones/${inv_id}/reenviar`, {}),
-  revocar: (curso_id: string, inv_id: string) =>
-    apiClient.delete(`/api/v1/cursos/${curso_id}/invitaciones/${inv_id}`),
 };
 
 export const invitacionesApi = {

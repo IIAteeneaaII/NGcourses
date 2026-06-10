@@ -31,7 +31,7 @@ from app.models import (
 )
 from app.models._enums import EstadoUsuario, RolOrganizacion, RolUsuario
 from app.models.organizacion import UsuarioOrganizacion
-from app.utils import generate_activacion_email, generate_new_account_email, send_email
+from app.utils import generate_activacion_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -93,12 +93,23 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Admin
         )
 
     user = crud.create_user(session=session, user_create=user_in)
-    if settings.emails_enabled and user_in.email:
-        email_data = generate_new_account_email(
-            email_to=user_in.email, username=user_in.email, password=user_in.password
-        )
+
+    # Toda cuenta nueva nace pendiente de activación: el usuario establece su
+    # propia contraseña por el enlace del correo (/activar). La contraseña NO se
+    # envía por correo ni la cuenta puede iniciar sesión hasta activarse.
+    token = secrets.token_urlsafe(32)
+    user.estado = EstadoUsuario.PENDIENTE_ACTIVACION
+    user.is_active = False
+    user.token_activacion = token
+    user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+
+    if settings.emails_enabled and user.email:
+        email_data = generate_activacion_email(email_to=user.email, token=token)
         send_email(
-            email_to=user_in.email,
+            email_to=user.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
         )

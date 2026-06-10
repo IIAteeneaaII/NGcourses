@@ -88,12 +88,18 @@ def create_user_by_admin(
     return db_obj, reset_token
 
 def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
+    from app.models._enums import EstadoUsuario
+
     user_data = user_in.model_dump(exclude_unset=True)
     extra_data = {}
     if "password" in user_data:
         password = user_data["password"]
         hashed_password = get_password_hash(password)
         extra_data["hashed_password"] = hashed_password
+    # Mantener is_active en sincronía con estado: el guardia de auth valida
+    # is_active, así que al suspender (o reactivar) hay que reflejarlo ahí.
+    if "estado" in user_data:
+        extra_data["is_active"] = user_data["estado"] == EstadoUsuario.ACTIVO
     db_user.sqlmodel_update(user_data, update=extra_data)
     session.add(db_user)
     session.commit()
@@ -992,24 +998,45 @@ def reenviar_invitacion(
 def get_or_create_user_by_email(
     *, session: Session, email: str, organizacion_id: uuid.UUID | None = None
 ) -> tuple[User, bool, str | None]:
-    """Retorna (usuario, creado, reset_token).
-    reset_token solo tiene valor cuando creado=True; es un token de un solo uso
-    para que el usuario establezca su contraseña. Nunca se expone la contraseña."""
+    """Retorna (usuario, creado, token_activacion).
+
+    El token de activación tiene valor cuando se crea una cuenta nueva, o cuando
+    el usuario ya existe pero sigue PENDIENTE_ACTIVACION (se regenera para poder
+    reenviar el correo). Es de un solo uso y se canjea en /activar. Nunca se
+    expone ninguna contraseña."""
+    from datetime import timezone
+
+    from app.models._enums import EstadoUsuario
+
     user = get_user_by_email(session=session, email=email)
     if user:
         if organizacion_id is not None:
             _ensure_user_in_org(session=session, user_id=user.id, organizacion_id=organizacion_id)
+        # Usuario invitado antes que nunca activó: regenerar token y devolverlo
+        # para que el llamador reenvíe el correo de activación.
+        if user.estado == EstadoUsuario.PENDIENTE_ACTIVACION:
+            token = secrets.token_urlsafe(32)
+            user.token_activacion = token
+            user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+            return user, False, token
         return user, False, None
 
-    # Contraseña aleatoria, el usuario nunca la usa directamente
+    # Contraseña placeholder aleatoria: el usuario la reemplaza al activar.
     temp_password = secrets.token_urlsafe(16)
     user_create = UserCreate(email=email, password=temp_password, rol=RolUsuario.ESTUDIANTE)
     new_user = create_user(session=session, user_create=user_create)
 
-    # Generar token de reset para que el usuario establezca su propia contraseña
-    reset_token = secrets.token_urlsafe(32)
-    new_user.password_reset_token = reset_token
-    new_user.password_reset_expira = datetime.now(timezone.utc) + timedelta(hours=72)
+    # Cuenta sin verificar: NO puede iniciar sesión hasta activarla por el enlace
+    # del correo (/activar). Ver activar_cuenta en routes/users.py.
+    new_user.is_active = False
+    new_user.estado = EstadoUsuario.PENDIENTE_ACTIVACION
+
+    token = secrets.token_urlsafe(32)
+    new_user.token_activacion = token
+    new_user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
@@ -1018,7 +1045,7 @@ def get_or_create_user_by_email(
         _ensure_user_in_org(
             session=session, user_id=new_user.id, organizacion_id=organizacion_id
         )
-    return new_user, True, reset_token
+    return new_user, True, token
 
 def _ensure_user_in_org(
     *, session: Session, user_id: uuid.UUID, organizacion_id: uuid.UUID,

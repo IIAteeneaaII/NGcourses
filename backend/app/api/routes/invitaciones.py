@@ -12,7 +12,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models._enums import EstadoInscripcion
-from app.utils import generate_reset_password_email, send_email  # ← AGREGAR
+from app.utils import generate_activacion_email, send_email
 
 logger = logging.getLogger(__name__)
 
@@ -58,9 +58,9 @@ class CanjearResponse(SQLModel):
     curso_titulo: str
     email: str
     usuario_creado: bool
-    # password_temporal ELIMINADO: ya no se expone nunca en la respuesta.
-    # Si se creó cuenta nueva, el usuario recibe un email con link para
-    # establecer su contraseña.
+    # True cuando la cuenta debe activarse (nueva o pendiente): el front muestra
+    # "revisa tu correo" en lugar de "inicia sesión". Nunca se expone contraseña.
+    requiere_activacion: bool = False
 
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
@@ -112,21 +112,22 @@ def canjear_invitacion(
     )
     creador_org_id = org_info[0].id if org_info else None
 
-    # crud ahora retorna reset_token (no password_temporal)
-    user, usuario_creado, reset_token = crud.get_or_create_user_by_email(
+    # crud retorna un token de activación cuando la cuenta es nueva o sigue
+    # pendiente de activar (para reenviar el correo). Nunca se expone contraseña.
+    user, usuario_creado, activacion_token = crud.get_or_create_user_by_email(
         session=session, email=inv.email, organizacion_id=creador_org_id,
     )
+    requiere_activacion = bool(activacion_token)
 
     db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
     curso_titulo = db_curso.titulo if db_curso else ""
 
-    # Si se creó cuenta nueva: enviar email con link para establecer contraseña
-    # La contraseña temporal NUNCA se retorna en la respuesta ni se muestra en pantalla
-    if usuario_creado and reset_token and settings.emails_enabled:
-        email_data = generate_reset_password_email(
+    # Cuenta nueva o pendiente: enviar email con link a /activar para que el
+    # usuario establezca su contraseña. La contraseña NUNCA se envía ni se muestra.
+    if activacion_token and settings.emails_enabled:
+        email_data = generate_activacion_email(
             email_to=user.email,
-            email=user.email,
-            token=reset_token,
+            token=activacion_token,
         )
         send_email(
             email_to=user.email,
@@ -139,16 +140,22 @@ def canjear_invitacion(
         session=session, usuario_id=user.id, curso_id=inv.curso_id
     )
     if existing:
+        # Retorno de un alumno dado de baja: una nueva invitación reactiva su
+        # inscripción cancelada. Activa/finalizada se dejan como están.
+        if existing.estado == EstadoInscripcion.CANCELADO:
+            existing.estado = EstadoInscripcion.ACTIVA
+            session.add(existing)
         inv.usado_en = datetime.utcnow()
         session.add(inv)
         session.commit()
+        session.refresh(existing)
         return CanjearResponse(
             inscripcion_id=existing.id,
             curso_id=inv.curso_id,
             curso_titulo=curso_titulo,
             email=inv.email,
             usuario_creado=usuario_creado,
-            # password_temporal eliminado
+            requiere_activacion=requiere_activacion,
         )
 
     inscripcion = crud.canjear_invitacion(
@@ -160,7 +167,7 @@ def canjear_invitacion(
         curso_titulo=curso_titulo,
         email=inv.email,
         usuario_creado=usuario_creado,
-        # password_temporal eliminado
+        requiere_activacion=requiere_activacion,
     )
 
 
