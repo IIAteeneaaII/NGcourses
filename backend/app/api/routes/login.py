@@ -126,6 +126,13 @@ def refresh_access_token(
     if datetime.now(timezone.utc) > expira:
         raise HTTPException(status_code=401, detail="Token de renovación expirado")
 
+    # No renovar la sesión de cuentas inactivas/suspendidas: dar de baja debe
+    # cortar el acceso, incluido el refresh (si no, la sesión se renovaría sola).
+    from app.models._enums import EstadoUsuario
+    rt_user = session.get(User, rt.usuario_id)
+    if not rt_user or not rt_user.is_active or rt_user.estado == EstadoUsuario.SUSPENDIDO:
+        raise HTTPException(status_code=401, detail="Cuenta inactiva o suspendida")
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     new_token = security.create_access_token(rt.usuario_id, expires_delta=access_token_expires)
     response.set_cookie(

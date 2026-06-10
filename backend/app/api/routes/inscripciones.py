@@ -99,13 +99,15 @@ def mis_inscripciones(
     skip: int = 0,
     limit: int = 100,
 ) -> Any:
-    """Lista las inscripciones del usuario actual."""
-    items, count = crud.get_inscripciones_usuario(
+    """Lista las inscripciones del usuario actual (sin las dadas de baja)."""
+    items, _ = crud.get_inscripciones_usuario(
         session=session, usuario_id=current_user.id, skip=skip, limit=limit
     )
+    # El alumno no debe ver en "mis cursos" los cursos de los que fue dado de baja.
+    items = [i for i in items if i.estado != EstadoInscripcion.CANCELADO]
     return InscripcionesPublic(
         data=[InscripcionPublic.model_validate(i, from_attributes=True) for i in items],
-        count=count,
+        count=len(items),
     )
 
 

@@ -112,10 +112,14 @@ export default function InvitacionesPage() {
     try {
       await invitacionesApi.revocar(id);
       setInvitaciones((prev) => prev.filter((i) => i.id !== id));
-    } catch {
-      // ignorar
+      setReenvioMsg({ id, ok: true, text: 'Invitación revocada.' });
+    } catch (e: unknown) {
+      // Mostrar el motivo real (p.ej. "ya utilizada" → 409) en vez de fallar mudo.
+      const detail = (e as { detail?: string })?.detail;
+      setReenvioMsg({ id, ok: false, text: detail || 'No se pudo revocar la invitación.' });
     } finally {
       setRevoking(null);
+      setTimeout(() => setReenvioMsg(null), 4000);
     }
   }
 

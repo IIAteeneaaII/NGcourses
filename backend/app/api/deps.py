@@ -12,7 +12,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.db import engine
 from app.models import TokenPayload, User
-from app.models._enums import RolUsuario
+from app.models._enums import EstadoUsuario, RolUsuario
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -53,8 +53,11 @@ def get_current_user(
     user = session.get(User, token_data.sub)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="Inactive user")
+    # Bloquea cuentas inactivas y suspendidas (defensa en profundidad: aunque
+    # is_active quedara desincronizado, un estado SUSPENDIDO revoca el acceso).
+    # 401 (no 400) para que el front trate la sesión como inválida y cierre sesión.
+    if not user.is_active or user.estado == EstadoUsuario.SUSPENDIDO:
+        raise HTTPException(status_code=401, detail="Cuenta inactiva o suspendida")
     return user
 
 
