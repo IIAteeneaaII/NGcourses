@@ -61,7 +61,14 @@ jobs:
           APP_DIR="$HOME/NGcourses"
           mkdir -p "$APP_DIR"
 
-          # Extraer el codigo nuevo sobre el directorio (preserva .env.prod, gitignored)
+          # Limpiar codigo viejo: 'tar -x' agrega/sobrescribe pero NUNCA borra
+          # archivos eliminados en git, asi que quedan "fantasmas" que rompen el
+          # build (ej. paginas borradas que importan exports ya removidos). Se
+          # preserva .env.prod (gitignored); la data vive en volumenes Docker,
+          # no en este arbol, asi que es seguro.
+          find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name '.env.prod' -exec rm -rf {} +
+
+          # Extraer el codigo nuevo limpio (preserva .env.prod, gitignored)
           tar -xzf /tmp/ngcourses.tar.gz -C "$APP_DIR"
           rm -f /tmp/ngcourses.tar.gz
           cd "$APP_DIR"
