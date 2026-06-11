@@ -41,8 +41,12 @@ jobs:
           printf '%s\n' "${{ secrets.EC2_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           EC2=$(printf '%s' "$EC2_HOST" | tr -d '[:space:]')
+          # Limpia espacios/saltos de línea del usuario (al pegar el Secret suele
+          # colarse un \n o espacio → "remote username contains invalid characters").
+          USR=$(printf '%s' "$EC2_USER" | tr -d '[:space:]')
           ssh-keyscan -H "$EC2" >> ~/.ssh/known_hosts 2>/dev/null
           echo "EC2_IP=$EC2" >> "$GITHUB_ENV"
+          echo "EC2_USER=$USR" >> "$GITHUB_ENV"
 
       - name: Package repo (commit actual)
         run: git archive --format=tar.gz -o /tmp/ngcourses.tar.gz HEAD
