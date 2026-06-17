@@ -28,3 +28,8 @@ npm-debug.log*
 
 # Contexto local del proyecto (NO subir: contiene EIP, IDs de cuenta AWS, infra)
 ncourses.md
+
+# Artefactos de auditoría / responsividad local (no subir: paja)
+.audit/
+_audit_*.mjs
+DOCUMENTACION.html

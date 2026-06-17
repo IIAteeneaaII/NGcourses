@@ -1317,17 +1317,29 @@ def list_cursos_for_student(
 
     from sqlalchemy import or_
 
-    stmt = select(Curso).where(Curso.estado == EstadoCurso.PUBLICADO)
-    lic_subq = select(LicenciaCurso.curso_id).where(
-        LicenciaCurso.estado == EstadoLicencia.ACTIVA
+    # Cursos en los que el alumno está inscrito (no dados de baja): SIEMPRE visibles
+    # en su dashboard, sin importar la marca. Cubre los cursos a los que llegó por
+    # invitación (típicamente marca RAM), que antes solo se veían en "Mis cursos".
+    insc_subq = select(Inscripcion.curso_id).where(
+        Inscripcion.usuario_id == user_id,
+        Inscripcion.estado != EstadoInscripcion.CANCELADO,
     )
+
+    stmt = select(Curso).where(Curso.estado == EstadoCurso.PUBLICADO)
+
+    # Un curso es visible para el alumno si: es NEXTGEN, o está inscrito en él, o
+    # su organización tiene una licencia activa que lo cubre.
+    visibles = [
+        Curso.marca == MarcaCurso.NEXTGEN,
+        Curso.id.in_(insc_subq),  # type: ignore[attr-defined]
+    ]
     if org_id is not None:
-        lic_subq = lic_subq.where(LicenciaCurso.organizacion_id == org_id)
-        stmt = stmt.where(
-            or_(Curso.marca == MarcaCurso.NEXTGEN, Curso.id.in_(lic_subq))  # type: ignore[attr-defined]
+        lic_subq = select(LicenciaCurso.curso_id).where(
+            LicenciaCurso.estado == EstadoLicencia.ACTIVA,
+            LicenciaCurso.organizacion_id == org_id,
         )
-    else:
-        stmt = stmt.where(Curso.marca == MarcaCurso.NEXTGEN)
+        visibles.append(Curso.id.in_(lic_subq))  # type: ignore[attr-defined]
+    stmt = stmt.where(or_(*visibles))
 
     if categoria_id:
         stmt = stmt.where(Curso.categoria_id == categoria_id)
