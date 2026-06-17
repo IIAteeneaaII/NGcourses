@@ -100,7 +100,7 @@ export default function LoginContent() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/icono_invertido.png" alt="NextGen" className={styles.brandIcon}/>
             <h1 className={styles.mainTitle}>
-              <span className={styles.titleBold}>NEXT GEN</span>{' '}
+              <span className={styles.titleBold}>NextGen</span>{' '}
               <span className={styles.titleLight}>Course</span>
             </h1>
           </div>

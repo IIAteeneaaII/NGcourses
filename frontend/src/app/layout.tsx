@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NEXT GEN Course",
+  title: "NextGen Course",
   description: "Plataforma de cursos en línea NextGen",
   icons: {
     icon: '/images/favicon.png',

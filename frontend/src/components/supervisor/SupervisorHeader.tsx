@@ -39,7 +39,7 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
             <span className={styles.logoTitle}>
-              <span className={styles.logoBold}>NEXT GEN</span>
+              <span className={styles.logoBold}>NextGen</span>
               <span className={styles.logoLight}> Course</span>
             </span>
           </Link>
