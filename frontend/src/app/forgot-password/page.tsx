@@ -63,7 +63,7 @@ export default function ForgotPasswordPage() {
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo.png" alt="NextGen" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
           <span style={{ fontWeight: 900, fontSize: '16px', color: '#0B1B2B', letterSpacing: '-0.2px' }}>
-            NEXT GEN <span style={{ fontWeight: 400 }}>Course</span>
+            NextGen <span style={{ fontWeight: 400 }}>Course</span>
           </span>
         </div>
 
