@@ -274,7 +274,7 @@ def get_curso(*, session: Session, curso_id: uuid.UUID) -> Curso | None:
     return session.get(Curso, curso_id)
 
 
-_METADATA_FIELDS = ("nivel", "lo_que_aprenderas", "requisitos")
+_METADATA_FIELDS = ("nivel", "lo_que_aprenderas", "requisitos", "notas_revision")
 
 
 def _sync_es_gratis_with_precio(data: dict) -> None:

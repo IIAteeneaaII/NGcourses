@@ -67,7 +67,16 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
 
               <div className={styles.courseInfoItem}>
                 <span className={styles.courseInfoLabel}>Instructor:</span>
-                <span className={styles.courseInfoValue}>{course.instructor} | {course.rating}/5</span>
+                <span className={styles.courseInfoValue}>{course.instructor || '—'}</span>
+              </div>
+
+              <div className={styles.courseInfoItem}>
+                <span className={styles.courseInfoLabel}>Calificación:</span>
+                <span className={styles.courseInfoValue}>
+                  {course.reviewsCount && course.reviewsCount > 0
+                    ? `${course.rating.toFixed(1)} / 5 (${course.reviewsCount} reseña${course.reviewsCount !== 1 ? 's' : ''})`
+                    : 'Sin reseñas'}
+                </span>
               </div>
 
               <div className={styles.courseInfoItem}>

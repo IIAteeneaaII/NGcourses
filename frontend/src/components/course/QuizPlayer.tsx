@@ -24,9 +24,11 @@ interface Props {
   ultimoIntento?: QuizIntentoPublic | null;
   /** Llamado cuando el alumno aprueba para marcar completada la lección en UI */
   onAprobado?: () => void;
+  /** Vista previa (admin/instructor sin inscripción): califica localmente sin guardar. */
+  previewMode?: boolean;
 }
 
-export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoIntento, onAprobado }: Props) {
+export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoIntento, onAprobado, previewMode }: Props) {
   const [selecciones, setSelecciones] = useState<Record<string, string>>({});
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -39,16 +41,40 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
   };
 
   const handleEnviar = async () => {
-    if (!inscripcionId) {
-      setError('Debes estar inscrito para responder el quiz.');
-      return;
-    }
     const sinResponder = preguntas.filter((p) => !selecciones[p.id]);
     if (sinResponder.length > 0) {
       setError(`Debes responder todas las preguntas (faltan ${sinResponder.length}).`);
       return;
     }
     setError('');
+
+    // Modo vista previa (admin/instructor): califica localmente sin guardar intento.
+    if (previewMode) {
+      const respuestas = preguntas.map((p) => {
+        const opId = selecciones[p.id];
+        const op = p.opciones.find((o) => o.id === opId);
+        return { pregunta_id: p.id, opcion_id_seleccionada: opId, es_correcta: !!op?.esCorrecta };
+      });
+      const correctas = respuestas.filter((r) => r.es_correcta).length;
+      const aprobado = correctas === preguntas.length;
+      setResultado({
+        id: 'preview',
+        leccion_id: leccionId,
+        aprobado,
+        total_preguntas: preguntas.length,
+        correctas,
+        creado_en: new Date().toISOString(),
+        respuestas,
+      });
+      if (aprobado) onAprobado?.();
+      return;
+    }
+
+    if (!inscripcionId) {
+      setError('Debes estar inscrito para responder el quiz.');
+      return;
+    }
+
     setEnviando(true);
     try {
       const resp = await quizApi.enviar(leccionId, {
@@ -131,6 +157,12 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
           />
         ))}
       </div>
+
+      {previewMode && (
+        <p style={{ fontSize: '0.85rem', color: '#1e40af', background: '#dbeafe', padding: '0.6rem 0.85rem', borderRadius: '0.5rem', margin: '0 0 0.5rem' }}>
+          Modo vista previa: las respuestas se califican localmente y no se guardan.
+        </p>
+      )}
 
       {error && <p className={styles.errorMsg}>{error}</p>}
 

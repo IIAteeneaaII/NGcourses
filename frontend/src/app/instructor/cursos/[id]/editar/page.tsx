@@ -51,6 +51,7 @@ interface ApiCurso {
   lo_que_aprenderas?: string[];
   requisitos?: string;
   destacado?: boolean;
+  notas_revision?: string | null;
 }
 
 interface RecursoItem {
@@ -130,6 +131,7 @@ export default function EditarCursoInstructorPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReview, setIsSendingReview] = useState(false);
   const [cursoEstado, setCursoEstado] = useState('borrador');
+  const [notasRevision, setNotasRevision] = useState('');
   const [notification, setNotification] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const notify = React.useCallback((type: 'success' | 'error', message: string) => {
@@ -155,6 +157,7 @@ export default function EditarCursoInstructorPage() {
       if (curso.requisitos) setRequisitos(curso.requisitos);
       setDestacado(!!curso.destacado);
       if (curso.estado) setCursoEstado(curso.estado);
+      setNotasRevision(curso.notas_revision || '');
       setModules(
         (curso.modulos || []).map((m) => ({
           id: m.id,
@@ -446,11 +449,17 @@ export default function EditarCursoInstructorPage() {
   };
 
   const handleSendToReview = async () => {
+    if (!level) {
+      notify('error', 'Selecciona el nivel del curso antes de enviarlo a revisión');
+      return;
+    }
     setIsSendingReview(true);
     try {
       await doSave();
-      await cursosApi.update(courseId, { estado: 'revision' });
+      // Al reenviar se limpian las notas de la revisión anterior.
+      await cursosApi.update(courseId, { estado: 'revision', notas_revision: '' });
       setCursoEstado('revision');
+      setNotasRevision('');
       notify('success', 'Curso enviado a revisión');
     } catch {
       notify('error', 'Error al enviar a revisión');
@@ -490,6 +499,32 @@ export default function EditarCursoInstructorPage() {
           <h1 className={styles.pageTitle}>Editar Curso</h1>
         </div>
       </div>
+
+      {notasRevision && (cursoEstado === 'borrador' || cursoEstado === 'rechazado') && (
+        <div style={{
+          display: 'flex', gap: '0.75rem', alignItems: 'flex-start',
+          padding: '1rem 1.25rem', margin: '0 0 1rem',
+          background: cursoEstado === 'rechazado' ? '#fef2f2' : '#fffbeb',
+          border: `1px solid ${cursoEstado === 'rechazado' ? '#fecaca' : '#fcd34d'}`,
+          borderRadius: '0.75rem',
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8}
+            stroke={cursoEstado === 'rechazado' ? '#b91c1c' : '#b45309'} width="20" height="20" style={{ flexShrink: 0, marginTop: '0.1rem' }}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <div>
+            <p style={{ margin: '0 0 0.25rem', fontWeight: 700, color: cursoEstado === 'rechazado' ? '#991b1b' : '#92400e' }}>
+              {cursoEstado === 'rechazado' ? 'Curso rechazado por el administrador' : 'El administrador solicitó cambios'}
+            </p>
+            <p style={{ margin: 0, fontSize: '0.9rem', color: cursoEstado === 'rechazado' ? '#7f1d1d' : '#78350f', whiteSpace: 'pre-wrap' }}>
+              {notasRevision}
+            </p>
+            <p style={{ margin: '0.5rem 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+              Corrige lo indicado y vuelve a enviar el curso a revisión.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className={styles.contentWrapper}>
         <aside className={styles.sidebar}>
@@ -985,7 +1020,7 @@ export default function EditarCursoInstructorPage() {
                   >
                     {isSaving ? 'Guardando...' : 'Guardar cambios'}
                   </button>
-                  {cursoEstado === 'borrador' && (
+                  {(cursoEstado === 'borrador' || cursoEstado === 'rechazado') && (
                     <button
                       className={styles.publishButton}
                       onClick={handleSendToReview}

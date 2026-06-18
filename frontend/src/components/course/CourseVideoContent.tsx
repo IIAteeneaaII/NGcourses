@@ -17,6 +17,8 @@ interface CourseVideoContentProps {
   inscripcionId?: string | null;
   bunnyLibraryId?: string | null;
   backHref?: string;
+  /** Vista previa de admin/instructor: el quiz se califica localmente sin inscripción. */
+  previewMode?: boolean;
 }
 
 interface CompletionModal {
@@ -24,7 +26,7 @@ interface CompletionModal {
   loading: boolean;
 }
 
-export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, previewMode }: CourseVideoContentProps) {
   const router = useRouter();
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(
@@ -200,6 +202,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                   catch { return { preguntas: [] }; }
                 })()}
                 onAprobado={handleMarkComplete}
+                previewMode={previewMode}
               />
             ) : (
               <>

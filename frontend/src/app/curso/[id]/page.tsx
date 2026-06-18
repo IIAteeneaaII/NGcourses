@@ -20,6 +20,7 @@ interface ApiCurso {
   descripcion: string | null;
   duracion_seg: number;
   calificacion_prom: number;
+  total_resenas: number;
   modulos: ApiModulo[];
   portada_url: string | null;
   nivel: string | null;
@@ -73,7 +74,8 @@ export default function CursoInfoPage() {
           title: cursoRaw.titulo,
           instructor: cursoRaw.instructor_nombre || '',
           rating: cursoRaw.calificacion_prom ?? 0,
-          level: (cursoRaw.nivel && nivelLabel[cursoRaw.nivel]) || 'Todos los niveles',
+          reviewsCount: cursoRaw.total_resenas ?? 0,
+          level: (cursoRaw.nivel && nivelLabel[cursoRaw.nivel]) || 'No especificado',
           duration: `${duracionHoras}h`,
           lessonsCount: totalLecciones,
           description: cursoRaw.descripcion || '',

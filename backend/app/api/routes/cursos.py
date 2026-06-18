@@ -206,6 +206,7 @@ def get_curso(
     curso_data.nivel = meta.get("nivel")
     curso_data.lo_que_aprenderas = meta.get("lo_que_aprenderas", [])
     curso_data.requisitos = meta.get("requisitos")
+    curso_data.notas_revision = meta.get("notas_revision")
     curso_data.instructor_nombre = db_curso.instructor.full_name if db_curso.instructor else None
 
     # Bloqueo por licencia: solo aplica a estudiantes (admins/instructores siempre acceden).

@@ -236,6 +236,16 @@
   color: #92400e;
 }
 
+.statusReview {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+.statusReject {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
 /* Course Actions */
 .courseActions {
   display: flex;

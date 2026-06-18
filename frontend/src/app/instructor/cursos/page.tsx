@@ -39,8 +39,8 @@ export default function InstructorCursosPage() {
       return matchSearch && matchStatus;
     }), [cursos, searchTerm, statusFilter]);
 
-  const getStatusLabel = (s: string) => ({ publicado: 'Publicado', borrador: 'Borrador', revision: 'En revision', archivado: 'Archivado' }[s] || s);
-  const getStatusClass = (s: string) => ({ publicado: styles.statusPublished, borrador: styles.statusDraft, revision: styles.statusReview }[s] || '');
+  const getStatusLabel = (s: string) => ({ publicado: 'Publicado', borrador: 'Borrador', revision: 'En revision', archivado: 'Archivado', rechazado: 'Rechazado' }[s] || s);
+  const getStatusClass = (s: string) => ({ publicado: styles.statusPublished, borrador: styles.statusDraft, revision: styles.statusReview, rechazado: styles.statusReject }[s] || '');
 
   return (
     <div className={styles.pageContainer}>
@@ -78,6 +78,7 @@ export default function InstructorCursosPage() {
             <option value="publicado">Publicado</option>
             <option value="borrador">Borrador</option>
             <option value="revision">En revision</option>
+            <option value="rechazado">Rechazado</option>
           </select>
         </div>
 
