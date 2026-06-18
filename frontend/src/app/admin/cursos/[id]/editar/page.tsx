@@ -95,7 +95,6 @@ export default function EditarCursoAdminPage() {
   const cursoId = params.id as string;
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [visitedSteps, setVisitedSteps] = useState<Set<number>>(new Set([1]));
   const [showPreview, setShowPreview] = useState(false);
   const [categories, setCategories] = useState<ApiCategoria[]>([]);
   const [loading, setLoading] = useState(true);
@@ -213,7 +212,6 @@ export default function EditarCursoAdminPage() {
 
   const goToStep = (step: number) => {
     setCurrentStep(step);
-    setVisitedSteps((prev) => { const next = new Set(prev); next.add(step); return next; });
   };
 
   const handleNext = async () => {
@@ -514,23 +512,16 @@ export default function EditarCursoAdminPage() {
       <div className={styles.contentWrapper}>
         <aside className={styles.sidebar}>
           <nav className={styles.stepNav}>
-            {STEPS.map((step) => {
-              const visited = visitedSteps.has(step.id);
-              const complete = visited && isStepComplete(step.id);
-              return (
-                <button
-                  key={step.id}
-                  className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${complete ? styles.complete : ''}`}
-                  onClick={() => goToStep(step.id)}
-                >
-                  <span className={styles.stepIcon}>{step.icon}</span>
-                  <span className={styles.stepName}>{step.name}</span>
-                  {complete && currentStep !== step.id && (
-                    <span className={styles.checkmark}><svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></span>
-                  )}
-                </button>
-              );
-            })}
+            {STEPS.map((step) => (
+              <button
+                key={step.id}
+                className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''}`}
+                onClick={() => goToStep(step.id)}
+              >
+                <span className={styles.stepIcon}>{step.icon}</span>
+                <span className={styles.stepName}>{step.name}</span>
+              </button>
+            ))}
           </nav>
         </aside>
 
