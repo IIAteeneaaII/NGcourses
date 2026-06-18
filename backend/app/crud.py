@@ -1184,6 +1184,45 @@ def add_user_to_organizacion(
     return link
 
 
+def create_supervisor_pendiente(
+    *, session: Session, org_id: uuid.UUID, email: str,
+    full_name: str | None = None, telefono: str | None = None,
+) -> tuple[User, str]:
+    """Crea un usuario SUPERVISOR en estado pendiente_activacion y lo vincula a la
+    organización como ADMIN_ORG. Retorna (user, raw_token) para enviar el correo de
+    activación. No establece/expone contraseña real: usa un placeholder aleatorio que
+    el supervisor reemplaza al activar (mismo flujo que el resto de la plataforma)."""
+    from datetime import timezone
+
+    from app.models._enums import EstadoUsuario
+
+    token = secrets.token_urlsafe(32)
+    placeholder_password = secrets.token_urlsafe(16)
+
+    user = User(
+        email=email,
+        full_name=full_name,
+        telefono=telefono,
+        hashed_password=get_password_hash(placeholder_password),
+        rol=RolUsuario.SUPERVISOR,
+        estado=EstadoUsuario.PENDIENTE_ACTIVACION,
+        is_active=False,
+        token_activacion=token,
+        token_activacion_expira=datetime.now(timezone.utc) + timedelta(hours=72),
+    )
+    session.add(user)
+    session.flush()  # INSERT del usuario antes de la membresía para satisfacer el FK
+
+    link = UsuarioOrganizacion(
+        organizacion_id=org_id, usuario_id=user.id,
+        rol_org=RolOrganizacion.ADMIN_ORG,
+    )
+    session.add(link)
+    session.commit()
+    session.refresh(user)
+    return user, token
+
+
 def remove_user_from_organizacion(
     *, session: Session, org_id: uuid.UUID, user_id: uuid.UUID
 ) -> None:

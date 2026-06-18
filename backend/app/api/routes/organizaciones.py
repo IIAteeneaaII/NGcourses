@@ -3,13 +3,14 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
+from pydantic import EmailStr
 from sqlmodel import SQLModel
 
 from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
-from app.core.security import get_password_hash
-from app.models import User, UserCreate
-from app.models._enums import RolOrganizacion, RolUsuario
+from app.core.config import settings
+from app.models import User
+from app.models._enums import RolOrganizacion
 
 router = APIRouter(prefix="/organizaciones", tags=["organizaciones"])
 
@@ -19,6 +20,10 @@ router = APIRouter(prefix="/organizaciones", tags=["organizaciones"])
 
 class OrganizacionCreate(SQLModel):
     nombre: str
+    # Punto de contacto de la empresa: se crea como usuario SUPERVISOR (ADMIN_ORG)
+    # en estado pendiente de activación. Obligatorio: toda organización tiene uno.
+    supervisor_email: EmailStr
+    supervisor_nombre: str
     email_contacto: str | None = None
     telefono_contacto: str | None = None
     plan_de_cursos: str | None = None
@@ -69,9 +74,8 @@ class AsignarMiembro(SQLModel):
 
 
 class CrearSupervisor(SQLModel):
-    email: str
+    email: EmailStr
     full_name: str
-    password: str
     telefono: str | None = None
 
 
@@ -108,16 +112,42 @@ def list_organizaciones(
 def create_organizacion(
     *, session: SessionDep, current_user: AdminOrSuperuser, body: OrganizacionCreate,
 ) -> Any:
+    """Crea la organización y su supervisor (punto de contacto) en estado pendiente
+    de activación, y envía el correo con el token. El correo del supervisor sirve
+    también como email de contacto si no se especifica otro."""
+    # Validar el correo del supervisor ANTES de crear la org, para no dejar
+    # organizaciones huérfanas si el correo ya está en uso.
+    if crud.get_user_by_email(session=session, email=body.supervisor_email):
+        raise HTTPException(
+            status_code=400,
+            detail="Ya existe un usuario con el correo del supervisor.",
+        )
+
     org = crud.create_organizacion(
         session=session,
         nombre=body.nombre,
-        email_contacto=body.email_contacto,
+        email_contacto=body.email_contacto or body.supervisor_email,
         telefono_contacto=body.telefono_contacto,
         plan_de_cursos=body.plan_de_cursos,
         fecha_compra=body.fecha_compra,
         rfc=body.rfc,
         dominio_corporativo=body.dominio_corporativo,
     )
+
+    _, token = crud.create_supervisor_pendiente(
+        session=session, org_id=org.id,
+        email=body.supervisor_email, full_name=body.supervisor_nombre,
+    )
+
+    if settings.emails_enabled:
+        from app.utils import generate_activacion_email, send_email
+        email_data = generate_activacion_email(email_to=body.supervisor_email, token=token)
+        send_email(
+            email_to=body.supervisor_email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
     return _to_public(org)
 
 
@@ -206,38 +236,30 @@ def crear_supervisor(
     *, org_id: uuid.UUID, session: SessionDep, current_user: AdminOrSuperuser,
     body: CrearSupervisor,
 ) -> Any:
-    """Crea un usuario con rol SUPERVISOR vinculado a la organización como ADMIN_ORG."""
+    """Crea un usuario SUPERVISOR (ADMIN_ORG) para la organización en estado pendiente
+    de activación y envía el correo con el token. Sin contraseña: la fija el supervisor
+    al activar (mismo flujo que el alta de organización)."""
     org = crud.get_organizacion(session=session, org_id=org_id)
     if not org:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
 
-    existing = crud.get_user_by_email(session=session, email=body.email)
-    if existing:
-        # Promover usuario existente a supervisor y asignarlo a la org
-        existing.rol = RolUsuario.SUPERVISOR
-        existing.hashed_password = get_password_hash(body.password)
-        if body.full_name:
-            existing.full_name = body.full_name
-        if body.telefono:
-            existing.telefono = body.telefono
-        session.add(existing)
-        session.commit()
-        session.refresh(existing)
-        user = existing
-    else:
-        user_in = UserCreate(
-            email=body.email,
-            password=body.password,
-            full_name=body.full_name,
-            rol=RolUsuario.SUPERVISOR,
-            telefono=body.telefono,
-        )
-        user = crud.create_user(session=session, user_create=user_in)
+    if crud.get_user_by_email(session=session, email=body.email):
+        raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
 
-    crud.add_user_to_organizacion(
-        session=session, org_id=org_id, user_id=user.id,
-        rol_org=RolOrganizacion.ADMIN_ORG,
+    user, token = crud.create_supervisor_pendiente(
+        session=session, org_id=org_id, email=body.email,
+        full_name=body.full_name, telefono=body.telefono,
     )
+
+    if settings.emails_enabled:
+        from app.utils import generate_activacion_email, send_email
+        email_data = generate_activacion_email(email_to=user.email, token=token)
+        send_email(
+            email_to=user.email,
+            subject=email_data.subject,
+            html_content=email_data.html_content,
+        )
+
     return MiembroPublic(
         user_id=user.id, email=user.email, full_name=user.full_name,
         rol=user.rol.value if hasattr(user.rol, "value") else str(user.rol),

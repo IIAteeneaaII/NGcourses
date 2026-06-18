@@ -199,10 +199,9 @@ export default function OrganizacionDetallePage() {
       await organizacionesApi.crearSupervisor(orgId, {
         email: supForm.email,
         full_name: supForm.full_name,
-        password: supForm.password,
         telefono: supForm.telefono || undefined,
       });
-      setSupMsg('Supervisor creado');
+      setSupMsg('Supervisor creado. Se envió el correo de activación.');
       setSupForm({ email: '', full_name: '', password: '', telefono: '' });
     } catch (err: unknown) {
       const apiErr = err as { detail?: string };
@@ -393,7 +392,8 @@ export default function OrganizacionDetallePage() {
         {tab === 'supervisor' && (
           <form onSubmit={handleCrearSupervisor} className={styles.formColumn}>
             <p className={styles.helpText}>
-              Crea un usuario con rol SUPERVISOR asignado a esta organización.
+              Crea un usuario con rol SUPERVISOR asignado a esta organización. Recibirá
+              un correo para activar su cuenta y establecer su contraseña.
             </p>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Nombre completo *</label>
@@ -406,12 +406,6 @@ export default function OrganizacionDetallePage() {
               <input type="email" required className={styles.formInput}
                 value={supForm.email}
                 onChange={(e) => setSupForm({ ...supForm, email: e.target.value })} />
-            </div>
-            <div className={styles.formGroup}>
-              <label className={styles.formLabel}>Contraseña * (mín. 8 caracteres)</label>
-              <input type="password" required minLength={8} className={styles.formInput}
-                value={supForm.password}
-                onChange={(e) => setSupForm({ ...supForm, password: e.target.value })} />
             </div>
             <div className={styles.formGroup}>
               <label className={styles.formLabel}>Teléfono</label>

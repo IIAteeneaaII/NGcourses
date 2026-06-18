@@ -388,7 +388,7 @@ export const organizacionesApi = {
     apiClient.post(`/api/v1/organizaciones/${id}/miembros`, data),
   quitarMiembro: (id: string, user_id: string) =>
     apiClient.delete(`/api/v1/organizaciones/${id}/miembros/${user_id}`),
-  crearSupervisor: (id: string, data: { email: string; full_name: string; password: string; telefono?: string }) =>
+  crearSupervisor: (id: string, data: { email: string; full_name: string; telefono?: string }) =>
     apiClient.post(`/api/v1/organizaciones/${id}/supervisor`, data),
   listLicencias: (id: string) => apiClient.get(`/api/v1/organizaciones/${id}/licencias`),
   asignarLicencia: (id: string, curso_id: string) =>
