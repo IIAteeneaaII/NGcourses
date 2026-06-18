@@ -14,7 +14,7 @@ const ROL_HOME: Record<string, string> = {
 
 const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const token = request.cookies.get('access_token')?.value;
   const userRol = request.cookies.get('user_rol')?.value;

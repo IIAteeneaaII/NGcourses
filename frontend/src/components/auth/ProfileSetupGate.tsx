@@ -27,7 +27,7 @@ export default function ProfileSetupGate({ children }: { children: React.ReactNo
         setUser(me);
         // Re-sincroniza las cookies de rol con la sesión real (HttpOnly). Evita
         // que un user_rol stale (p.ej. tras cambiar de cuenta) provoque que el
-        // middleware desvíe al dashboard equivocado con ?error=role.
+        // proxy desvíe al dashboard equivocado con ?error=role.
         setRolCookies(me.rol, Boolean(me.is_superuser));
       })
       .catch(() => {})

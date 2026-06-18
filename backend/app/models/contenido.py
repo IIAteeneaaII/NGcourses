@@ -343,6 +343,7 @@ class CursoPublic(SQLModel):
     nivel: str | None = None
     lo_que_aprenderas: list[str] = []
     requisitos: str | None = None
+    notas_revision: str | None = None
     bloqueado_por_licencia: bool = False
 
 
@@ -389,6 +390,7 @@ class CursoUpdate(SQLModel):
     nivel: str | None = None
     lo_que_aprenderas: list[str] | None = None
     requisitos: str | None = None
+    notas_revision: str | None = None
 
 
 # -- Bunny.net Video Upload --

@@ -18,7 +18,7 @@ export interface AuthUser {
   organizacion?: OrganizacionInfo | null;
 }
 
-// Cookies no-HttpOnly para que el middleware (server-side) pueda leer el rol.
+// Cookies no-HttpOnly para que el proxy (server-side) pueda leer el rol.
 // El JWT real se maneja como HttpOnly cookie emitida por el backend (FND-003).
 export function setRolCookies(rol: string, isSuperuser: boolean): void {
   const secure = window.location.protocol === 'https:' ? '; Secure' : '';

@@ -20,6 +20,7 @@ class EstadoCurso(str, enum.Enum):
     REVISION = "revision"
     PUBLICADO = "publicado"
     ARCHIVADO = "archivado"
+    RECHAZADO = "rechazado"
 
 
 class TipoLeccion(str, enum.Enum):

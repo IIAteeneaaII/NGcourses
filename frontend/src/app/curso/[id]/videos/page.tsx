@@ -156,6 +156,7 @@ export default function CursoVideosPage() {
         inscripcionId={inscripcionId}
         bunnyLibraryId={bunnyLibraryId}
         backHref={fromAdmin ? `/admin/cursos/${id}/preview` : undefined}
+        previewMode={fromAdmin}
       />
     </ErrorBoundary>
   );

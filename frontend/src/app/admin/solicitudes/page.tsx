@@ -27,6 +27,8 @@ export default function SolicitudesPage() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ id: string; titulo: string; action: ActionType } | null>(null);
+  const [nota, setNota] = useState('');
+  const [notaError, setNotaError] = useState('');
 
   const fetchPending = useCallback(async () => {
     setLoading(true);
@@ -43,14 +45,19 @@ export default function SolicitudesPage() {
   useEffect(() => { fetchPending(); }, [fetchPending]);
 
   const handleAction = async (id: string, action: ActionType) => {
+    if (action === 'solicitar_cambios' && !nota.trim()) {
+      setNotaError('Describe los cambios solicitados.');
+      return;
+    }
     setActionLoading(id + action);
     try {
       if (action === 'publicar') {
         await cursosApi.update(id, { estado: 'publicado' });
       } else if (action === 'solicitar_cambios') {
-        await cursosApi.update(id, { estado: 'borrador' });
+        await cursosApi.update(id, { estado: 'borrador', notas_revision: nota.trim() });
       } else if (action === 'rechazar') {
-        await cursosApi.delete(id);
+        // No se elimina: el curso se conserva en estado 'rechazado' con el motivo.
+        await cursosApi.update(id, { estado: 'rechazado', notas_revision: nota.trim() || undefined });
       }
       setCourses((prev) => prev.filter((c) => c.id !== id));
     } catch {
@@ -58,10 +65,14 @@ export default function SolicitudesPage() {
     } finally {
       setActionLoading(null);
       setConfirmModal(null);
+      setNota('');
+      setNotaError('');
     }
   };
 
   const openConfirm = (curso: ApiCurso, action: ActionType) => {
+    setNota('');
+    setNotaError('');
     setConfirmModal({ id: curso.id, titulo: curso.titulo, action });
   };
 
@@ -73,8 +84,8 @@ export default function SolicitudesPage() {
 
   const actionMsg: Record<ActionType, string> = {
     publicar: 'El curso quedará visible para los estudiantes inmediatamente.',
-    solicitar_cambios: 'El curso regresará al instructor como borrador para que realice modificaciones.',
-    rechazar: 'El curso y todo su contenido (videos, archivos) serán eliminados permanentemente.',
+    solicitar_cambios: 'El curso regresará al instructor como borrador con tus notas.',
+    rechazar: 'El curso se marcará como rechazado (no se elimina) y volverá al instructor con el motivo.',
   };
 
   return (
@@ -165,14 +176,29 @@ export default function SolicitudesPage() {
 
       {/* Confirmation modal */}
       {confirmModal && (
-        <div className={styles.modalOverlay} onClick={() => setConfirmModal(null)}>
+        <div className={styles.modalOverlay} onClick={() => { setConfirmModal(null); setNota(''); setNotaError(''); }}>
           <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
             <h3 className={styles.modalTitle}>
               {actionLabel[confirmModal.action]}: &ldquo;{confirmModal.titulo}&rdquo;
             </h3>
             <p className={styles.modalDesc}>{actionMsg[confirmModal.action]}</p>
+            {(confirmModal.action === 'solicitar_cambios' || confirmModal.action === 'rechazar') && (
+              <div style={{ marginBottom: '1rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                  {confirmModal.action === 'solicitar_cambios' ? 'Cambios solicitados *' : 'Motivo del rechazo (opcional)'}
+                </label>
+                <textarea
+                  value={nota}
+                  onChange={(e) => { setNota(e.target.value); setNotaError(''); }}
+                  rows={3}
+                  placeholder={confirmModal.action === 'solicitar_cambios' ? 'Ej: Faltan subtítulos en el módulo 2.' : 'Ej: El contenido no cumple los lineamientos.'}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+                {notaError && <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#dc2626' }}>{notaError}</p>}
+              </div>
+            )}
             <div className={styles.modalActions}>
-              <button className={styles.cancelBtn} onClick={() => setConfirmModal(null)}>
+              <button className={styles.cancelBtn} onClick={() => { setConfirmModal(null); setNota(''); setNotaError(''); }}>
                 Cancelar
               </button>
               <button

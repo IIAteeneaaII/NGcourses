@@ -53,6 +53,7 @@ export interface CourseInfo {
   title: string;
   instructor: string;
   rating: number;
+  reviewsCount?: number;
   level: string;
   duration: string;
   lessonsCount: number;
