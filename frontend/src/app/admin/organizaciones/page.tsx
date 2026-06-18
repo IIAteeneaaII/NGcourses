@@ -83,7 +83,7 @@ export default function OrganizacionesPage() {
         fecha_compra: createForm.fecha_compra ? new Date(createForm.fecha_compra).toISOString() : null,
       });
       setShowCreateModal(false);
-      setCreateForm({ nombre: '', email_contacto: '', telefono_contacto: '', plan_de_cursos: '', fecha_compra: '' });
+      setCreateForm({ nombre: '', supervisor_nombre: '', supervisor_email: '', email_contacto: '', telefono_contacto: '', plan_de_cursos: '', fecha_compra: '' });
       fetchOrgs();
     } catch (err: unknown) {
       const apiErr = err as { detail?: string };
