@@ -22,6 +22,8 @@ interface OrganizacionesResp {
 
 interface CreateOrgForm {
   nombre: string;
+  supervisor_nombre: string;
+  supervisor_email: string;
   email_contacto: string;
   telefono_contacto: string;
   plan_de_cursos: string;
@@ -39,7 +41,7 @@ export default function OrganizacionesPage() {
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState<CreateOrgForm>({
-    nombre: '', email_contacto: '', telefono_contacto: '', plan_de_cursos: '', fecha_compra: '',
+    nombre: '', supervisor_nombre: '', supervisor_email: '', email_contacto: '', telefono_contacto: '', plan_de_cursos: '', fecha_compra: '',
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
@@ -73,6 +75,8 @@ export default function OrganizacionesPage() {
     try {
       await organizacionesApi.create({
         nombre: createForm.nombre,
+        supervisor_nombre: createForm.supervisor_nombre,
+        supervisor_email: createForm.supervisor_email,
         email_contacto: createForm.email_contacto || null,
         telefono_contacto: createForm.telefono_contacto || null,
         plan_de_cursos: createForm.plan_de_cursos || null,
@@ -219,14 +223,42 @@ export default function OrganizacionesPage() {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Email de contacto</label>
+                <label className={styles.formLabel}>Nombre del supervisor *</label>
+                <input
+                  type="text"
+                  required
+                  value={createForm.supervisor_nombre}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, supervisor_nombre: e.target.value }))}
+                  className={styles.formInput}
+                  placeholder="Nombre del punto de contacto"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Correo del supervisor *</label>
+                <input
+                  type="email"
+                  required
+                  value={createForm.supervisor_email}
+                  onChange={(e) => setCreateForm((f) => ({ ...f, supervisor_email: e.target.value }))}
+                  className={styles.formInput}
+                  placeholder="supervisor@empresa.com"
+                />
+                <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                  Se crea como supervisor de la organización y recibe un correo para activar su cuenta.
+                </span>
+              </div>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Email de contacto (opcional)</label>
                 <input
                   type="email"
                   value={createForm.email_contacto}
                   onChange={(e) => setCreateForm((f) => ({ ...f, email_contacto: e.target.value }))}
                   className={styles.formInput}
-                  placeholder="contacto@empresa.com"
+                  placeholder="Si es distinto al del supervisor"
                 />
+                <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                  Déjalo vacío si el contacto es el mismo que el supervisor: se usará su correo.
+                </span>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Teléfono</label>
