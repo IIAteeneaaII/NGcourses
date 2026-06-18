@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { organizacionesApi } from '@/lib/api/client';
+import { organizacionesApi, usersApi } from '@/lib/api/client';
 import { CreateUserSchema } from '@/schemas/user';
 
 interface Organizacion {
@@ -34,33 +34,19 @@ export default function CrearUsuarioEmpresaPage() {
     }
     setLoading(true);
     try {
-      const body: Record<string, unknown> = {
+      await usersApi.createEmpresa({
         email: form.email,
         full_name: form.full_name || null,
-      };
-      if (form.organizacion_id) body.organizacion_id = form.organizacion_id;
-
-      const res = await fetch('/api/v1/users/empresa', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(body),
+        ...(form.organizacion_id ? { organizacion_id: form.organizacion_id } : {}),
       });
-
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        const detail = data.detail;
-        const msg = Array.isArray(detail)
-          ? (detail[0]?.msg ?? 'Error de validación')
-          : (detail ?? 'Error al crear el usuario');
-        throw new Error(msg);
-      }
-
       setSuccess(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Error inesperado');
+      const apiErr = err as { detail?: unknown };
+      const detail = apiErr?.detail;
+      const msg = Array.isArray(detail)
+        ? ((detail[0] as { msg?: string })?.msg ?? 'Error de validación')
+        : (typeof detail === 'string' ? detail : 'Error al crear el usuario');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -95,9 +81,29 @@ export default function CrearUsuarioEmpresaPage() {
       <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
         Alta de usuario empresarial
       </h1>
-      <p style={{ margin: '0 0 28px', fontSize: '14px', color: 'rgba(11,27,43,.55)' }}>
-        El empleado recibirá un correo para activar su cuenta y establecer su contraseña.
+      <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(11,27,43,.55)' }}>
+        Crea un <strong>empleado (estudiante)</strong> y lo liga a una organización existente. El empleado
+        recibirá un correo para activar su cuenta y establecer su contraseña.
+        <br />
+        Para dar de alta una <strong>empresa y su supervisor</strong>, usa{' '}
+        <a href="/admin/organizaciones" style={{ color: '#00968f', fontWeight: 600 }}>Organizaciones</a>.
       </p>
+
+      {!success && orgs.length === 0 && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '10px',
+          padding: '12px 16px', background: '#fffbeb',
+          border: '1px solid #fcd34d', borderRadius: '12px', marginBottom: '20px',
+        }}>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#b45309" width="18" height="18">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+          </svg>
+          <span style={{ fontSize: '13px', color: '#92400e' }}>
+            Aún no hay organizaciones.{' '}
+            <a href="/admin/organizaciones" style={{ color: '#b45309', fontWeight: 700 }}>Crea una empresa y su supervisor →</a>
+          </span>
+        </div>
+      )}
 
       {success ? (
         <div>

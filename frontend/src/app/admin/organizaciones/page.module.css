@@ -363,6 +363,10 @@
   width: 100%;
   max-width: 480px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+  /* No desbordar el viewport en pantallas de poco alto: el modal se limita
+     a la altura visible y desplaza su contenido en vez de salirse del margen. */
+  max-height: calc(100vh - 2rem);
+  overflow-y: auto;
 }
 
 .modalHeader {

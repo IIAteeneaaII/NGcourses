@@ -45,6 +45,7 @@ export default function OrganizacionesPage() {
   });
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const fetchOrgs = useCallback(async () => {
     setLoading(true);
@@ -83,6 +84,7 @@ export default function OrganizacionesPage() {
         fecha_compra: createForm.fecha_compra ? new Date(createForm.fecha_compra).toISOString() : null,
       });
       setShowCreateModal(false);
+      setSuccessMsg(`Organización creada. Se envió el correo de activación a ${createForm.supervisor_email} (pídele que revise Otros/Spam).`);
       setCreateForm({ nombre: '', supervisor_nombre: '', supervisor_email: '', email_contacto: '', telefono_contacto: '', plan_de_cursos: '', fecha_compra: '' });
       fetchOrgs();
     } catch (err: unknown) {
@@ -124,6 +126,27 @@ export default function OrganizacionesPage() {
           </button>
         </div>
       </div>
+
+      {successMsg && (
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
+          padding: '14px 18px', background: '#ecfdf5',
+          border: '1px solid #6ee7b7', borderRadius: '12px', margin: '0 0 20px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="#059669" width="20" height="20">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>{successMsg}</span>
+          </div>
+          <button type="button" onClick={() => setSuccessMsg('')} aria-label="Cerrar"
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#065f46', display: 'flex' }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      )}
 
       <section className={styles.mainContent}>
         <div className={styles.filterRow}>
