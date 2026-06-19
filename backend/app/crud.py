@@ -688,8 +688,13 @@ def check_and_emit_certificate(
         session.commit()
         session.refresh(certificado)
     except Exception as exc:  # noqa: BLE001
+        # No-fatal: el registro ya existe y la descarga regenera el PDF on-demand.
+        # Se registra como error con traza porque suele ser un problema de escritura
+        # (permisos del dir media/certificados) que de otro modo pasa inadvertido.
         import logging
-        logging.getLogger(__name__).warning("PDF generation failed for %s: %s", folio, exc)
+        logging.getLogger(__name__).error(
+            "PDF generation failed for %s: %s", folio, exc, exc_info=True
+        )
 
     return certificado
 

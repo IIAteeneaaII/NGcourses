@@ -96,7 +96,8 @@ export default function MisCursosPage() {
             status: isCompleted ? 'completed' : 'in_progress',
             progress: isCompleted ? 100 : undefined,
             completedDate: isCompleted ? insc.inscrito_en.slice(0, 10) : undefined,
-            certificadoFolio: cert?.url_pdf ? cert.folio : undefined,
+            // Basta el folio: la descarga regenera el PDF si hiciera falta.
+            certificadoFolio: cert ? cert.folio : undefined,
           };
         });
 
