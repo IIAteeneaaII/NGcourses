@@ -15,6 +15,7 @@ interface QuizIntentoPublic {
   aprobado: boolean;
   total_preguntas: number;
   correctas: number;
+  respuestas: RespuestaResult[];
 }
 
 interface Props {
@@ -29,6 +30,13 @@ interface Props {
 export default function QuizResult({ resultado, preguntas, seleccionesOriginales, onReintentar }: Props) {
   const { aprobado, total_preguntas, correctas } = resultado;
   const porcentaje = total_preguntas > 0 ? Math.round((correctas / total_preguntas) * 100) : 0;
+
+  // La corrección es autoritativa del backend (es_correcta por respuesta); el
+  // alumno ya no recibe la clave `esCorrecta` en las opciones del quiz.
+  const correctaPorPregunta = resultado.respuestas.reduce<Record<string, boolean>>(
+    (acc, r) => { acc[r.pregunta_id] = r.es_correcta; return acc; },
+    {}
+  );
 
   return (
     <div className={styles.container}>
@@ -73,7 +81,7 @@ export default function QuizResult({ resultado, preguntas, seleccionesOriginales
         {preguntas.map((pregunta, idx) => {
           const opcionElegidaId = seleccionesOriginales[pregunta.id];
           const opcionElegida = pregunta.opciones.find((o) => o.id === opcionElegidaId);
-          const esCorrecta = !!opcionElegida?.esCorrecta;
+          const esCorrecta = correctaPorPregunta[pregunta.id] ?? false;
 
           return (
             <div
