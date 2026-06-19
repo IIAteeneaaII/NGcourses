@@ -31,6 +31,8 @@ interface ApiInscripcion {
   estado: string;
   inscrito_en: string;
   ultimo_acceso_en: string | null;
+  usuario_nombre: string | null;
+  usuario_email: string | null;
 }
 
 interface ApiInscripcionesResp {
@@ -42,6 +44,8 @@ interface AlumnoRow {
   id: string;
   curso_id: string;
   curso_titulo: string;
+  alumno_nombre: string;
+  alumno_email: string;
   estado: string;
   inscrito_en: string;
   ultimo_acceso: string | null;
@@ -88,6 +92,8 @@ export default function AlumnosInstructorPage() {
                 id: insc.id,
                 curso_id: insc.curso_id,
                 curso_titulo: misCursos[idx].titulo,
+                alumno_nombre: insc.usuario_nombre || '—',
+                alumno_email: insc.usuario_email || '',
                 estado: insc.estado,
                 inscrito_en: insc.inscrito_en,
                 ultimo_acceso: insc.ultimo_acceso_en,
@@ -123,7 +129,11 @@ export default function AlumnosInstructorPage() {
   const filtered = useMemo(() =>
     alumnos.filter((a) => {
       const matchCourse = courseFilter === 'todos' || a.curso_id === courseFilter;
-      const matchSearch = a.curso_titulo.toLowerCase().includes(searchTerm.toLowerCase());
+      const term = searchTerm.toLowerCase();
+      const matchSearch =
+        a.curso_titulo.toLowerCase().includes(term) ||
+        a.alumno_nombre.toLowerCase().includes(term) ||
+        a.alumno_email.toLowerCase().includes(term);
       return matchCourse && matchSearch;
     }), [alumnos, searchTerm, courseFilter]);
 
@@ -178,7 +188,7 @@ export default function AlumnosInstructorPage() {
             <div className={styles.filtersRow}>
               <input
                 type="text"
-                placeholder="Buscar por nombre de curso..."
+                placeholder="Buscar por alumno o curso..."
                 value={searchTerm}
                 onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 className={styles.searchInput}
@@ -193,6 +203,7 @@ export default function AlumnosInstructorPage() {
               <table className={styles.table}>
                 <thead>
                   <tr>
+                    <th>Alumno</th>
                     <th>Curso</th>
                     <th>Estado</th>
                     <th>Inscrito el</th>
@@ -201,10 +212,14 @@ export default function AlumnosInstructorPage() {
                 </thead>
                 <tbody>
                   {loading ? (
-                    <tr><td colSpan={4} className={styles.emptyRow}>Cargando...</td></tr>
+                    <tr><td colSpan={5} className={styles.emptyRow}>Cargando...</td></tr>
                   ) : paginated.length > 0 ? (
                     paginated.map((a) => (
                       <tr key={a.id}>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{a.alumno_nombre}</div>
+                          {a.alumno_email && <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{a.alumno_email}</div>}
+                        </td>
                         <td>{a.curso_titulo}</td>
                         <td>{a.estado}</td>
                         <td className={styles.dateCell}>{formatDate(a.inscrito_en)}</td>
@@ -212,7 +227,7 @@ export default function AlumnosInstructorPage() {
                       </tr>
                     ))
                   ) : (
-                    <tr><td colSpan={4} className={styles.emptyRow}>No se encontraron inscripciones.</td></tr>
+                    <tr><td colSpan={5} className={styles.emptyRow}>No se encontraron inscripciones.</td></tr>
                   )}
                 </tbody>
               </table>
