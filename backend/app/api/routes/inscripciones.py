@@ -6,10 +6,11 @@ from datetime import datetime
 from typing import Any
 
 from fastapi import APIRouter, HTTPException
-from sqlmodel import SQLModel
+from sqlmodel import SQLModel, select
 
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
+from app.models import User
 from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
 from app.models.inscripcion import Certificado, Inscripcion
 
@@ -29,6 +30,9 @@ class InscripcionPublic(SQLModel):
     estado: EstadoInscripcion
     inscrito_en: datetime
     ultimo_acceso_en: datetime | None = None
+    # Identidad del alumno (poblada en el listado por curso para instructor/admin).
+    usuario_nombre: str | None = None
+    usuario_email: str | None = None
 
 
 class InscripcionesPublic(SQLModel):
@@ -204,7 +208,20 @@ def inscripciones_por_curso(
     items, count = crud.get_inscripciones_curso(
         session=session, curso_id=curso_id, skip=skip, limit=limit
     )
-    return InscripcionesPublic(
-        data=[InscripcionPublic.model_validate(i, from_attributes=True) for i in items],
-        count=count,
-    )
+    # Cargar la identidad de los alumnos en una sola consulta (evita N+1).
+    user_ids = [i.usuario_id for i in items]
+    user_map: dict[uuid.UUID, User] = {}
+    if user_ids:
+        user_map = {
+            u.id: u for u in session.exec(select(User).where(User.id.in_(user_ids))).all()
+        }
+    data = []
+    for i in items:
+        u = user_map.get(i.usuario_id)
+        data.append(InscripcionPublic(
+            id=i.id, usuario_id=i.usuario_id, curso_id=i.curso_id,
+            estado=i.estado, inscrito_en=i.inscrito_en, ultimo_acceso_en=i.ultimo_acceso_en,
+            usuario_nombre=u.full_name if u else None,
+            usuario_email=u.email if u else None,
+        ))
+    return InscripcionesPublic(data=data, count=count)
