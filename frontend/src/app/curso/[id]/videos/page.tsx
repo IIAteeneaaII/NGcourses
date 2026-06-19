@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, notFound } from 'next/navigation';
+import { useParams, useSearchParams, useRouter, notFound } from 'next/navigation';
 import CourseVideoContent from '@/components/course/CourseVideoContent';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import { cursosApi, inscripcionesApi, progresoApi } from '@/lib/api/client';
@@ -62,6 +62,7 @@ interface ProgresoResp {
 export default function CursoVideosPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = params.id as string;
   const fromAdmin = searchParams.get('from') === 'admin';
 
@@ -70,6 +71,7 @@ export default function CursoVideosPage() {
   const [bunnyLibraryId, setBunnyLibraryId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -80,6 +82,16 @@ export default function CursoVideosPage() {
         // Inscripción del usuario en este curso
         const inscResp = await inscripcionesApi.mis() as ApiInscripcionesResp;
         const inscripcion = inscResp.data.find((i) => i.curso_id === id);
+
+        // CP18: el reproductor es solo para inscritos. Sin inscripción (y fuera
+        // del preview de admin) se redirige a la ficha del curso, que muestra el
+        // CTA para inscribirse. El backend ya no entrega contenido ni progreso
+        // sin inscripción; esto bloquea además el acceso a la ruta.
+        if (!inscripcion && !fromAdmin) {
+          setRedirecting(true);
+          router.replace(`/curso/${id}`);
+          return;
+        }
         if (inscripcion) setInscripcionId(inscripcion.id);
 
         // Progreso del usuario
@@ -139,7 +151,7 @@ export default function CursoVideosPage() {
     fetchData();
   }, [id]);
 
-  if (loading) {
+  if (loading || redirecting) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
         <span>Cargando...</span>
