@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import uuid
@@ -37,6 +38,25 @@ from app.models.schemas import Message
 from app.services import bunny as bunny_svc
 
 router = APIRouter(prefix="/cursos", tags=["cursos"])
+
+
+def _strip_quiz_answer_key(contenido: str | None) -> str | None:
+    """Quita el flag `esCorrecta` de las opciones del quiz.
+
+    La calificación es autoritativa del backend (`crud.crear_intento_quiz`), así
+    que el alumno NUNCA debe recibir cuál opción es la correcta: filtrarlo evita
+    que vea la respuesta antes de contestar inspeccionando el payload/HTML.
+    """
+    if not contenido:
+        return contenido
+    try:
+        data = json.loads(contenido)
+    except (json.JSONDecodeError, TypeError):
+        return contenido
+    for pregunta in data.get("preguntas", []):
+        for opcion in pregunta.get("opciones", []):
+            opcion.pop("esCorrecta", None)
+    return json.dumps(data)
 
 
 def _require_instructor_or_admin(current_user: CurrentUser) -> None:
@@ -196,6 +216,10 @@ def get_curso(
                 lp.thumbnail_url = None
                 lp.contenido = None
                 lp.recursos = []
+            elif not (is_admin or is_owner):
+                # Alumno inscrito: ve el quiz pero sin la clave de respuestas.
+                # Admin/instructor sí la reciben (editor / preview con calificación local).
+                lp.contenido = _strip_quiz_answer_key(lp.contenido)
             lecciones.append(lp)
         modulo_data.lecciones = lecciones
         modulos.append(modulo_data)
