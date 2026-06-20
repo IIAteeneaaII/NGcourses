@@ -420,6 +420,13 @@ export const supervisorApi = {
   listarSolicitudes: () => apiClient.get('/api/v1/supervisor/solicitudes'),
 };
 
+// Solicitudes de curso de los supervisores, vistas/gestionadas por el admin (CP09).
+export const solicitudesAdminApi = {
+  listar: () => apiClient.get('/api/v1/solicitudes'),
+  actualizar: (id: string, data: { estado: string; comentario?: string }) =>
+    apiClient.patch(`/api/v1/solicitudes/${id}`, data),
+};
+
 export const quizApi = {
   /** El alumno envía sus respuestas y obtiene resultado inmediato. */
   enviar: (leccion_id: string, data: { inscripcion_id: string; respuestas: { pregunta_id: string; opcion_id: string }[] }) =>

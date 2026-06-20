@@ -1488,6 +1488,42 @@ def list_solicitudes_by_org(
     ).all())
 
 
+def list_all_solicitudes(*, session: Session) -> list[SolicitudCurso]:
+    """Todas las solicitudes de curso (panel de admin)."""
+    return list(session.exec(
+        select(SolicitudCurso).order_by(SolicitudCurso.creado_en.desc())  # type: ignore[arg-type]
+    ).all())
+
+
+def get_solicitud(
+    *, session: Session, solicitud_id: uuid.UUID
+) -> SolicitudCurso | None:
+    return session.get(SolicitudCurso, solicitud_id)
+
+
+def set_solicitud_estado(
+    *, session: Session, solicitud: SolicitudCurso, estado: EstadoSolicitud
+) -> SolicitudCurso:
+    solicitud.estado = estado
+    solicitud.actualizado_en = datetime.utcnow()
+    session.add(solicitud)
+    session.commit()
+    session.refresh(solicitud)
+    return solicitud
+
+
+def add_comentario_solicitud(
+    *, session: Session, solicitud_id: uuid.UUID, autor_id: uuid.UUID, comentario: str
+) -> ComentarioSolicitud:
+    c = ComentarioSolicitud(
+        solicitud_id=solicitud_id, autor_id=autor_id, comentario=comentario
+    )
+    session.add(c)
+    session.commit()
+    session.refresh(c)
+    return c
+
+
 # ── Pagos (RF10/RF08) ──────────────────────────────────────────────────────
 
 
