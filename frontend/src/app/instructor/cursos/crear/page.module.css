@@ -1146,3 +1146,212 @@
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(0, 71, 119, 0.2);
 }
+
+/* Fix responsive Crear Curso Instructor */
+.pageContainer,
+.pageHeader,
+.headerLeft,
+.contentWrapper,
+.sidebar,
+.mainContent,
+.formContainer,
+.stepContent,
+.formGroup,
+.formRow,
+.moduleCard,
+.moduleHeader,
+.moduleContent,
+.lessonCard,
+.lessonHeader,
+.lessonInputs,
+.addRecursoForm,
+.summaryGrid {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.input,
+.textarea,
+.select,
+.moduleTitleInput,
+.lessonTitleInput,
+.lessonInput,
+.lessonDurationInput,
+.recursoInput {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .headerLeft {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    width: 100%;
+  }
+
+  .returnButton,
+  .previewButton {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pageTitle {
+    width: 100%;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    overflow-wrap: anywhere;
+  }
+
+  .contentWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    width: 100%;
+  }
+
+  .sidebar {
+    position: static;
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 0;
+    overflow: hidden;
+  }
+
+  .stepNav {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.5rem;
+    overflow: visible;
+    padding-bottom: 0;
+  }
+
+  .stepButton {
+    width: 100%;
+    min-width: 0;
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 0.35rem;
+    padding: 0.75rem 0.35rem;
+  }
+
+  .stepIcon {
+    font-size: 1rem;
+  }
+
+  .stepName {
+    font-size: 0.7rem;
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .mainContent {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .formContainer {
+    width: 100%;
+    padding: 1.25rem;
+  }
+
+  .stepTitle {
+    font-size: 1.35rem;
+    line-height: 1.2;
+  }
+
+  .stepDescription {
+    font-size: 0.9rem;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+
+  .formRow,
+  .lessonInputs,
+  .addRecursoForm {
+    grid-template-columns: 1fr;
+  }
+
+  .input,
+  .textarea,
+  .select,
+  .lessonInput,
+  .lessonDurationInput,
+  .recursoInput {
+    width: 100%;
+    font-size: 0.95rem;
+  }
+
+  .lessonDurationInput {
+    text-align: left;
+  }
+
+  .moduleHeader,
+  .lessonHeader {
+    flex-wrap: wrap;
+  }
+
+  .moduleTitleInput,
+  .lessonTitleInput {
+    flex: 1 1 100%;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .navigationButtons {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .backButton,
+  .nextButton,
+  .publishButton {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .stepNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formContainer {
+    padding: 1rem;
+  }
+
+  .sidebar {
+    padding: 0.875rem;
+  }
+
+  .uploadPlaceholder {
+    padding: 2rem 1rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .stepButton {
+    padding: 0.7rem 0.25rem;
+  }
+
+  .stepName {
+    font-size: 0.68rem;
+  }
+}
