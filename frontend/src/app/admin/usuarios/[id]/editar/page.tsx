@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 import { EditUserSchema } from '@/schemas/user';
 
@@ -36,6 +37,7 @@ export default function EditarUsuarioPage() {
   const router = useRouter();
   const id = params.id as string;
 
+  const { flags } = useFeatureFlags();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -160,9 +162,13 @@ export default function EditarUsuarioPage() {
               value={form.rol}
               onChange={(e) => setForm((f) => ({ ...f, rol: e.target.value }))}
             >
-              {Object.entries(ROLES).map(([key, label]) => (
-                <option key={key} value={key}>{label}</option>
-              ))}
+              {Object.entries(ROLES)
+                // Feature flag: ocultar "Instructor" mientras esté apagado, salvo
+                // que el usuario ya tenga ese rol (para no romper su edición).
+                .filter(([key]) => key !== 'instructor' || flags.instructores || form.rol === 'instructor')
+                .map(([key, label]) => (
+                  <option key={key} value={key}>{label}</option>
+                ))}
             </select>
           </div>
 

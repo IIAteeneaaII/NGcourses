@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { cursosApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 
 interface ApiCurso {
@@ -18,6 +19,7 @@ interface ApiResponse {
 }
 
 export default function AdminDashboardPage() {
+  const { flags } = useFeatureFlags();
   const [recentCourses, setRecentCourses] = useState<ApiCurso[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
 
@@ -57,8 +59,11 @@ export default function AdminDashboardPage() {
         </p>
       </div>
 
-      {/* Options Grid - 4 Cards */}
-      <div className={styles.optionsGrid}>
+      {/* Options Grid — una columna por tarjeta visible (3 sin instructor, 4 con él) */}
+      <div
+        className={styles.optionsGrid}
+        style={{ ['--card-count' as string]: flags.instructores ? 4 : 3 } as CSSProperties}
+      >
         {/* Gestionar Usuarios */}
         <div className={styles.optionCard}>
           <div className={`${styles.optionIcon} ${styles.users}`}>
@@ -108,7 +113,8 @@ export default function AdminDashboardPage() {
           <Link href="/admin/solicitudes" className={styles.optionButton}>Ver solicitudes</Link>
         </div>
 
-        {/* Instructores */}
+        {/* Instructores — solo si el feature flag está habilitado */}
+        {flags.instructores && (
         <div className={styles.optionCard}>
           <div className={`${styles.optionIcon} ${styles.instructors}`}>
             <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -124,6 +130,7 @@ export default function AdminDashboardPage() {
           </p>
           <Link href="/admin/instructores" className={styles.optionButton}>Ver instructores</Link>
         </div>
+        )}
       </div>
 
       {/* Cursos recientes (datos reales) */}

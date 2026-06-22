@@ -447,6 +447,19 @@ export const solicitudesAdminApi = {
     apiClient.patch(`/api/v1/solicitudes/${id}`, data),
 };
 
+// Feature flags: interruptores de funcionalidad controlados por el admin.
+export interface FeatureFlag {
+  nombre: string;
+  habilitado: boolean;
+  actualizado_en: string;
+}
+
+export const featureFlagsApi = {
+  list: () => apiClient.get('/api/v1/feature-flags') as Promise<FeatureFlag[]>,
+  set: (nombre: string, habilitado: boolean) =>
+    apiClient.patch(`/api/v1/feature-flags/${nombre}`, { habilitado }) as Promise<FeatureFlag>,
+};
+
 export const quizApi = {
   /** El alumno envía sus respuestas y obtiene resultado inmediato. */
   enviar: (leccion_id: string, data: { inscripcion_id: string; respuestas: { pregunta_id: string; opcion_id: string }[] }) =>
