@@ -78,6 +78,15 @@ _LOGO_W: dict[str, float] = {
     "ram":     PAGE_W * 0.22,
 }
 
+# Altura máxima del logo. Imprescindible para logos casi cuadrados (el de
+# nextgen es 677×619): si solo se limita el ancho, el alto se dispara y el logo
+# invade el título y el nombre del alumno. Se toma la escala menor entre ancho
+# y alto para mantener proporción y que SIEMPRE quepa en la banda superior.
+_LOGO_MAX_H: dict[str, float] = {
+    "nextgen": PAGE_H * 0.17,   # ~104 pt
+    "ram":     PAGE_H * 0.22,   # ~135 pt
+}
+
 def _draw_logo(c: rl_canvas.Canvas, marca: str) -> None:
     logo_path = STATIC_LOGOS / marca / "logo.png"
     if not logo_path.exists():
@@ -85,10 +94,12 @@ def _draw_logo(c: rl_canvas.Canvas, marca: str) -> None:
     img = ImageReader(str(logo_path))
     iw, ih = img.getSize()
     fixed_w = _LOGO_W.get(marca, PAGE_W * 0.22)
-    dw = fixed_w
-    dh = ih * (fixed_w / iw)
+    max_h = _LOGO_MAX_H.get(marca, PAGE_H * 0.22)
+    scale = min(fixed_w / iw, max_h / ih)
+    dw = iw * scale
+    dh = ih * scale
     x = CX - dw / 2
-    y = PAGE_H - 32 - dh
+    y = PAGE_H - 30 - dh
     c.drawImage(img, x, y, width=dw, height=dh, mask="auto")
 
 
@@ -180,14 +191,19 @@ def _draw_body(c: rl_canvas.Canvas, folio: str, student_name: str,
     c.setFont("Helvetica-Oblique", 12)
     _cx_text(c, "Se certifica que", 395)
 
-    # ── Nombre del alumno ─────────────────────────────────────────────────────
+    # ── Nombre del alumno (auto-ajuste para nombres largos) ───────────────────
+    name_font = "Times-BoldItalic"
+    name_size = 38
+    max_name_w = PAGE_W - 180          # margen seguro respecto a los bordes
+    while name_size > 22 and c.stringWidth(student_name, name_font, name_size) > max_name_w:
+        name_size -= 2
     c.setFillColor(TEXT_DARK)
-    c.setFont("Times-BoldItalic", 38)
+    c.setFont(name_font, name_size)
     _cx_text(c, student_name, 352)
 
     # Línea bajo el nombre
-    name_w = c.stringWidth(student_name, "Times-BoldItalic", 38)
-    line_half = min(name_w / 2 + 20, 240)
+    name_w = c.stringWidth(student_name, name_font, name_size)
+    line_half = min(name_w / 2 + 20, 260)
     _hline(c, CX - line_half, CX + line_half, 342, width=0.7)
 
     # ── "has successfully completed the course in:" ───────────────────────────

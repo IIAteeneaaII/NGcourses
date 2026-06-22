@@ -231,6 +231,26 @@ export const cursosApi = {
   },
   deleteRecurso: (curso_id: string, modulo_id: string, leccion_id: string, recurso_id: string) =>
     apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/${recurso_id}`),
+  // Descarga autenticada de un recurso (el archivo ya NO es público vía /media).
+  descargarRecurso: async (recurso_id: string): Promise<void> => {
+    const resp = await fetch(`${API_URL}/api/v1/cursos/recursos/${recurso_id}/download`, { cache: 'no-store' });
+    if (!resp.ok) {
+      let detail = 'No se pudo descargar el recurso';
+      try { const b = await resp.json(); detail = b.detail ?? detail; } catch { /* noop */ }
+      throw { detail, status: resp.status } as ApiError;
+    }
+    const cd = resp.headers.get('Content-Disposition') || '';
+    const match = cd.match(/filename="?([^"]+)"?/);
+    const blob = await resp.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.download = match?.[1] || 'recurso';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(objectUrl);
+  },
   saveQuizData: (curso_id: string, modulo_id: string, leccion_id: string, quizData: unknown) =>
     apiClient.patch(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`, { contenido: JSON.stringify(quizData) }),
 };
@@ -418,6 +438,13 @@ export const supervisorApi = {
   crearSolicitud: (data: { titulo_solicitud: string; descripcion?: string }) =>
     apiClient.post('/api/v1/supervisor/solicitudes', data),
   listarSolicitudes: () => apiClient.get('/api/v1/supervisor/solicitudes'),
+};
+
+// Solicitudes de curso de los supervisores, vistas/gestionadas por el admin (CP09).
+export const solicitudesAdminApi = {
+  listar: () => apiClient.get('/api/v1/solicitudes'),
+  actualizar: (id: string, data: { estado: string; comentario?: string }) =>
+    apiClient.patch(`/api/v1/solicitudes/${id}`, data),
 };
 
 export const quizApi = {
