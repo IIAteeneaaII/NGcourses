@@ -547,3 +547,36 @@
     min-width: 600px;
   }
 }
+
+
+/* Responsive solo para botones del header de usuarios */
+.headerActions {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .headerActions {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+
+  .headerActions .backButton {
+    flex: 1 1 100%;
+  }
+
+  .headerActions .createButton {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .headerActions .createButton {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+}
