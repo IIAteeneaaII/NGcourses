@@ -688,8 +688,13 @@ def check_and_emit_certificate(
         session.commit()
         session.refresh(certificado)
     except Exception as exc:  # noqa: BLE001
+        # No-fatal: el registro ya existe y la descarga regenera el PDF on-demand.
+        # Se registra como error con traza porque suele ser un problema de escritura
+        # (permisos del dir media/certificados) que de otro modo pasa inadvertido.
         import logging
-        logging.getLogger(__name__).warning("PDF generation failed for %s: %s", folio, exc)
+        logging.getLogger(__name__).error(
+            "PDF generation failed for %s: %s", folio, exc, exc_info=True
+        )
 
     return certificado
 
@@ -1481,6 +1486,42 @@ def list_solicitudes_by_org(
         select(SolicitudCurso).where(SolicitudCurso.organizacion_id == org_id)
         .order_by(SolicitudCurso.creado_en.desc())  # type: ignore[arg-type]
     ).all())
+
+
+def list_all_solicitudes(*, session: Session) -> list[SolicitudCurso]:
+    """Todas las solicitudes de curso (panel de admin)."""
+    return list(session.exec(
+        select(SolicitudCurso).order_by(SolicitudCurso.creado_en.desc())  # type: ignore[arg-type]
+    ).all())
+
+
+def get_solicitud(
+    *, session: Session, solicitud_id: uuid.UUID
+) -> SolicitudCurso | None:
+    return session.get(SolicitudCurso, solicitud_id)
+
+
+def set_solicitud_estado(
+    *, session: Session, solicitud: SolicitudCurso, estado: EstadoSolicitud
+) -> SolicitudCurso:
+    solicitud.estado = estado
+    solicitud.actualizado_en = datetime.utcnow()
+    session.add(solicitud)
+    session.commit()
+    session.refresh(solicitud)
+    return solicitud
+
+
+def add_comentario_solicitud(
+    *, session: Session, solicitud_id: uuid.UUID, autor_id: uuid.UUID, comentario: str
+) -> ComentarioSolicitud:
+    c = ComentarioSolicitud(
+        solicitud_id=solicitud_id, autor_id=autor_id, comentario=comentario
+    )
+    session.add(c)
+    session.commit()
+    session.refresh(c)
+    return c
 
 
 # ── Pagos (RF10/RF08) ──────────────────────────────────────────────────────

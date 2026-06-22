@@ -14,10 +14,11 @@ interface Solicitud {
 }
 
 const ESTADO_LABEL: Record<string, string> = {
-  pendiente: 'Pendiente',
-  revision: 'En revisión',
-  aceptada: 'Aceptada',
+  abierta: 'Pendiente',
+  en_revision: 'En revisión',
+  aprobada: 'Aprobada',
   rechazada: 'Rechazada',
+  cerrada: 'Cerrada',
 };
 
 export default function SupervisorSolicitudesPage() {

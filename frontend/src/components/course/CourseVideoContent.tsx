@@ -45,7 +45,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
     if (initialCourse.progress !== 100) return;
     (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>)
       .then((resp) => {
-        const cert = resp.data.find((c) => c.curso_id === initialCourse.id && c.url_pdf);
+        const cert = resp.data.find((c) => c.curso_id === initialCourse.id);
         if (cert) setCertFolio(cert.folio);
       })
       .catch(() => {});
@@ -106,7 +106,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
     setProgress(newProgress);
 
     if (newProgress === 100 && inscripcionId) {
-      // Mostrar modal y ESPERAR a que el backend procese el certificado
+      // El certificado se emite de forma síncrona al registrar el 100%; basta
+      // con leer el folio. La descarga regenera el PDF si hiciera falta, así
+      // que NO se gatea por url_pdf ni se espera con un sleep arbitrario.
       setCompletionModal({ folio: null, loading: true });
       try {
         await progresoApi.registrar({
@@ -115,10 +117,8 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
           visto_seg: videoDuration.current || 0,
           progreso_pct: 100,
         });
-        // Pequeña pausa extra para que el PDF termine de generarse
-        await new Promise((r) => setTimeout(r, 800));
         const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>);
-        const cert = resp.data.find((c) => c.curso_id === course.id && c.url_pdf);
+        const cert = resp.data.find((c) => c.curso_id === course.id);
         setCompletionModal({ folio: cert?.folio ?? null, loading: false });
         if (cert?.folio) setCertFolio(cert.folio);
       } catch (e) {
@@ -190,6 +190,22 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
             Volver a información del curso
           </Link>
         </div>
+
+        {certFolio && (
+          <div className={styles.certBanner}>
+            <div className={styles.certBannerText}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a9 9 0 01-9-9 9 9 0 019-9h9a9 9 0 019 9 9 9 0 01-9 9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l2 2 4-4.5" /></svg>
+              <span>¡Curso completado! Tu certificado está listo.</span>
+            </div>
+            <button
+              className={styles.certBannerBtn}
+              disabled={downloading}
+              onClick={() => handleDescargarCert(certFolio)}
+            >
+              {downloading ? 'Descargando...' : 'Descargar certificado'}
+            </button>
+          </div>
+        )}
 
         <div className={styles.contentGrid}>
           <div className={styles.videoSection}>
