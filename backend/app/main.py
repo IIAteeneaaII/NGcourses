@@ -76,7 +76,13 @@ if settings.all_cors_origins:
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Serve uploaded media files (course covers, etc.)
+# Servir archivos de media. Solo `covers` (miniaturas de curso) es PÚBLICO.
+# Los certificados (PII) y los recursos de lección (material gateado por
+# inscripción) NO se montan como estáticos: se sirven por endpoints autenticados
+# (`/certificados/descargar/{folio}` y `/cursos/recursos/{id}/download`) para que
+# no sean descargables sin sesión por su URL directa.
 os.makedirs(MEDIA_DIR, exist_ok=True)
 if os.getenv("SERVE_MEDIA", "true").lower() != "false":
-    app.mount("/media", StaticFiles(directory=MEDIA_DIR), name="media")
+    covers_dir = os.path.join(MEDIA_DIR, "covers")
+    os.makedirs(covers_dir, exist_ok=True)
+    app.mount("/media/covers", StaticFiles(directory=covers_dir), name="media-covers")
