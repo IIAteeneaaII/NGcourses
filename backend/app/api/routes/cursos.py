@@ -7,6 +7,7 @@ from typing import Any
 
 import httpx
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from sqlmodel import SQLModel, func, select
 
 logger = logging.getLogger(__name__)
@@ -904,6 +905,57 @@ async def upload_recurso(
     )
     db_recurso = crud.create_recurso_leccion(session=session, recurso_in=recurso_in, leccion_id=leccion_id)
     return RecursoLeccionPublic.model_validate(db_recurso, from_attributes=True)
+
+
+@router.get("/recursos/{recurso_id}/download")
+def download_recurso(
+    recurso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+) -> FileResponse:
+    """Descarga un recurso de lección con control de acceso.
+
+    Reemplaza el acceso estático público a `/media/recursos/*`: solo admin,
+    instructor dueño del curso, o alumno con inscripción ACTIVA/FINALIZADA puede
+    descargarlo. Mismo criterio que el contenido reproducible en `get_curso`.
+    """
+    from pathlib import Path
+    from app.models.contenido import Curso as CursoModel, Leccion, Modulo, RecursoLeccion
+
+    recurso = session.get(RecursoLeccion, recurso_id)
+    if not recurso:
+        raise HTTPException(status_code=404, detail="Recurso no encontrado")
+
+    leccion = session.get(Leccion, recurso.leccion_id)
+    modulo = session.get(Modulo, leccion.modulo_id) if leccion else None
+    curso = session.get(CursoModel, modulo.curso_id) if modulo else None
+    if not curso:
+        raise HTTPException(status_code=404, detail="Recurso no encontrado")
+
+    is_admin = current_user.is_superuser or current_user.rol in {
+        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+    }
+    is_owner = current_user.id == curso.instructor_id
+    if not (is_admin or is_owner):
+        inscripcion = crud.get_inscripcion_by_usuario_curso(
+            session=session, usuario_id=current_user.id, curso_id=curso.id
+        )
+        tiene_acceso = (
+            inscripcion is not None
+            and inscripcion.estado in {EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA}
+        )
+        if not tiene_acceso:
+            raise HTTPException(status_code=403, detail="Sin acceso a este recurso")
+
+    # El archivo físico es el basename de la URL guardada (/media/recursos/<uuid>.<ext>).
+    filename = Path(recurso.url).name
+    file_path = Path(RECURSOS_DIR) / filename
+    if not file_path.exists():
+        raise HTTPException(status_code=404, detail="Archivo no encontrado en el servidor")
+
+    ext = filename.rsplit(".", 1)[-1] if "." in filename else ""
+    download_name = f"{recurso.titulo}.{ext}" if ext else recurso.titulo
+    return FileResponse(path=str(file_path), filename=download_name)
 
 
 @router.delete(

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Resource } from '@/types/course';
-import { calificacionesApi } from '@/lib/api/client';
+import { calificacionesApi, cursosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './VideoControls.module.css';
 
@@ -42,6 +42,18 @@ export default function VideoControls({
 }: VideoControlsProps) {
   const [activeTab, setActiveTab] = useState<'resumen' | 'recursos' | 'notas' | 'comentarios'>('resumen');
   const [isCompleted, setIsCompleted] = useState(false);
+  const [descargandoRecurso, setDescargandoRecurso] = useState<string | null>(null);
+
+  const handleDescargarRecurso = async (recursoId: string) => {
+    setDescargandoRecurso(recursoId);
+    try {
+      await cursosApi.descargarRecurso(recursoId);
+    } catch (e) {
+      logError('VideoControls/descargarRecurso', e);
+    } finally {
+      setDescargandoRecurso(null);
+    }
+  };
 
   // Notas (localStorage por lección)
   const notasKey = `notas_${courseId}_${lessonId}`;
@@ -139,9 +151,14 @@ export default function VideoControls({
                     {getFileIcon(resource.type)}
                   </span>
                   <span className={styles.resourceName}>{resource.name}</span>
-                  <a href={resource.url} download className={styles.downloadButton}>
-                    Descargar
-                  </a>
+                  <button
+                    type="button"
+                    className={styles.downloadButton}
+                    disabled={descargandoRecurso === resource.id}
+                    onClick={() => handleDescargarRecurso(resource.id)}
+                  >
+                    {descargandoRecurso === resource.id ? 'Descargando...' : 'Descargar'}
+                  </button>
                 </li>
               ))}
             </ul>
