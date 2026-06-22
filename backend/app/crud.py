@@ -1661,3 +1661,35 @@ def reenviar_invitacion(*, session: Session, invitacion_id: uuid.UUID) -> tuple[
     session.commit()
     session.refresh(inv)
     return inv, raw_token
+
+
+# ── Feature Flags ─────────────────────────────────────────────────────────────
+
+
+def get_feature_flags(*, session: Session) -> list:
+    """Devuelve todos los feature flags."""
+    from app.models.sistema import FeatureFlag
+    return list(session.exec(select(FeatureFlag)).all())
+
+
+def feature_habilitada(*, session: Session, nombre: str, default: bool = False) -> bool:
+    """True si el feature `nombre` está habilitado. Si no existe el registro,
+    devuelve `default` (apagado por defecto)."""
+    from app.models.sistema import FeatureFlag
+    flag = session.get(FeatureFlag, nombre)
+    return flag.habilitado if flag else default
+
+
+def set_feature_flag(*, session: Session, nombre: str, habilitado: bool):
+    """Prende/apaga un feature flag (lo crea si no existe)."""
+    from app.models.sistema import FeatureFlag
+    flag = session.get(FeatureFlag, nombre)
+    if flag is None:
+        flag = FeatureFlag(nombre=nombre, habilitado=habilitado)
+    else:
+        flag.habilitado = habilitado
+    flag.actualizado_en = datetime.utcnow()
+    session.add(flag)
+    session.commit()
+    session.refresh(flag)
+    return flag

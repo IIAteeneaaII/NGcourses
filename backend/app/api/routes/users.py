@@ -85,6 +85,16 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Admin
             detail="Solo el superusuario puede crear otros superusuarios",
         )
 
+    # Feature flag: el rol instructor puede estar deshabilitado (apagado por el
+    # admin). Mientras lo esté, no se permite crear instructores nuevos.
+    if user_in.rol == RolUsuario.INSTRUCTOR and not crud.feature_habilitada(
+        session=session, nombre="instructores"
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="El rol de instructor está deshabilitado actualmente.",
+        )
+
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -263,6 +273,15 @@ def update_user(
                 status_code=403,
                 detail="Solo superuser puede modificar cuentas de administrador",
             )
+
+    # Feature flag: no permitir asignar el rol instructor mientras esté apagado.
+    if user_in.rol == RolUsuario.INSTRUCTOR and not crud.feature_habilitada(
+        session=session, nombre="instructores"
+    ):
+        raise HTTPException(
+            status_code=400,
+            detail="El rol de instructor está deshabilitado actualmente.",
+        )
 
     if user_in.email:
         existing_user = crud.get_user_by_email(session=session, email=user_in.email)

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usersApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 
 interface CreateUserForm {
@@ -38,6 +39,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function UsuariosPage() {
   const router = useRouter();
+  const { flags } = useFeatureFlags();
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -378,7 +380,7 @@ export default function UsuariosPage() {
                   className={styles.formInput}
                 >
                   <option value="estudiante">Estudiante</option>
-                  <option value="instructor">Instructor</option>
+                  {flags.instructores && <option value="instructor">Instructor</option>}
                   <option value="administrador">Administrador</option>
                 </select>
               </div>
