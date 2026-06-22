@@ -438,3 +438,71 @@
     padding: 1.25rem;
   }
 }
+
+/* Fix responsive para Solicitudes */
+.pageContainer,
+.headerBar,
+.historySection {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    overflow-x: hidden;
+  }
+
+  .headerBar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .headerBar h1 {
+    font-size: 1.35rem !important;
+    line-height: 1.25;
+    text-align: left;
+    overflow-wrap: anywhere;
+  }
+
+  .backButton {
+    width: 100%;
+    justify-content: center;
+    padding: 0.85rem 1rem;
+  }
+
+  .historySection {
+    padding: 1.25rem;
+  }
+
+  .historySection > div:first-child {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 0.75rem;
+  }
+
+  .historyTitle {
+    font-size: 1.45rem;
+    line-height: 1.3;
+  }
+}
+
+@media (max-width: 380px) {
+  .historySection {
+    padding: 1rem;
+  }
+
+  .headerBar h1 {
+    font-size: 1.25rem !important;
+  }
+
+  .historyTitle {
+    font-size: 1.35rem;
+  }
+
+  .backButton {
+    font-size: 0.875rem;
+  }
+}

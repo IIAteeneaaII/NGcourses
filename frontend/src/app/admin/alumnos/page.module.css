@@ -569,3 +569,148 @@
   .pageHeader { flex-direction: column; align-items: flex-start; }
   .tab { padding: 0.625rem 1rem; font-size: 0.875rem; }
 }
+
+/* Fix responsive para vista Alumnos */
+.pageContainer,
+.pageHeader,
+.tabs,
+.pageLayout,
+.mainPanel,
+.card,
+.cardHeader,
+.searchBar,
+.quizFilterRow,
+.tableWrapper {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+@media (max-width: 768px) {
+  .pageContainer {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .pageHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .pageTitle {
+    width: 100%;
+    font-size: 1.55rem;
+    line-height: 1.2;
+  }
+
+  .backButton {
+    width: auto;
+    padding: 0.7rem 1rem;
+  }
+
+  .tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+    margin-bottom: 1.5rem;
+  }
+
+  .tab {
+    width: 100%;
+    padding: 0.8rem 0.35rem;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    text-align: center;
+    white-space: normal;
+  }
+
+  .pageLayout {
+    width: 100%;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+
+  .mainPanel {
+    width: 100%;
+  }
+
+  .card {
+    width: 100%;
+    padding: 1.25rem;
+    overflow: hidden;
+  }
+
+  .cardHeader {
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .cardTitle {
+    font-size: 1rem;
+    line-height: 1.25;
+  }
+
+  .countBadge {
+    flex-shrink: 0;
+    font-size: 0.75rem;
+  }
+
+  .searchBar {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+  }
+
+  .searchInput {
+    min-width: 0;
+    font-size: 0.9rem;
+  }
+
+  .quizSelect {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .tableWrapper {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table {
+    min-width: 560px;
+  }
+
+  .emptyMsg {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+}
+
+@media (max-width: 380px) {
+  .card {
+    padding: 1rem;
+  }
+
+  .tab {
+    font-size: 0.78rem;
+    padding: 0.75rem 0.25rem;
+  }
+
+  .cardHeader {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .countBadge {
+    align-self: flex-start;
+  }
+
+  .table {
+    min-width: 520px;
+  }
+}
