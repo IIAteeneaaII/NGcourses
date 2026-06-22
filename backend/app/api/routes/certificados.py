@@ -10,9 +10,10 @@ from fastapi import APIRouter, HTTPException
 from fastapi.responses import FileResponse
 from sqlmodel import Session, SQLModel, select
 
+from app import crud
 from app.api.deps import CurrentUser, SessionDep
-from app.models.inscripcion import Certificado
-from app.models._enums import RolUsuario
+from app.models.inscripcion import Certificado, Inscripcion
+from app.models._enums import EstadoInscripcion, RolUsuario
 
 CERT_DIR = Path(__file__).parent.parent.parent / "media" / "certificados"
 
@@ -106,6 +107,19 @@ def mis_certificados(
     current_user: CurrentUser,
 ) -> Any:
     """Lista los certificados del usuario actual."""
+    # CP20: re-emisión perezosa. Si el alumno completó un curso pero el
+    # certificado no se emitió (p.ej. su perfil no tenía nombre y ya lo
+    # corrigió), se intenta emitir ahora antes de listar.
+    inscripciones = session.exec(
+        select(Inscripcion).where(Inscripcion.usuario_id == current_user.id)
+    ).all()
+    for insc in inscripciones:
+        ya_tiene = session.exec(
+            select(Certificado).where(Certificado.inscripcion_id == insc.id)
+        ).first()
+        if not ya_tiene:
+            crud.check_and_emit_certificate(session=session, inscripcion_id=insc.id)
+
     statement = select(Certificado).where(Certificado.usuario_id == current_user.id)
     items = list(session.exec(statement).all())
     return CertificadosPublic(
@@ -131,6 +145,20 @@ def descargar_certificado(
     }
     if not is_admin and db_cert.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin acceso a este certificado")
+
+    # CP20: re-validar que el curso siga completo. Si se agregó contenido nuevo
+    # después de finalizar y el alumno aún no lo completa, el certificado no está
+    # disponible y la inscripción vuelve a ACTIVA.
+    inscripcion = session.get(Inscripcion, db_cert.inscripcion_id)
+    if inscripcion and not crud.curso_completado(session=session, inscripcion=inscripcion):
+        if inscripcion.estado == EstadoInscripcion.FINALIZADA:
+            inscripcion.estado = EstadoInscripcion.ACTIVA
+            session.add(inscripcion)
+            session.commit()
+        raise HTTPException(
+            status_code=409,
+            detail="Tienes contenido pendiente en el curso. Complétalo para descargar tu certificado.",
+        )
 
     pdf_path = CERT_DIR / f"{folio.upper()}.pdf"
     # Auto-recuperación: si el PDF nunca se generó (url_pdf nulo por una falla

@@ -26,6 +26,10 @@ export default function MyCoursesContent({ courses, statistics, user }: MyCourse
       await certificadosApi.descargar(folio);
     } catch (e) {
       logError('MyCoursesContent/descargarCertificado', e);
+      // CP20: el backend puede rechazar la descarga (409) si el curso cambió y
+      // hay contenido pendiente. Mostramos el motivo al alumno.
+      const detail = (e as { detail?: string })?.detail || 'No se pudo descargar el certificado.';
+      alert(detail);
     } finally {
       setDownloading(null);
     }
@@ -188,7 +192,11 @@ export default function MyCoursesContent({ courses, statistics, user }: MyCourse
                         {downloading === course.certificadoFolio ? 'Descargando...' : 'Descargar Certificado'}
                       </button>
                     ) : (
-                      <button className={styles.certificateButton} disabled>
+                      <button
+                        className={styles.certificateButton}
+                        disabled
+                        title="Si ya completaste el curso, verifica que tu perfil tenga tu nombre completo (sin el correo) para generar el certificado."
+                      >
                         Sin certificado
                       </button>
                     )}

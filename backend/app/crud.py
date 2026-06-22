@@ -587,6 +587,40 @@ def upsert_progreso(
     return db_prog
 
 
+def curso_completado(*, session: Session, inscripcion: Inscripcion) -> bool:
+    """True si el alumno completó TODAS las lecciones actuales del curso.
+
+    CP20: se recalcula contra las lecciones vigentes, así que si se agregan
+    módulos/lecciones después de finalizar, el curso deja de estar completo
+    hasta que el alumno también los complete.
+    """
+    statement = (
+        select(Leccion)
+        .join(Modulo, Leccion.modulo_id == Modulo.id)
+        .where(Modulo.curso_id == inscripcion.curso_id)
+    )
+    todas_lecciones = list(session.exec(statement).all())
+    if not todas_lecciones:
+        return False
+
+    completadas = get_progreso_curso(session=session, inscripcion_id=inscripcion.id)
+    completadas_ids = {p.leccion_id for p in completadas if p.completado}
+    total_ids = {l.id for l in todas_lecciones}
+    return total_ids.issubset(completadas_ids)
+
+
+def nombre_certificado_valido(usuario: User | None) -> bool:
+    """CP20: el certificado solo puede emitirse con un nombre real en el perfil.
+
+    Rechaza el nombre vacío y el caso reportado de tener el correo metido en el
+    campo de nombre (cualquier '@' lo delata).
+    """
+    if usuario is None or not usuario.full_name:
+        return False
+    nombre = usuario.full_name.strip()
+    return bool(nombre) and "@" not in nombre
+
+
 def check_and_emit_certificate(
     *, session: Session, inscripcion_id: uuid.UUID
 ) -> Certificado | None:
@@ -598,23 +632,23 @@ def check_and_emit_certificate(
     if not inscripcion:
         return None
 
-    # Obtener todas las lecciones del curso
-    statement = (
-        select(Leccion)
-        .join(Modulo, Leccion.modulo_id == Modulo.id)
-        .where(Modulo.curso_id == inscripcion.curso_id)
-    )
-    todas_lecciones = list(session.exec(statement).all())
-    if not todas_lecciones:
+    completo = curso_completado(session=session, inscripcion=inscripcion)
+
+    # CP20: si el curso cambió (módulos/lecciones nuevos) y ya no está completo,
+    # revertir una finalización previa: el certificado deja de ser válido hasta
+    # completar el contenido nuevo.
+    if not completo:
+        if inscripcion.estado == EstadoInscripcion.FINALIZADA:
+            inscripcion.estado = EstadoInscripcion.ACTIVA
+            session.add(inscripcion)
+            session.commit()
         return None
 
-    # Verificar progreso completado en todas
-    completadas = get_progreso_curso(session=session, inscripcion_id=inscripcion_id)
-    completadas_ids = {p.leccion_id for p in completadas if p.completado}
-    total_ids = {l.id for l in todas_lecciones}
-
-    if not total_ids.issubset(completadas_ids):
-        return None
+    # Completo → marcar FINALIZADA (idempotente).
+    if inscripcion.estado != EstadoInscripcion.FINALIZADA:
+        inscripcion.estado = EstadoInscripcion.FINALIZADA
+        session.add(inscripcion)
+        session.commit()
 
     # Ya existe certificado?
     existing = session.exec(
@@ -622,6 +656,13 @@ def check_and_emit_certificate(
     ).first()
     if existing:
         return existing
+
+    # CP20: validar que el perfil tenga un nombre real antes de emitir. Si no,
+    # NO se emite; se reintenta al consultar sus certificados (GET /me) una vez
+    # que el alumno corrija su nombre en el perfil.
+    usuario = session.get(User, inscripcion.usuario_id)
+    if not nombre_certificado_valido(usuario):
+        return None
 
     # Generar folio único
     folio = f"NG-{secrets.token_hex(FOLIO_TOKEN_BYTES).upper()}"
@@ -635,10 +676,6 @@ def check_and_emit_certificate(
         hash_verificacion=hash_ver,
     )
     session.add(certificado)
-
-    # Actualizar inscripción a FINALIZADA
-    inscripcion.estado = EstadoInscripcion.FINALIZADA
-    session.add(inscripcion)
 
     # FND-009: si dos requests concurrentes pasan el check, el unique constraint
     # en inscripcion_id rechaza el segundo — devolver el existente en ese caso.

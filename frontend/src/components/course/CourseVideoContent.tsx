@@ -117,8 +117,10 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
           visto_seg: videoDuration.current || 0,
           progreso_pct: 100,
         });
-        const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>);
-        const cert = resp.data.find((c) => c.curso_id === course.id);
+        const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] } | undefined>);
+        // El certificado puede no existir aún (p.ej. el perfil no tiene un nombre
+        // válido — CP20). En ese caso el modal se muestra sin folio de descarga.
+        const cert = resp?.data?.find((c) => c.curso_id === course.id);
         setCompletionModal({ folio: cert?.folio ?? null, loading: false });
         if (cert?.folio) setCertFolio(cert.folio);
       } catch (e) {

@@ -58,7 +58,8 @@ export default function PerfilPage() {
   const [loading, setLoading] = useState(true);
 
   const [editOpen, setEditOpen] = useState(false);
-  const [editForm, setEditForm] = useState({ email: '', telefono: '' });
+  const [editForm, setEditForm] = useState({ full_name: '', email: '', telefono: '' });
+  const [rawFullName, setRawFullName] = useState('');
   const [pwdForm, setPwdForm] = useState({ current: '', nueva: '', confirmar: '' });
   const [saving, setSaving] = useState(false);
   const [savingPwd, setSavingPwd] = useState(false);
@@ -80,6 +81,7 @@ export default function PerfilPage() {
         const initials = nombre.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join('');
 
         setUserId(userRaw.id);
+        setRawFullName(userRaw.full_name || '');
         setProfile({
           id: userRaw.id,
           name: nombre,
@@ -128,7 +130,7 @@ export default function PerfilPage() {
   }, []);
 
   const handleOpenEdit = () => {
-    setEditForm({ email: profile.email, telefono: profile.phone });
+    setEditForm({ full_name: rawFullName, email: profile.email, telefono: profile.phone });
     setPwdForm({ current: '', nueva: '', confirmar: '' });
     setSaveError('');
     setPwdError('');
@@ -147,11 +149,13 @@ export default function PerfilPage() {
     setSaving(true);
     try {
       const updated = await usersApi.updateMe({
+        full_name: editForm.full_name.trim() || undefined,
         email: editForm.email,
         telefono: editForm.telefono || null,
       }) as ApiUser;
       const nombre = updated.full_name || updated.email.split('@')[0];
       const initials = nombre.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join('');
+      setRawFullName(updated.full_name || '');
       setProfile((p) => ({ ...p, email: updated.email, phone: updated.telefono || '', name: nombre, initials: initials || 'U' }));
       setEditOpen(false);
     } catch (err: unknown) {
@@ -224,6 +228,19 @@ export default function PerfilPage() {
             </div>
 
             <form onSubmit={handleSaveEdit} className={styles.editForm}>
+              <div className={styles.formGroup}>
+                <label className={styles.formLabel}>Nombre completo</label>
+                <input
+                  type="text"
+                  className={styles.formInput}
+                  value={editForm.full_name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
+                  placeholder="Tu nombre y apellido"
+                />
+                <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                  Se usa tal cual en tu certificado. Asegúrate de que sea tu nombre real.
+                </small>
+              </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Correo electrónico *</label>
                 <input
