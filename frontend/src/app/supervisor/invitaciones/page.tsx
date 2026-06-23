@@ -204,7 +204,9 @@ export default function SupervisorInvitacionesPage() {
                     ? 'Enviada'
                     : r.estado === 'ya_inscrito'
                       ? 'Ya inscrito'
-                      : `Error${r.detalle ? `: ${r.detalle}` : ''}`}
+                      : r.estado === 'invalido'
+                        ? `Correo inválido${r.detalle ? `: ${r.detalle}` : ''}`
+                        : `Error${r.detalle ? `: ${r.detalle}` : ''}`}
                 </span>
               </li>
             ))}

@@ -12,7 +12,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models._enums import EstadoInscripcion
-from app.utils import generate_activacion_email, send_email
+from app.utils import email_formato_valido, generate_activacion_email, send_email
 
 logger = logging.getLogger(__name__)
 
@@ -189,6 +189,14 @@ def crear_invitaciones(
     for email in body.emails:
         email = email.strip().lower()
         if not email:
+            continue
+
+        # CP29: validar formato del correo antes de crear/enviar la invitación.
+        if not email_formato_valido(email):
+            resultados.append(InvitacionEnvioResultado(
+                email=email, estado="invalido",
+                detalle="Correo con formato inválido",
+            ))
             continue
 
         try:
