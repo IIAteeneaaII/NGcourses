@@ -277,6 +277,6 @@ export interface CourseInvitationsResponse {
 
 export interface InvitacionEnvioResult {
   email: string;
-  estado: 'enviada' | 'ya_inscrito' | 'error';
+  estado: 'enviada' | 'ya_inscrito' | 'error' | 'invalido';
   detalle?: string;
 }

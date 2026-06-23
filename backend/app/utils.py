@@ -8,12 +8,25 @@ import emails  # type: ignore
 import jwt
 from jinja2 import Template
 from jwt.exceptions import InvalidTokenError
+from pydantic import EmailStr, TypeAdapter
 
 from app.core import security
 from app.core.config import settings
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+_email_adapter = TypeAdapter(EmailStr)
+
+
+def email_formato_valido(email: str) -> bool:
+    """True si `email` tiene un formato de correo válido (misma validación que
+    EmailStr). Solo valida la sintaxis, no comprueba que el dominio exista."""
+    try:
+        _email_adapter.validate_python(email)
+        return True
+    except Exception:
+        return False
 
 
 @dataclass
