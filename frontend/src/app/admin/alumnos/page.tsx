@@ -160,18 +160,34 @@ export default function AlumnosAdminPage() {
   }, [activeTab, fetchStats]);
 
   // Fetch quiz results when curso changes
+  const loadQuizResults = useCallback((cursoId: string, resetPage = false) => {
+    setQuizLoading(true);
+    quizApi.resultadosCurso(cursoId)
+      .then((res) => setQuizResults(res as QuizResultadoAlumno[]))
+      .catch((e) => { logError('admin/alumnos/quizResultados', e); setQuizResults([]); })
+      .finally(() => setQuizLoading(false));
+    if (resetPage) setQuizPage(1);
+  }, []);
+
   useEffect(() => {
     if (activeTab !== 'quiz' || !quizCursoId) {
       setQuizResults([]);
       return;
     }
-    setQuizLoading(true);
-    quizApi.resultadosCurso(quizCursoId)
-      .then((res) => setQuizResults(res as QuizResultadoAlumno[]))
-      .catch((e) => { logError('admin/alumnos/quizResultados', e); setQuizResults([]); })
-      .finally(() => setQuizLoading(false));
-    setQuizPage(1);
-  }, [activeTab, quizCursoId]);
+    loadQuizResults(quizCursoId, true);
+  }, [activeTab, quizCursoId, loadQuizResults]);
+
+  const handleReiniciarIntentos = async (r: QuizResultadoAlumno) => {
+    if (!window.confirm(`¿Reiniciar los intentos de ${r.usuario_nombre} en "${r.leccion_titulo}"? Podrá volver a intentar el quiz desde cero.`)) return;
+    try {
+      await quizApi.reiniciarIntentos(r.leccion_id, r.usuario_id);
+      loadQuizResults(quizCursoId);
+    } catch (e) {
+      logError('admin/alumnos/reiniciarIntentos', e);
+      const detail = (e as { detail?: string })?.detail || 'No se pudieron reiniciar los intentos.';
+      window.alert(detail);
+    }
+  };
 
   // ── Handlers panel ───────────────────────────────────────────────────────────
 
@@ -593,15 +609,16 @@ export default function AlumnosAdminPage() {
                       <th>Resultado</th>
                       <th>Correctas</th>
                       <th>Fecha</th>
+                      <th>Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
                     {!quizCursoId ? (
-                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Selecciona un curso para ver resultados.</td></tr>
+                      <tr><td colSpan={7} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Selecciona un curso para ver resultados.</td></tr>
                     ) : quizLoading ? (
-                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Cargando...</td></tr>
+                      <tr><td colSpan={7} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>Cargando...</td></tr>
                     ) : quizResults.length === 0 ? (
-                      <tr><td colSpan={6} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>No hay intentos de quiz en este curso.</td></tr>
+                      <tr><td colSpan={7} className={styles.emptyMsg} style={{ textAlign: 'center', padding: '2rem' }}>No hay intentos de quiz en este curso.</td></tr>
                     ) : (
                       quizResults
                         .slice((quizPage - 1) * QUIZ_ITEMS_PER_PAGE, quizPage * QUIZ_ITEMS_PER_PAGE)
@@ -624,6 +641,16 @@ export default function AlumnosAdminPage() {
                             </td>
                             <td>{r.correctas}/{r.total_preguntas}</td>
                             <td>{r.creado_en ? r.creado_en.slice(0, 10) : '—'}</td>
+                            <td>
+                              <button
+                                type="button"
+                                className={styles.quizResetBtn}
+                                onClick={() => handleReiniciarIntentos(r)}
+                                title="Reiniciar los intentos del alumno en este quiz"
+                              >
+                                Reiniciar intentos
+                              </button>
+                            </td>
                           </tr>
                         ))
                     )}
