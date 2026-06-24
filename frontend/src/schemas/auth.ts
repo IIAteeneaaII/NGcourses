@@ -9,7 +9,14 @@ export const ForgotPasswordSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
 });
 
-const passwordField = z.string().min(8, 'Mínimo 8 caracteres').max(128, 'Máximo 128 caracteres');
+const passwordField = z
+  .string()
+  .min(8, 'La contraseña debe tener mínimo 8 caracteres')
+  .max(128, 'Máximo 128 caracteres')
+  .regex(/[A-Z]/, 'La contraseña debe incluir al menos una mayúscula')
+  .regex(/[a-z]/, 'La contraseña debe incluir al menos una minúscula')
+  .regex(/[0-9]/, 'La contraseña debe incluir al menos un número')
+  .regex(/[^\p{L}\p{N}\s]/u, 'La contraseña debe incluir al menos un carácter especial');
 
 export const ResetPasswordSchema = z
   .object({
