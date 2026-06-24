@@ -150,7 +150,6 @@ export default function PerfilPage() {
     try {
       const updated = await usersApi.updateMe({
         full_name: editForm.full_name.trim() || undefined,
-        email: editForm.email,
         telefono: editForm.telefono || null,
       }) as ApiUser;
       const nombre = updated.full_name || updated.email.split('@')[0];
@@ -242,14 +241,17 @@ export default function PerfilPage() {
                 </small>
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Correo electrónico *</label>
+                <label className={styles.formLabel}>Correo electrónico</label>
                 <input
                   type="email"
-                  required
                   className={styles.formInput}
                   value={editForm.email}
-                  onChange={(e) => setEditForm((f) => ({ ...f, email: e.target.value }))}
+                  disabled
+                  style={{ background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}
                 />
+                <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                  El correo no se puede cambiar: es el identificador de tu cuenta.
+                </small>
               </div>
               <div className={styles.formGroup}>
                 <label className={styles.formLabel}>Teléfono</label>
