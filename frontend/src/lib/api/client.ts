@@ -486,4 +486,7 @@ export const quizApi = {
   /** Instructor/admin: todos los resultados de quiz en un curso. */
   resultadosCurso: (curso_id: string) =>
     apiClient.get(`/api/v1/quiz/cursos/${curso_id}/resultados`),
+  /** Admin/instructor: reinicia los intentos de un alumno en una lección de quiz. */
+  reiniciarIntentos: (leccion_id: string, usuario_id: string) =>
+    apiClient.post(`/api/v1/quiz/lecciones/${leccion_id}/reiniciar-intentos`, { usuario_id }),
 };

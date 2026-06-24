@@ -1,10 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { QuizData, QuizQuestion } from '@/types/course';
 import { quizApi } from '@/lib/api/client';
 import QuizResult from './QuizResult';
 import styles from './QuizPlayer.module.css';
+
+/** Fracción mínima de aciertos para aprobar (debe coincidir con el backend). */
+const UMBRAL_APROBACION = 0.6;
 
 interface QuizIntentoPublic {
   id: string;
@@ -14,6 +17,8 @@ interface QuizIntentoPublic {
   correctas: number;
   creado_en: string;
   respuestas: { pregunta_id: string; opcion_id_seleccionada: string; es_correcta: boolean }[];
+  intentos_usados: number;
+  intentos_max: number;
 }
 
 interface Props {
@@ -33,8 +38,30 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
   const [resultado, setResultado] = useState<QuizIntentoPublic | null>(ultimoIntento ?? null);
+  const [intentosUsados, setIntentosUsados] = useState(ultimoIntento?.intentos_usados ?? 0);
+  const [intentosMax, setIntentosMax] = useState(ultimoIntento?.intentos_max ?? 0);
+  // Mientras se consulta el último intento al montar, mostramos "cargando" en vez
+  // del quiz vacío (evita el parpadeo del quiz en blanco antes de ver el resultado).
+  const [cargandoIntento, setCargandoIntento] = useState(!previewMode && !!inscripcionId);
 
   const preguntas = quizData.preguntas ?? [];
+
+  // Al montar (cambio de lección, por el `key`), restaura el último intento del
+  // alumno: si ya aprobó/reprobó lo muestra, y sincroniza el conteo de intentos.
+  useEffect(() => {
+    if (previewMode || !inscripcionId) return;
+    let activo = true;
+    (quizApi.ultimoIntento(leccionId, inscripcionId) as Promise<QuizIntentoPublic | null>)
+      .then((resp) => {
+        if (!activo || !resp) return;
+        setResultado(resp);
+        setIntentosUsados(resp.intentos_usados);
+        setIntentosMax(resp.intentos_max);
+      })
+      .catch(() => { /* sin intento previo o error: se queda como nuevo */ })
+      .finally(() => { if (activo) setCargandoIntento(false); });
+    return () => { activo = false; };
+  }, [leccionId, inscripcionId, previewMode]);
 
   const handleSeleccion = (preguntaId: string, opcionId: string) => {
     setSelecciones((prev) => ({ ...prev, [preguntaId]: opcionId }));
@@ -56,7 +83,7 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
         return { pregunta_id: p.id, opcion_id_seleccionada: opId, es_correcta: !!op?.esCorrecta };
       });
       const correctas = respuestas.filter((r) => r.es_correcta).length;
-      const aprobado = correctas === preguntas.length;
+      const aprobado = preguntas.length > 0 && (correctas / preguntas.length) >= UMBRAL_APROBACION;
       setResultado({
         id: 'preview',
         leccion_id: leccionId,
@@ -65,6 +92,8 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
         correctas,
         creado_en: new Date().toISOString(),
         respuestas,
+        intentos_usados: 0,
+        intentos_max: 0, // 0 = sin límite (vista previa de admin/instructor)
       });
       if (aprobado) onAprobado?.();
       return;
@@ -85,9 +114,19 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
         })),
       }) as QuizIntentoPublic;
       setResultado(resp);
+      setIntentosUsados(resp.intentos_usados);
+      setIntentosMax(resp.intentos_max);
       if (resp.aprobado) onAprobado?.();
-    } catch {
-      setError('Error al enviar el quiz. Intenta de nuevo.');
+    } catch (e) {
+      // El backend devuelve 409 con detalle si ya aprobó o agotó los intentos,
+      // y 404 si la lección ya no existe (p.ej. la eliminaron mientras el alumno
+      // tenía el curso abierto → su página quedó desactualizada).
+      const err = e as { detail?: string; status?: number };
+      if (err.status === 404) {
+        setError('Esta lección ya no está disponible (pudo haberse eliminado). Recarga la página.');
+      } else {
+        setError(err.detail || 'Error al enviar el quiz. Intenta de nuevo.');
+      }
     } finally {
       setEnviando(false);
     }
@@ -99,8 +138,19 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
     setError('');
   };
 
+  // Mientras carga el último intento, evitar mostrar el quiz vacío (parpadeo).
+  if (cargandoIntento) {
+    return (
+      <div className={styles.container}>
+        <p className={styles.emptyMsg}>Cargando tu progreso del quiz…</p>
+      </div>
+    );
+  }
+
   // Mostrar resultado si ya hay uno
   if (resultado) {
+    const puedeReintentar =
+      !resultado.aprobado && (previewMode || intentosMax === 0 || intentosUsados < intentosMax);
     return (
       <QuizResult
         resultado={resultado}
@@ -111,7 +161,9 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
             {}
           )
         }
-        onReintentar={resultado.aprobado ? undefined : handleReintentar}
+        onReintentar={puedeReintentar ? handleReintentar : undefined}
+        intentosUsados={previewMode ? 0 : intentosUsados}
+        intentosMax={previewMode ? 0 : intentosMax}
       />
     );
   }
@@ -138,7 +190,10 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
         <div>
           <h2 className={styles.title}>Quiz de evaluación</h2>
           <p className={styles.subtitle}>
-            Debes contestar correctamente <strong>todas</strong> las preguntas para aprobar.
+            Necesitas al menos <strong>60%</strong> de aciertos para aprobar.
+            {!previewMode && intentosMax > 0 && (
+              <> · Intento <strong>{Math.min(intentosUsados + 1, intentosMax)}</strong> de {intentosMax}</>
+            )}
           </p>
         </div>
         <div className={styles.counter}>
