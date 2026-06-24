@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import type { QuizData, QuizQuestion, QuizOption, QuestionType } from '@/types/course';
+import { validateQuestion } from '@/lib/quizValidation';
 import styles from './QuizBuilder.module.css';
 
 // crypto.randomUUID() solo funciona en contextos seguros (HTTPS o localhost) — fallback para HTTP.
@@ -125,7 +126,9 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
       </div>
 
       <div className={styles.questionList}>
-        {quizData.preguntas.map((q, idx) => (
+        {quizData.preguntas.map((q, idx) => {
+          const issues = validateQuestion(q);
+          return (
           <div key={q.id} className={styles.questionCard}>
             <div
               className={styles.questionHeader}
@@ -135,6 +138,15 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
               <span className={styles.questionPreview}>
                 {q.enunciado || <em className={styles.emptyEnunciado}>Sin enunciado</em>}
               </span>
+              {issues.length > 0 && (
+                <span className={styles.questionWarnBadge} title={issues.join(', ')}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                    <path d="M12 9v4M12 17h.01" />
+                  </svg>
+                  Incompleta
+                </span>
+              )}
               <span className={styles.questionTypeBadge}>
                 {q.tipo === 'multiple_choice' ? 'Opción múltiple' : 'V / F'}
               </span>
@@ -159,6 +171,11 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
 
             {expandedId === q.id && (
               <div className={styles.questionBody}>
+                {issues.length > 0 && (
+                  <div className={styles.questionWarnDetail}>
+                    Para que esta pregunta sea válida: {issues.join(', ')}.
+                  </div>
+                )}
                 <div className={styles.fieldGroup}>
                   <label htmlFor={`enunciado-${q.id}`} className={styles.fieldLabel}>Enunciado</label>
                   <textarea
@@ -214,7 +231,8 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
               </div>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       <div className={styles.addQuestionBar}>

@@ -213,6 +213,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
           <div className={styles.videoSection}>
             {currentLesson.tipo === 'quiz' ? (
               <QuizPlayer
+                key={currentLesson.id}
                 leccionId={currentLesson.id}
                 inscripcionId={inscripcionId ?? null}
                 quizData={(() => {
