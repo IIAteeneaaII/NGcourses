@@ -53,6 +53,13 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [newType, setNewType] = useState<QuestionType>('multiple_choice');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  // Preguntas que el instructor ya intentó guardar (al salir de un campo o elegir
+  // respuesta). El aviso "Incompleta" solo aparece para estas, no para una
+  // pregunta recién agregada que aún se está escribiendo (UX más amable).
+  const [touched, setTouched] = useState<Set<string>>(new Set());
+
+  const markTouched = (qId: string) =>
+    setTouched((prev) => (prev.has(qId) ? prev : new Set(prev).add(qId)));
 
   const triggerSave = (data: QuizData) => {
     setSaveStatus('saving');
@@ -128,6 +135,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
       <div className={styles.questionList}>
         {quizData.preguntas.map((q, idx) => {
           const issues = validateQuestion(q);
+          const showIssues = touched.has(q.id) && issues.length > 0;
           return (
           <div key={q.id} className={styles.questionCard}>
             <div
@@ -138,7 +146,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
               <span className={styles.questionPreview}>
                 {q.enunciado || <em className={styles.emptyEnunciado}>Sin enunciado</em>}
               </span>
-              {issues.length > 0 && (
+              {showIssues && (
                 <span className={styles.questionWarnBadge} title={issues.join(', ')}>
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden="true">
                     <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
@@ -171,7 +179,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
 
             {expandedId === q.id && (
               <div className={styles.questionBody}>
-                {issues.length > 0 && (
+                {showIssues && (
                   <div className={styles.questionWarnDetail}>
                     Para que esta pregunta sea válida: {issues.join(', ')}.
                   </div>
@@ -187,6 +195,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
                     onChange={(e) => updateQuestion(q.id, { enunciado: e.target.value })}
                     onBlur={(e) => {
                       const updated = updateQuestion(q.id, { enunciado: e.target.value });
+                      markTouched(q.id);
                       triggerSave(updated);
                     }}
                   />
@@ -203,7 +212,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
                           type="radio"
                           name={`correct-${q.id}`}
                           checked={opt.esCorrecta}
-                          onChange={() => { const updated = setCorrectOption(q.id, opt.id); triggerSave(updated); }}
+                          onChange={() => { const updated = setCorrectOption(q.id, opt.id); markTouched(q.id); triggerSave(updated); }}
                           className={styles.optionRadio}
                           title="Marcar como correcta"
                           aria-label={`Marcar "${opt.texto || `Opción ${q.opciones.indexOf(opt) + 1}`}" como respuesta correcta`}
@@ -219,6 +228,7 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
                             onChange={(e) => updateOption(q.id, opt.id, { texto: e.target.value })}
                             onBlur={(e) => {
                               const updated = updateOption(q.id, opt.id, { texto: e.target.value });
+                              markTouched(q.id);
                               triggerSave(updated);
                             }}
                             aria-label={`Texto de opción ${q.opciones.indexOf(opt) + 1}`}
@@ -227,6 +237,19 @@ export default function QuizBuilder({ quizData, onChange, onSave }: Props) {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className={styles.questionBodyFooter}>
+                  <button
+                    type="button"
+                    className={styles.deleteQuestionTextBtn}
+                    onClick={() => deleteQuestion(q.id)}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2m3 0v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6h14z" />
+                    </svg>
+                    Eliminar pregunta
+                  </button>
                 </div>
               </div>
             )}
