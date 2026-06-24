@@ -7,6 +7,22 @@ export interface ApiError {
   status: number;
 }
 
+/**
+ * fetch para endpoints autenticados que NO pasan por ApiClient.request (subida y
+ * descarga de archivos con FormData/blob). Espeja su manejo de sesión: si el
+ * access token (cookie HttpOnly, de vida corta) ya expiró y la respuesta es 401,
+ * intenta refrescarlo una vez y reintenta. Evita el 401 intermitente al
+ * subir/descargar recursos, portadas y certificados.
+ */
+async function fetchConRefresh(input: string, init?: RequestInit): Promise<Response> {
+  const resp = await fetch(input, init);
+  if (resp.status !== 401 || typeof window === 'undefined') return resp;
+  const refreshed = await fetch('/api/v1/login/refresh-token', { method: 'POST' })
+    .then((r) => r.ok)
+    .catch(() => false);
+  return refreshed ? fetch(input, init) : resp;
+}
+
 class ApiClient {
   private baseUrl: string;
   private _refreshInProgress: Promise<boolean> | null = null;
@@ -124,7 +140,7 @@ class ApiClient {
     const formData = new FormData();
     formData.append(fieldName, file);
 
-    const response = await fetch(url, { method: 'POST', body: formData });
+    const response = await fetchConRefresh(url, { method: 'POST', body: formData });
     if (!response.ok) {
       let detail = 'Error desconocido';
       try {
@@ -222,7 +238,7 @@ export const cursosApi = {
     const form = new FormData();
     form.append('file', file);
     if (titulo) form.append('titulo', titulo);
-    const response = await fetch(url, { method: 'POST', body: form });
+    const response = await fetchConRefresh(url, { method: 'POST', body: form });
     if (!response.ok) {
       const error: ApiError = { detail: await response.text(), status: response.status };
       throw error;
@@ -233,7 +249,7 @@ export const cursosApi = {
     apiClient.delete(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}/recursos/${recurso_id}`),
   // Descarga autenticada de un recurso (el archivo ya NO es público vía /media).
   descargarRecurso: async (recurso_id: string): Promise<void> => {
-    const resp = await fetch(`${API_URL}/api/v1/cursos/recursos/${recurso_id}/download`, { cache: 'no-store' });
+    const resp = await fetchConRefresh(`${API_URL}/api/v1/cursos/recursos/${recurso_id}/download`, { cache: 'no-store' });
     if (!resp.ok) {
       let detail = 'No se pudo descargar el recurso';
       try { const b = await resp.json(); detail = b.detail ?? detail; } catch { /* noop */ }
@@ -363,7 +379,7 @@ export const certificadosApi = {
   verificar: (folio: string) => apiClient.get(`/api/v1/certificados/verificar/${folio}`),
   descargar: async (folio: string): Promise<void> => {
     const url = `${API_URL}/api/v1/certificados/descargar/${folio}`;
-    const response = await fetch(url);
+    const response = await fetchConRefresh(url);
     if (!response.ok) {
       let detail = 'Error al descargar el certificado';
       try { const b = await response.json(); detail = b.detail ?? detail; } catch { /* noop */ }

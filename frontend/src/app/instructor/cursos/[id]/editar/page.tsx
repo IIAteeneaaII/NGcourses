@@ -378,6 +378,16 @@ export default function EditarCursoInstructorPage() {
     }
   }, [courseId]);
 
+  const handleDescargarRecurso = useCallback(async (recursoId: string) => {
+    try {
+      await cursosApi.descargarRecurso(recursoId);
+    } catch (e) {
+      logError('instructor/cursos/editar/descargarRecurso', e);
+      const detail = (e as { detail?: string })?.detail || 'No se pudo abrir el recurso.';
+      notify('error', detail);
+    }
+  }, []);
+
   const doSave = async (): Promise<void> => {
     const precioNum = precio.trim() === '' ? null : Number(precio);
     if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
@@ -856,9 +866,9 @@ export default function EditarCursoInstructorPage() {
                                       {lesson.recursos.map((r) => (
                                         <div key={r.id} className={styles.recursoItem}>
                                           <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
-                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                          <button type="button" className={styles.recursoTitle} onClick={() => handleDescargarRecurso(r.id)} title="Descargar recurso">
                                             {r.titulo}
-                                          </a>
+                                          </button>
                                           <button
                                             type="button"
                                             className={styles.deleteRecursoBtn}
@@ -894,8 +904,11 @@ export default function EditarCursoInstructorPage() {
                                           onClick={() => addRecurso(module.id, lesson)}
                                           disabled={!pendingRecursoFiles[lesson.id]?.length}
                                         >
-                                          + Subir recurso
+                                          Subir recurso
                                         </button>
+                                        <p className={styles.recursoHint}>
+                                          Formatos: PDF, Word, Excel o PowerPoint · máx. 20 MB
+                                        </p>
                                       </div>
                                     </div>
                                   )}
