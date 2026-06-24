@@ -196,7 +196,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         {certFolio && (
           <div className={styles.certBanner}>
             <div className={styles.certBannerText}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} style={{ flexShrink: 0 }}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9a9 9 0 01-9-9 9 9 0 019-9h9a9 9 0 019 9 9 9 0 01-9 9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75l2 2 4-4.5" /></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><circle cx="12" cy="8" r="6" /><path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" /></svg>
               <span>¡Curso completado! Tu certificado está listo.</span>
             </div>
             <button

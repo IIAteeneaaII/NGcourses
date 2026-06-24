@@ -23,13 +23,19 @@ interface Props {
   preguntas: QuizQuestion[];
   /** Mapa preguntaId → opcionId elegida por el alumno */
   seleccionesOriginales: Record<string, string>;
-  /** Si undefined (ya aprobó), no se muestra el botón de reintentar */
+  /** Si undefined (ya aprobó o agotó intentos), no se muestra el botón de reintentar */
   onReintentar?: () => void;
+  /** Intentos ya usados y máximo permitido (0 = sin límite, p.ej. vista previa). */
+  intentosUsados?: number;
+  intentosMax?: number;
 }
 
-export default function QuizResult({ resultado, preguntas, seleccionesOriginales, onReintentar }: Props) {
+export default function QuizResult({ resultado, preguntas, seleccionesOriginales, onReintentar, intentosUsados = 0, intentosMax = 0 }: Props) {
   const { aprobado, total_preguntas, correctas } = resultado;
   const porcentaje = total_preguntas > 0 ? Math.round((correctas / total_preguntas) * 100) : 0;
+  const conLimite = intentosMax > 0;
+  const intentosRestantes = Math.max(0, intentosMax - intentosUsados);
+  const sinIntentos = !aprobado && conLimite && intentosRestantes === 0;
 
   // La corrección es autoritativa del backend (es_correcta por respuesta); el
   // alumno ya no recibe la clave `esCorrecta` en las opciones del quiz.
@@ -61,8 +67,10 @@ export default function QuizResult({ resultado, preguntas, seleccionesOriginales
           </h2>
           <p className={styles.bannerSubtitle}>
             {aprobado
-              ? 'Excelente, respondiste todas las preguntas correctamente.'
-              : 'Debes responder todas correctamente. Revisa tus respuestas y vuelve a intentarlo desde el inicio.'}
+              ? `Aprobaste con ${porcentaje}% de aciertos.`
+              : sinIntentos
+              ? `Necesitabas al menos 60%. Agotaste tus ${intentosMax} intentos; pide a un administrador que los reinicie.`
+              : 'Necesitas al menos 60% de aciertos. Revisa tus respuestas y vuelve a intentarlo desde el inicio.'}
           </p>
         </div>
         <div className={styles.score}>
@@ -116,13 +124,25 @@ export default function QuizResult({ resultado, preguntas, seleccionesOriginales
       {/* Acciones */}
       <div className={styles.actions}>
         {!aprobado && onReintentar && (
-          <button className={styles.retryBtn} onClick={onReintentar}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M1 4v6h6M23 20v-6h-6" />
-              <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
-            </svg>
-            Intentar de nuevo (desde cero)
-          </button>
+          <>
+            <button className={styles.retryBtn} onClick={onReintentar}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M1 4v6h6M23 20v-6h-6" />
+                <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
+              </svg>
+              Intentar de nuevo (desde cero)
+            </button>
+            {conLimite && (
+              <span className={styles.intentosHint}>
+                Te {intentosRestantes === 1 ? 'queda' : 'quedan'} {intentosRestantes} intento{intentosRestantes === 1 ? '' : 's'}.
+              </span>
+            )}
+          </>
+        )}
+        {sinIntentos && (
+          <div className={styles.blockedMsg}>
+            Agotaste tus {intentosMax} intentos en este quiz. Pide a un administrador que los reinicie para continuar.
+          </div>
         )}
         {aprobado && (
           <div className={styles.approvedMsg}>
