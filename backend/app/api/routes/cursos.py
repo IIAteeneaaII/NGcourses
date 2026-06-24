@@ -41,12 +41,37 @@ from app.services import bunny as bunny_svc
 router = APIRouter(prefix="/cursos", tags=["cursos"])
 
 
-def _strip_quiz_answer_key(contenido: str | None) -> str | None:
-    """Quita el flag `esCorrecta` de las opciones del quiz.
+def _pregunta_quiz_valida(pregunta: dict) -> bool:
+    """True si la pregunta está completa y por tanto es contestable/aprobable.
 
-    La calificación es autoritativa del backend (`crud.crear_intento_quiz`), así
-    que el alumno NUNCA debe recibir cuál opción es la correcta: filtrarlo evita
-    que vea la respuesta antes de contestar inspeccionando el payload/HTML.
+    Mismo criterio que la validación del editor (`frontend/.../quizValidation.ts`):
+    debe tener enunciado, una opción marcada como correcta y —para opción
+    múltiple— al menos dos opciones con texto (la correcta incluida). El backend
+    califica `aprobado = TODAS correctas`, así que una pregunta sin respuesta
+    correcta volvería el quiz imposible de aprobar.
+    """
+    if not (pregunta.get("enunciado") or "").strip():
+        return False
+    opciones = pregunta.get("opciones", []) or []
+    correcta = next((o for o in opciones if o.get("esCorrecta")), None)
+    if correcta is None:
+        return False
+    if pregunta.get("tipo") == "multiple_choice":
+        con_texto = [o for o in opciones if (o.get("texto") or "").strip()]
+        if len(con_texto) < 2 or not (correcta.get("texto") or "").strip():
+            return False
+    return True
+
+
+def _sanitize_quiz_for_student(contenido: str | None) -> str | None:
+    """Prepara el quiz para el alumno inscrito:
+
+    1. Descarta las preguntas inválidas/incompletas (sin respuesta correcta,
+       sin enunciado, etc.) para que NUNCA le aparezcan, aunque el instructor
+       las haya guardado en un curso ya publicado.
+    2. Quita el flag `esCorrecta` de cada opción: la calificación es autoritativa
+       del backend (`crud.crear_intento_quiz`), así que el alumno no debe recibir
+       cuál es la correcta (evita verla inspeccionando el payload/HTML).
     """
     if not contenido:
         return contenido
@@ -54,9 +79,11 @@ def _strip_quiz_answer_key(contenido: str | None) -> str | None:
         data = json.loads(contenido)
     except (json.JSONDecodeError, TypeError):
         return contenido
-    for pregunta in data.get("preguntas", []):
+    preguntas = [p for p in data.get("preguntas", []) if _pregunta_quiz_valida(p)]
+    for pregunta in preguntas:
         for opcion in pregunta.get("opciones", []):
             opcion.pop("esCorrecta", None)
+    data["preguntas"] = preguntas
     return json.dumps(data)
 
 
@@ -220,7 +247,7 @@ def get_curso(
             elif not (is_admin or is_owner):
                 # Alumno inscrito: ve el quiz pero sin la clave de respuestas.
                 # Admin/instructor sí la reciben (editor / preview con calificación local).
-                lp.contenido = _strip_quiz_answer_key(lp.contenido)
+                lp.contenido = _sanitize_quiz_for_student(lp.contenido)
             lecciones.append(lp)
         modulo_data.lecciones = lecciones
         modulos.append(modulo_data)
