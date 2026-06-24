@@ -8,6 +8,8 @@ from typing import Any
 # ISO 25010 §6.5 Mantenibilidad: constantes nombradas en lugar de magic numbers
 UMBRAL_COMPLETADO_PCT: int = 90  # Porcentaje mínimo para marcar una lección como completada
 FOLIO_TOKEN_BYTES: int = 6      # Bytes para generar el folio del certificado (12 chars hex)
+UMBRAL_APROBACION_QUIZ: float = 0.60  # Fracción mínima de aciertos para aprobar un quiz (≥60%)
+MAX_INTENTOS_QUIZ: int = 3       # Intentos máximos por quiz antes de bloquear (admin reinicia)
 INVITACION_EXPIRACION_DIAS: int = 7  # Días de validez de un enlace de invitación
 
 from sqlalchemy.exc import IntegrityError
@@ -388,9 +390,28 @@ def update_modulo(*, session: Session, db_modulo: Modulo, modulo_in: ModuloUpdat
     return db_modulo
 
 
+def _purgar_dependientes_leccion(*, session: Session, leccion_id: uuid.UUID) -> None:
+    """Borra las filas que referencian la lección por `leccion_id` SIN ondelete
+    CASCADE (intentos de quiz y progreso), para no violar el FK al eliminar la
+    lección o su módulo. (Los recursos sí cascadean por su FK; los intentos solo
+    cascadean al borrar la inscripción, no la lección.)"""
+    for intento in session.exec(
+        select(QuizIntento).where(QuizIntento.leccion_id == leccion_id)
+    ).all():
+        session.delete(intento)  # respuestas cascadean por la relación ORM
+    for prog in session.exec(
+        select(ProgresoLeccion).where(ProgresoLeccion.leccion_id == leccion_id)
+    ).all():
+        session.delete(prog)
+
+
 def delete_modulo(*, session: Session, modulo_id: uuid.UUID) -> None:
     db_modulo = session.get(Modulo, modulo_id)
     if db_modulo:
+        for leccion in session.exec(
+            select(Leccion).where(Leccion.modulo_id == modulo_id)
+        ).all():
+            _purgar_dependientes_leccion(session=session, leccion_id=leccion.id)
         session.delete(db_modulo)
         session.commit()
 
@@ -440,6 +461,7 @@ def update_leccion(*, session: Session, db_leccion: Leccion, leccion_in: Leccion
 def delete_leccion(*, session: Session, leccion_id: uuid.UUID) -> None:
     db_leccion = session.get(Leccion, leccion_id)
     if db_leccion:
+        _purgar_dependientes_leccion(session=session, leccion_id=leccion_id)
         session.delete(db_leccion)
         session.commit()
 
@@ -848,7 +870,7 @@ def crear_intento_quiz(
 ) -> QuizIntento:
     """
     Califica un intento de quiz.
-    - aprobado = True solo si TODAS las preguntas son correctas.
+    - aprobado = True si los aciertos son ≥60% del total (UMBRAL_APROBACION_QUIZ).
     - Guarda el intento y las respuestas individuales.
     - Si aprobado: marca la lección como completada (progreso 100%).
     - Retorna el intento con respuestas (sin revelar cuál era la correcta).
@@ -893,7 +915,8 @@ def crear_intento_quiz(
         respuestas_db.append(resp)
         session.add(resp)
 
-    aprobado = (correctas_count == total) and total > 0
+    # Aprueba con ≥60% de aciertos (antes exigía el 100%).
+    aprobado = total > 0 and (correctas_count / total) >= UMBRAL_APROBACION_QUIZ
     intento.correctas = correctas_count
     intento.aprobado = aprobado
     session.add(intento)
@@ -918,6 +941,77 @@ def get_ultimo_intento(
         )
         .order_by(QuizIntento.creado_en.desc())  # type: ignore[arg-type]
     ).first()
+
+
+def contar_intentos_quiz(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+) -> int:
+    """Número de intentos que el alumno ya hizo en esta lección de quiz."""
+    return len(session.exec(
+        select(QuizIntento).where(
+            QuizIntento.inscripcion_id == inscripcion_id,
+            QuizIntento.leccion_id == leccion_id,
+        )
+    ).all())
+
+
+def tiene_intento_aprobado_quiz(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+) -> bool:
+    """True si el alumno ya aprobó esta lección de quiz en algún intento."""
+    return session.exec(
+        select(QuizIntento).where(
+            QuizIntento.inscripcion_id == inscripcion_id,
+            QuizIntento.leccion_id == leccion_id,
+            QuizIntento.aprobado == True,  # noqa: E712
+        )
+    ).first() is not None
+
+
+def reiniciar_intentos_quiz(
+    *,
+    session: Session,
+    inscripcion_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+) -> int:
+    """Borra los intentos del alumno en esta lección (admin/instructor) para
+    desbloquearlo. Devuelve cuántos intentos se eliminaron. Las respuestas se
+    borran en cascada (`cascade_delete=True` en QuizIntento.respuestas).
+
+    Además "descompleta" la lección: borra su progreso (si la había aprobado
+    quedaba al 100/completado y aparecería en verde con el quiz vacío) y, si el
+    curso estaba finalizado, lo regresa a ACTIVA (falta re-aprobar este quiz)."""
+    intentos = list(session.exec(
+        select(QuizIntento).where(
+            QuizIntento.inscripcion_id == inscripcion_id,
+            QuizIntento.leccion_id == leccion_id,
+        )
+    ).all())
+    for intento in intentos:
+        session.delete(intento)
+
+    prog = session.exec(
+        select(ProgresoLeccion).where(
+            ProgresoLeccion.inscripcion_id == inscripcion_id,
+            ProgresoLeccion.leccion_id == leccion_id,
+        )
+    ).first()
+    if prog:
+        session.delete(prog)
+
+    inscripcion = session.get(Inscripcion, inscripcion_id)
+    if inscripcion and inscripcion.estado == EstadoInscripcion.FINALIZADA:
+        inscripcion.estado = EstadoInscripcion.ACTIVA
+        session.add(inscripcion)
+
+    session.commit()
+    return len(intentos)
 
 
 def get_intentos_curso(

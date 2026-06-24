@@ -245,6 +245,20 @@
 }
 .pageBtn:hover:not(:disabled) { background: var(--color-primary-60); }
 .pageBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.quizResetBtn {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid #fdba74;
+  border-radius: 0.4rem;
+  background: #fff7ed;
+  color: #c2410c;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.quizResetBtn:hover { background: #ffedd5; }
 .pageInfo {
   font-size: 0.875rem;
   color: var(--color-text-secondary);
