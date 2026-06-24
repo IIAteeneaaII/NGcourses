@@ -7,6 +7,7 @@ import VideoUploadButton from '@/components/video/VideoUploadButton';
 import LessonTypeSelector from '@/components/course/LessonTypeSelector';
 import QuizBuilder from '@/components/course/QuizBuilder';
 import type { QuizData } from '@/types/course';
+import { validateQuiz } from '@/lib/quizValidation';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -451,6 +452,20 @@ export default function EditarCursoInstructorPage() {
   const handleSendToReview = async () => {
     if (!level) {
       notify('error', 'Selecciona el nivel del curso antes de enviarlo a revisión');
+      return;
+    }
+    // Bloquear publicación si algún quiz está incompleto (sin respuesta correcta,
+    // sin enunciado, etc.) — de otro modo el alumno no podría aprobarlo.
+    const quizErrors: string[] = [];
+    modules.forEach((m) => {
+      m.lessons.forEach((l) => {
+        if (l.tipo !== 'quiz') return;
+        const issues = validateQuiz(l.quizData);
+        if (issues.length) quizErrors.push(`"${l.title || 'Quiz sin título'}": ${issues.join('; ')}`);
+      });
+    });
+    if (quizErrors.length) {
+      notify('error', `Corrige los quizzes antes de publicar — ${quizErrors[0]}${quizErrors.length > 1 ? ` (y ${quizErrors.length - 1} más)` : ''}`);
       return;
     }
     setIsSendingReview(true);

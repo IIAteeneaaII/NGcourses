@@ -693,7 +693,6 @@ def check_and_emit_certificate(
     try:
         from pathlib import Path
         from app.models._enums import MarcaCurso
-        from app.models import User
         from app.services.certificado_pdf import generate_certificate_pdf
 
         usuario = session.get(User, inscripcion.usuario_id)
