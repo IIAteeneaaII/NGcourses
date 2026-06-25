@@ -95,6 +95,22 @@ class RefreshToken(SQLModel, table=True):
     creado_en: datetime = Field(default_factory=datetime.utcnow)
 
 
+# ── Feature Flags ─────────────────────────────────────────────────────────────
+
+
+class FeatureFlag(SQLModel, table=True):
+    """Interruptor de funcionalidad on/off, controlado por el admin en runtime.
+
+    Permite "apagar" un feature sin borrar su código (p. ej. el rol instructor)
+    y reactivarlo después con un toggle. La fuente de verdad es la BD.
+    """
+    __tablename__ = "feature_flags"
+
+    nombre: str = Field(primary_key=True, max_length=100)
+    habilitado: bool = Field(default=False)
+    actualizado_en: datetime = Field(default_factory=datetime.utcnow)
+
+
 # ── Eventos de Analytics ────────────────────────────────────────────────────
 
 

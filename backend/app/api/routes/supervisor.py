@@ -15,6 +15,7 @@ from app.models import User, UserCreate
 from app.models._enums import EstadoInscripcion, EstadoLicencia, RolOrganizacion, RolUsuario
 from app.models.inscripcion import Inscripcion, ProgresoLeccion
 from app.models.organizacion import LicenciaCurso, SolicitudCurso, UsuarioOrganizacion
+from app.utils import email_formato_valido
 
 logger = logging.getLogger(__name__)
 
@@ -275,6 +276,14 @@ def invitar(
     for email in body.emails:
         email = email.strip().lower()
         if not email:
+            continue
+        # CP29: validar el formato del correo ANTES de crear la invitación. Un
+        # correo inválido se reporta y NO se marca como enviada.
+        if not email_formato_valido(email):
+            resultados.append(InvitacionEnvioResultado(
+                email=email, estado="invalido",
+                detalle="Correo con formato inválido",
+            ))
             continue
         try:
             existing_user = crud.get_user_by_email(session=session, email=email)

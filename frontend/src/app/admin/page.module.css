@@ -27,7 +27,10 @@
 /* Options Grid */
 .optionsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* Una columna por tarjeta visible (--card-count lo fija la página): así
+     todas caben en una sola fila en escritorio, sean 3 o 4, encogiéndose para
+     ajustarse al panel. En tablet/móvil las media queries de abajo reflujan. */
+  grid-template-columns: repeat(var(--card-count, 4), 1fr);
   gap: 1.5rem;
   margin-bottom: 2rem;
 }

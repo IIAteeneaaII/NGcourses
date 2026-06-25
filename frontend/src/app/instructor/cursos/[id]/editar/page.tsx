@@ -7,6 +7,7 @@ import VideoUploadButton from '@/components/video/VideoUploadButton';
 import LessonTypeSelector from '@/components/course/LessonTypeSelector';
 import QuizBuilder from '@/components/course/QuizBuilder';
 import type { QuizData } from '@/types/course';
+import { validateQuiz } from '@/lib/quizValidation';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -377,6 +378,16 @@ export default function EditarCursoInstructorPage() {
     }
   }, [courseId]);
 
+  const handleDescargarRecurso = useCallback(async (recursoId: string) => {
+    try {
+      await cursosApi.descargarRecurso(recursoId);
+    } catch (e) {
+      logError('instructor/cursos/editar/descargarRecurso', e);
+      const detail = (e as { detail?: string })?.detail || 'No se pudo abrir el recurso.';
+      notify('error', detail);
+    }
+  }, []);
+
   const doSave = async (): Promise<void> => {
     const precioNum = precio.trim() === '' ? null : Number(precio);
     if (precioNum !== null && (Number.isNaN(precioNum) || precioNum < 0)) {
@@ -451,6 +462,20 @@ export default function EditarCursoInstructorPage() {
   const handleSendToReview = async () => {
     if (!level) {
       notify('error', 'Selecciona el nivel del curso antes de enviarlo a revisión');
+      return;
+    }
+    // Bloquear publicación si algún quiz está incompleto (sin respuesta correcta,
+    // sin enunciado, etc.) — de otro modo el alumno no podría aprobarlo.
+    const quizErrors: string[] = [];
+    modules.forEach((m) => {
+      m.lessons.forEach((l) => {
+        if (l.tipo !== 'quiz') return;
+        const issues = validateQuiz(l.quizData);
+        if (issues.length) quizErrors.push(`"${l.title || 'Quiz sin título'}": ${issues.join('; ')}`);
+      });
+    });
+    if (quizErrors.length) {
+      notify('error', `Corrige los quizzes antes de publicar — ${quizErrors[0]}${quizErrors.length > 1 ? ` (y ${quizErrors.length - 1} más)` : ''}`);
       return;
     }
     setIsSendingReview(true);
@@ -841,9 +866,9 @@ export default function EditarCursoInstructorPage() {
                                       {lesson.recursos.map((r) => (
                                         <div key={r.id} className={styles.recursoItem}>
                                           <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
-                                          <a href={r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                          <button type="button" className={styles.recursoTitle} onClick={() => handleDescargarRecurso(r.id)} title="Descargar recurso">
                                             {r.titulo}
-                                          </a>
+                                          </button>
                                           <button
                                             type="button"
                                             className={styles.deleteRecursoBtn}
@@ -879,8 +904,11 @@ export default function EditarCursoInstructorPage() {
                                           onClick={() => addRecurso(module.id, lesson)}
                                           disabled={!pendingRecursoFiles[lesson.id]?.length}
                                         >
-                                          + Subir recurso
+                                          Subir recurso
                                         </button>
+                                        <p className={styles.recursoHint}>
+                                          Formatos: PDF, Word, Excel o PowerPoint · máx. 20 MB
+                                        </p>
                                       </div>
                                     </div>
                                   )}
