@@ -95,6 +95,14 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Admin
             detail="El rol de instructor está deshabilitado actualmente.",
         )
 
+    # Un supervisor SIEMPRE pertenece a una organización: se crea desde
+    # "Organizaciones" (POST /organizaciones/ o /{org_id}/supervisor), no suelto.
+    if user_in.rol == RolUsuario.SUPERVISOR:
+        raise HTTPException(
+            status_code=400,
+            detail="Los supervisores se crean desde Organizaciones (deben tener una organización).",
+        )
+
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(

@@ -10,7 +10,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models import User
-from app.models._enums import RolOrganizacion
+from app.models._enums import RolOrganizacion, RolUsuario
 
 router = APIRouter(prefix="/organizaciones", tags=["organizaciones"])
 
@@ -71,6 +71,13 @@ class MiembroPublic(SQLModel):
 class AsignarMiembro(SQLModel):
     user_id: uuid.UUID
     rol_org: RolOrganizacion = RolOrganizacion.MIEMBRO
+
+
+class SupervisorSinOrgPublic(SQLModel):
+    user_id: uuid.UUID
+    email: str
+    full_name: str | None
+    estado: str
 
 
 class CrearSupervisor(SQLModel):
@@ -151,6 +158,34 @@ def create_organizacion(
     return _to_public(org)
 
 
+@router.get("/supervisores-sin-organizacion", response_model=list[SupervisorSinOrgPublic])
+def supervisores_sin_organizacion(
+    *, session: SessionDep, current_user: AdminOrSuperuser,
+) -> Any:
+    """Supervisores legacy sin organización (su panel falla con 404). El admin les
+    asigna una con POST /{org_id}/miembros (rol_org=ADMIN_ORG)."""
+    users = crud.list_supervisores_sin_organizacion(session=session)
+    return [
+        SupervisorSinOrgPublic(
+            user_id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
+        )
+        for u in users
+    ]
+
+
+@router.get("/sin-supervisor", response_model=list[OrganizacionPublic])
+def organizaciones_sin_supervisor(
+    *, session: SessionDep, current_user: AdminOrSuperuser,
+) -> Any:
+    """Organizaciones sin supervisor (ADMIN_ORG) asignado. Sirve para asignarles
+    un supervisor huérfano sin dejar la org con dos supervisores."""
+    orgs = crud.list_organizaciones_sin_supervisor(session=session)
+    return [_to_public(o) for o in orgs]
+
+
 @router.get("/{org_id}", response_model=OrganizacionPublic)
 def get_organizacion(
     *, org_id: uuid.UUID, session: SessionDep, current_user: AdminOrSuperuser,
@@ -213,6 +248,27 @@ def asignar_miembro(
     user = session.get(User, body.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Un supervisor pertenece a EXACTAMENTE una organización. Se permite asignarle
+    # una si NO tiene (reparación de huérfanos), pero no una segunda.
+    if user.rol == RolUsuario.SUPERVISOR:
+        actual = crud.get_organizacion_of_user(session=session, user_id=user.id)
+        if actual and actual[0].id != org_id:
+            raise HTTPException(
+                status_code=409,
+                detail="El supervisor ya pertenece a una organización (solo se permite una).",
+            )
+
+    # Una organización tiene EXACTAMENTE un supervisor (ADMIN_ORG): no asignar un
+    # segundo. (Simétrico al "1 org por supervisor".)
+    if body.rol_org == RolOrganizacion.ADMIN_ORG and crud.org_tiene_supervisor(
+        session=session, org_id=org_id, excluir_user_id=user.id
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Esta organización ya tiene un supervisor.",
+        )
+
     crud.add_user_to_organizacion(
         session=session, org_id=org_id, user_id=body.user_id, rol_org=body.rol_org
     )
