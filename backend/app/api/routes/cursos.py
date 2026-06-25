@@ -254,6 +254,9 @@ def get_curso(
 
     curso_data = CursoDetalle.model_validate(db_curso, from_attributes=True)
     curso_data.modulos = modulos
+    # El player de Bunny necesita el library_id; si el curso no lo guardó, usar el
+    # default del .env del backend para no depender del NEXT_PUBLIC del frontend.
+    curso_data.bunny_library_id = db_curso.bunny_library_id or settings.BUNNY_LIBRARY_ID
     meta = db_curso.metadata_ or {}
     curso_data.nivel = meta.get("nivel")
     curso_data.lo_que_aprenderas = meta.get("lo_que_aprenderas", [])
