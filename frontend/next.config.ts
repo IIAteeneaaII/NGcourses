@@ -33,7 +33,7 @@ const nextConfig: NextConfig = {
       "font-src 'self' data: https://fonts.gstatic.com",
       "img-src 'self' data: blob: https://*.b-cdn.net https://www.paypalobjects.com https://www.paypal.com https://t.paypal.com",
       "connect-src 'self' https://video.bunnycdn.com https://api-m.sandbox.paypal.com https://api-m.paypal.com https://www.paypal.com https://t.paypal.com https://*.sentry.io https://*.ingest.sentry.io",
-      "frame-src https://www.paypal.com https://www.sandbox.paypal.com",
+      "frame-src https://iframe.mediadelivery.net https://www.paypal.com https://www.sandbox.paypal.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
