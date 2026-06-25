@@ -20,6 +20,13 @@ interface OrganizacionesResp {
   count: number;
 }
 
+interface SupervisorSinOrg {
+  user_id: string;
+  email: string;
+  full_name: string | null;
+  estado: string;
+}
+
 interface CreateOrgForm {
   nombre: string;
   supervisor_nombre: string;
@@ -46,6 +53,42 @@ export default function OrganizacionesPage() {
   const [createLoading, setCreateLoading] = useState(false);
   const [createError, setCreateError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  // Reparación: supervisores legacy sin organización + orgs sin supervisor (para
+  // asignar 1 a 1 sin dejar una org con dos supervisores).
+  const [orphans, setOrphans] = useState<SupervisorSinOrg[]>([]);
+  const [orgsSinSup, setOrgsSinSup] = useState<Organizacion[]>([]);
+  const [assignSel, setAssignSel] = useState<Record<string, string>>({});
+  const [assigningId, setAssigningId] = useState<string | null>(null);
+
+  const fetchReparacion = useCallback(async () => {
+    try {
+      const [sup, orgsLibres] = await Promise.all([
+        organizacionesApi.supervisoresSinOrg(),
+        organizacionesApi.orgsSinSupervisor(),
+      ]);
+      setOrphans(sup as SupervisorSinOrg[]);
+      setOrgsSinSup(orgsLibres as Organizacion[]);
+    } catch (e) {
+      logError('organizaciones.reparacion', e);
+    }
+  }, []);
+
+  const handleAsignarOrg = async (userId: string) => {
+    const orgId = assignSel[userId];
+    if (!orgId) return;
+    setAssigningId(userId);
+    try {
+      await organizacionesApi.asignarMiembro(orgId, { user_id: userId, rol_org: 'admin_org' });
+      setSuccessMsg('Supervisor asignado a la organización.');
+      fetchReparacion();
+      fetchOrgs();
+    } catch (e) {
+      logError('organizaciones.asignarOrgHuerfano', e);
+      alert((e as { detail?: string })?.detail || 'No se pudo asignar la organización.');
+    } finally {
+      setAssigningId(null);
+    }
+  };
 
   const fetchOrgs = useCallback(async () => {
     setLoading(true);
@@ -66,6 +109,7 @@ export default function OrganizacionesPage() {
   }, [currentPage, searchTerm]);
 
   useEffect(() => { fetchOrgs(); }, [fetchOrgs]);
+  useEffect(() => { fetchReparacion(); }, [fetchReparacion]);
 
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
@@ -148,6 +192,53 @@ export default function OrganizacionesPage() {
             </svg>
           </button>
         </div>
+      )}
+
+      {orphans.length > 0 && (
+        <section className={styles.mainContent} style={{ marginBottom: '1.25rem', borderLeft: '4px solid #f59e0b' }}>
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 700, margin: '0 0 0.25rem' }}>
+            Supervisores sin organización ({orphans.length})
+          </h2>
+          <p style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', margin: '0 0 0.85rem' }}>
+            Estas cuentas de supervisor no tienen organización (datos legacy) y su panel no funciona. Asígnales una para activarlas.
+          </p>
+          <div className={styles.tableContainer}>
+            <table className={styles.usersTable}>
+              <thead>
+                <tr><th>Email</th><th>Nombre</th><th>Organización</th><th>Acción</th></tr>
+              </thead>
+              <tbody>
+                {orphans.map((o) => (
+                  <tr key={o.user_id}>
+                    <td>{o.email}</td>
+                    <td>{o.full_name || '—'}</td>
+                    <td>
+                      <select
+                        value={assignSel[o.user_id] || ''}
+                        onChange={(e) => setAssignSel((p) => ({ ...p, [o.user_id]: e.target.value }))}
+                        disabled={orgsSinSup.length === 0}
+                      >
+                        <option value="">
+                          {orgsSinSup.length === 0 ? 'No hay orgs sin supervisor' : 'Selecciona organización…'}
+                        </option>
+                        {orgsSinSup.map((org) => <option key={org.id} value={org.id}>{org.nombre}</option>)}
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        className={styles.createButton}
+                        disabled={!assignSel[o.user_id] || assigningId === o.user_id}
+                        onClick={() => handleAsignarOrg(o.user_id)}
+                      >
+                        {assigningId === o.user_id ? 'Asignando…' : 'Asignar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
       )}
 
       <section className={styles.mainContent}>

@@ -1293,6 +1293,44 @@ def list_org_users(
     return result
 
 
+def list_supervisores_sin_organizacion(*, session: Session) -> list[User]:
+    """Supervisores (rol SUPERVISOR) que no pertenecen a ninguna organización.
+    Son datos legacy: su panel falla con 404 hasta que un admin les asigne una."""
+    subq = select(UsuarioOrganizacion.usuario_id)
+    return list(session.exec(
+        select(User).where(
+            User.rol == RolUsuario.SUPERVISOR,
+            User.id.not_in(subq),  # type: ignore[union-attr]
+        ).order_by(User.email)  # type: ignore[arg-type]
+    ).all())
+
+
+def org_tiene_supervisor(
+    *, session: Session, org_id: uuid.UUID, excluir_user_id: uuid.UUID | None = None
+) -> bool:
+    """True si la organización ya tiene un supervisor (ADMIN_ORG). `excluir_user_id`
+    permite ignorar a un usuario (p.ej. al reasignarse a sí mismo)."""
+    stmt = select(UsuarioOrganizacion).where(
+        UsuarioOrganizacion.organizacion_id == org_id,
+        UsuarioOrganizacion.rol_org == RolOrganizacion.ADMIN_ORG,
+    )
+    if excluir_user_id is not None:
+        stmt = stmt.where(UsuarioOrganizacion.usuario_id != excluir_user_id)
+    return session.exec(stmt).first() is not None
+
+
+def list_organizaciones_sin_supervisor(*, session: Session) -> list[Organizacion]:
+    """Organizaciones que no tienen un supervisor (ADMIN_ORG) asignado."""
+    con_supervisor = select(UsuarioOrganizacion.organizacion_id).where(
+        UsuarioOrganizacion.rol_org == RolOrganizacion.ADMIN_ORG
+    )
+    return list(session.exec(
+        select(Organizacion).where(
+            Organizacion.id.not_in(con_supervisor)  # type: ignore[union-attr]
+        ).order_by(Organizacion.nombre)  # type: ignore[arg-type]
+    ).all())
+
+
 def add_user_to_organizacion(
     *, session: Session, org_id: uuid.UUID, user_id: uuid.UUID,
     rol_org: RolOrganizacion = RolOrganizacion.MIEMBRO,
