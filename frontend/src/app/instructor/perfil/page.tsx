@@ -135,7 +135,9 @@ export default function PerfilInstructorPage() {
     <div className={styles.pageContainer}>
       <button className={styles.backButton} onClick={() => router.push('/instructor')}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M19 12H5M12 19l-7-7 7-7" />
+          <path d="M3 10.5 12 3l9 7.5" />
+          <path d="M5 10v10h14V10" />
+          <path d="M9 20v-6h6v6" />
         </svg>
         Volver al dashboard
       </button>

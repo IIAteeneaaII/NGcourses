@@ -402,7 +402,9 @@ export default function AlumnosAdminPage() {
         <h1 className={styles.pageTitle}>Alumnos</h1>
         <Link href="/admin" className={styles.backButton}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
+            <path d="M3 10.5 12 3l9 7.5" />
+            <path d="M5 10v10h14V10" />
+            <path d="M9 20v-6h6v6" />
           </svg>
           Inicio
         </Link>

@@ -114,7 +114,9 @@ export default function OrganizacionesPage() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <button className={styles.backButton} onClick={() => router.push('/admin')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 10v10h14V10" />
+              <path d="M9 20v-6h6v6" />
             </svg>
             Inicio
           </button>
@@ -191,10 +193,10 @@ export default function OrganizacionesPage() {
                     <td>{o.plan_de_cursos || '—'}</td>
                     <td>{formatDate(o.fecha_compra)}</td>
                     <td className={styles.actionsCell}>
-                      <button className={styles.editButton} onClick={() => router.push(`/admin/organizaciones/${o.id}`)} title="Ver detalle">
+                      <button className={styles.editButton} onClick={() => router.push(`/admin/organizaciones/${o.id}`)} title="Editar organización">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                          <circle cx="12" cy="12" r="3" />
+                          <path d="M12 20h9" />
+                          <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z" />
                         </svg>
                       </button>
                     </td>

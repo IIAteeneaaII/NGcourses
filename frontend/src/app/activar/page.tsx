@@ -5,6 +5,14 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ActivarCuentaSchema } from '@/schemas/auth';
 
+const getPasswordRules = (value: string) => [
+  { label: 'Mínimo 8 caracteres', valid: value.length >= 8 },
+  { label: 'Una mayúscula', valid: /[A-Z]/.test(value) },
+  { label: 'Una minúscula', valid: /[a-z]/.test(value) },
+  { label: 'Un número', valid: /[0-9]/.test(value) },
+  { label: 'Un carácter especial', valid: /[^\p{L}\p{N}\s]/u.test(value) },
+];
+
 function ActivarForm() {
   const searchParams = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -19,6 +27,11 @@ function ActivarForm() {
   const [emailReenvio, setEmailReenvio] = useState('');
   const [reenvioLoading, setReenvioLoading] = useState(false);
   const [reenvioMsg, setReenvioMsg] = useState('');
+
+  const passwordRules = getPasswordRules(password);
+  const isPasswordValid = passwordRules.every((rule) => rule.valid);
+  const passwordsMatch = confirm.length > 0 && confirm === password;
+  const canSubmit = Boolean(token) && !loading && isPasswordValid && passwordsMatch;
 
   useEffect(() => {
     if (!token) setError('El enlace no es válido. Contacta al administrador.');
@@ -166,7 +179,7 @@ function ActivarForm() {
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 <label style={{ fontSize: '14px', color: 'rgba(11,27,43,.78)' }}>Nueva contraseña</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'white', border: '1px solid rgba(0,150,143,.16)', padding: '14px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'white', border: `1px solid ${password && !isPasswordValid ? 'rgba(239,68,68,.45)' : 'rgba(0,150,143,.16)'}`, padding: '14px 16px' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7, flexShrink: 0 }}>
                     <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="#0B1B2B" strokeWidth="1.8" strokeLinecap="round"/>
                     <path d="M6 11h12v9H6v-9Z" stroke="#0B1B2B" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -175,8 +188,14 @@ function ActivarForm() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      setError('');
+                    }}
                     required
+                    minLength={8}
+                    autoComplete="new-password"
+                    aria-invalid={password.length > 0 && !isPasswordValid}
                     style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
@@ -187,6 +206,38 @@ function ActivarForm() {
                       {showPassword && <line x1="3" y1="3" x2="21" y2="21" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>}
                     </svg>
                   </button>
+                </div>
+
+                <div style={{ display: 'grid', gap: '6px', marginTop: '2px' }}>
+                  {passwordRules.map((rule) => (
+                    <div
+                      key={rule.label}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '7px',
+                        fontSize: '12px',
+                        lineHeight: 1.25,
+                        color: rule.valid ? '#047857' : 'rgba(11,27,43,.58)',
+                        fontWeight: rule.valid ? 700 : 500,
+                      }}
+                    >
+                      <span style={{
+                        width: '16px',
+                        height: '16px',
+                        borderRadius: '999px',
+                        display: 'inline-grid',
+                        placeItems: 'center',
+                        flexShrink: 0,
+                        fontSize: '11px',
+                        background: rule.valid ? '#dcfce7' : 'rgba(11,27,43,.07)',
+                        color: rule.valid ? '#059669' : 'rgba(11,27,43,.42)',
+                      }}>
+                        {rule.valid ? '✓' : '•'}
+                      </span>
+                      {rule.label}
+                    </div>
+                  ))}
                 </div>
               </div>
 
@@ -201,11 +252,22 @@ function ActivarForm() {
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
                     value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
+                    onChange={(e) => {
+                      setConfirm(e.target.value);
+                      setError('');
+                    }}
                     required
+                    minLength={8}
+                    autoComplete="new-password"
+                    aria-invalid={confirm.length > 0 && confirm !== password}
                     style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
                   />
                 </div>
+                {confirm.length > 0 && confirm !== password && (
+                  <p style={{ color: 'var(--color-error)', fontSize: '0.8125rem', margin: 0 }}>
+                    Las contraseñas no coinciden.
+                  </p>
+                )}
               </div>
 
               {error && (
@@ -214,8 +276,8 @@ function ActivarForm() {
 
               <button
                 type="submit"
-                disabled={loading || !token}
-                style={{ border: 0, width: '100%', padding: '14px 16px', borderRadius: '14px', fontWeight: 800, color: 'white', background: 'var(--color-accent-10)', cursor: (loading || !token) ? 'not-allowed' : 'pointer', fontSize: '1.0625rem', opacity: (loading || !token) ? 0.7 : 1 }}
+                disabled={!canSubmit}
+                style={{ border: 0, width: '100%', padding: '14px 16px', borderRadius: '14px', fontWeight: 800, color: 'white', background: 'var(--color-accent-10)', cursor: !canSubmit ? 'not-allowed' : 'pointer', fontSize: '1.0625rem', opacity: !canSubmit ? 0.7 : 1 }}
               >
                 {loading ? 'Activando...' : 'Activar cuenta'}
               </button>
