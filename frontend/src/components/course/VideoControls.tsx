@@ -58,6 +58,7 @@ export default function VideoControls({
   // Notas (localStorage por lección)
   const notasKey = `notas_${courseId}_${lessonId}`;
   const [nota, setNota] = useState('');
+  const [notaMsg, setNotaMsg] = useState('');
   useEffect(() => {
     if (lessonId) {
       setNota(localStorage.getItem(notasKey) || '');
@@ -65,13 +66,28 @@ export default function VideoControls({
   }, [lessonId, notasKey]);
   const handleSaveNota = () => {
     localStorage.setItem(notasKey, nota);
+    setNotaMsg('✓ Nota guardada en este dispositivo');
+    setTimeout(() => setNotaMsg(''), 2500);
+  };
+  const handleDescargarNota = () => {
+    const blob = new Blob([nota], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `nota-${lessonId ?? 'leccion'}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   // Comentarios (calificaciones de curso)
   const [comentarios, setComentarios] = useState<CalificacionPublic[]>([]);
   const [nuevoComentario, setNuevoComentario] = useState('');
+  const [estrellas, setEstrellas] = useState(5);
   const [loadingComentarios, setLoadingComentarios] = useState(false);
   const [postingComentario, setPostingComentario] = useState(false);
+  const [comentarioMsg, setComentarioMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
 
   useEffect(() => {
     if (activeTab === 'comentarios' && courseId) {
@@ -86,13 +102,17 @@ export default function VideoControls({
   const handlePostComentario = async () => {
     if (!nuevoComentario.trim() || !courseId) return;
     setPostingComentario(true);
+    setComentarioMsg(null);
     try {
-      await calificacionesApi.create(courseId, { estrellas: 5, comentario: nuevoComentario });
+      await calificacionesApi.create(courseId, { estrellas, comentario: nuevoComentario });
       const resp = await calificacionesApi.list(courseId) as CalificacionesResp;
       setComentarios(resp.data ?? []);
       setNuevoComentario('');
-    } catch {
-      // Fallo silencioso
+      setComentarioMsg({ tipo: 'ok', texto: '¡Publicado! Aparece abajo y suma a la reseña del curso.' });
+    } catch (e) {
+      // El backend devuelve 409 si ya reseñaste, 403 si no estás inscrito.
+      const detail = (e as { detail?: string })?.detail || 'No se pudo publicar el comentario.';
+      setComentarioMsg({ tipo: 'error', texto: detail });
     } finally {
       setPostingComentario(false);
     }
@@ -180,15 +200,43 @@ export default function VideoControls({
             placeholder="Escribe tus notas para esta lección..."
             rows={6}
           />
-          <button className={styles.saveNotaBtn} onClick={handleSaveNota}>
-            Guardar nota
-          </button>
+          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            <button className={styles.saveNotaBtn} onClick={handleSaveNota}>
+              Guardar nota
+            </button>
+            <button
+              className={styles.saveNotaBtn}
+              onClick={handleDescargarNota}
+              disabled={!nota.trim()}
+              style={{ background: 'transparent', color: 'var(--color-secondary-30)', border: '1px solid currentColor' }}
+            >
+              Descargar (.txt)
+            </button>
+            {notaMsg && <span style={{ fontSize: '0.8rem', color: '#16a34a' }}>{notaMsg}</span>}
+          </div>
         </div>
       )}
 
       {activeTab === 'comentarios' && (
         <div className={styles.tabContent}>
+          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
+            Tu comentario se publica como <strong>reseña pública del curso</strong>: aparece en la lista de abajo y suma a la calificación del curso. Puedes dejar una reseña por curso.
+          </p>
           <div className={styles.comentarioForm}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', marginBottom: '0.4rem' }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setEstrellas(n)}
+                  aria-label={`${n} estrella${n > 1 ? 's' : ''}`}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: 0, color: n <= estrellas ? '#f59e0b' : '#cbd5e1' }}
+                >
+                  ★
+                </button>
+              ))}
+              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginLeft: '0.35rem' }}>{estrellas}/5</span>
+            </div>
             <textarea
               className={styles.notasTextarea}
               value={nuevoComentario}
@@ -203,6 +251,11 @@ export default function VideoControls({
             >
               {postingComentario ? 'Publicando...' : 'Publicar comentario'}
             </button>
+            {comentarioMsg && (
+              <p style={{ fontSize: '0.8rem', marginTop: '0.4rem', color: comentarioMsg.tipo === 'ok' ? '#16a34a' : '#dc2626' }}>
+                {comentarioMsg.texto}
+              </p>
+            )}
           </div>
           {loadingComentarios ? (
             <p className={styles.emptyMessage}>Cargando comentarios...</p>
