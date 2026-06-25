@@ -169,7 +169,9 @@ export default function UsuariosPage() {
         <div className={styles.headerActions}>
           <button className={styles.backButton} onClick={() => router.push('/admin')}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
+              <path d="M3 10.5 12 3l9 7.5" />
+              <path d="M5 10v10h14V10" />
+              <path d="M9 20v-6h6v6" />
             </svg>
             Inicio
           </button>
@@ -219,10 +221,13 @@ export default function UsuariosPage() {
               placeholder="Buscar usuario por nombre o email..."
             />
             <button type="button" className={styles.clearButton} onClick={handleResetSearch}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M18 6L6 18M6 6l12 12" />
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 3l-8.5 8.5" />
+                <path d="M10.5 11.5l2 2" />
+                <path d="M5 21c3 .2 5.7-.6 7.8-2.7l1.7-1.7-5.1-5.1-1.7 1.7C5.6 15.3 4.8 18 5 21z" />
+                <path d="M7.5 17.5l2 2" />
               </svg>
-              Borrar
+              Limpiar
             </button>
           </div>
           <select
