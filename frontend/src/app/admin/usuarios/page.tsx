@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usersApi } from '@/lib/api/client';
+import { getCurrentUser } from '@/lib/auth';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 
@@ -53,6 +54,12 @@ export default function UsuariosPage() {
   const [reenviarId, setReenviarId] = useState<string | null>(null);
   const [reenviarMsg, setReenviarMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+  // Solo el superusuario puede suspender/activar cuentas de administrador.
+  const [isSuperuser, setIsSuperuser] = useState(false);
+
+  useEffect(() => {
+    getCurrentUser().then((u) => setIsSuperuser(!!u?.is_superuser)).catch(() => {});
+  }, []);
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -81,8 +88,10 @@ export default function UsuariosPage() {
     try {
       await usersApi.update(user.id, { estado: newEstado });
       setUsers((prev) => prev.map((u) => u.id === user.id ? { ...u, estado: newEstado } : u));
-    } catch {
-      // Fallo silencioso
+    } catch (e) {
+      // p.ej. 403 si un admin intenta tocar a otro admin, o auto-suspenderse.
+      const detail = (e as { detail?: string })?.detail || 'No se pudo cambiar el estado de la cuenta.';
+      alert(detail);
     }
   };
 
@@ -284,8 +293,10 @@ export default function UsuariosPage() {
                             className={styles.toggleLabel}
                             title={user.rol === 'instructor' && !flags.instructores
                               ? 'Rol de instructor deshabilitado: no se puede cambiar el estado'
+                              : user.rol === 'administrador' && !isSuperuser
+                              ? 'Solo el superusuario puede suspender cuentas de administrador'
                               : 'Activar/Suspender cuenta'}
-                            style={user.rol === 'instructor' && !flags.instructores
+                            style={(user.rol === 'instructor' && !flags.instructores) || (user.rol === 'administrador' && !isSuperuser)
                               ? { opacity: 0.5, cursor: 'not-allowed' }
                               : undefined}
                           >
@@ -293,7 +304,7 @@ export default function UsuariosPage() {
                               type="checkbox"
                               checked={user.estado === 'activo'}
                               onChange={() => handleToggleActive(user)}
-                              disabled={user.rol === 'instructor' && !flags.instructores}
+                              disabled={(user.rol === 'instructor' && !flags.instructores) || (user.rol === 'administrador' && !isSuperuser)}
                               className={styles.toggleInput}
                             />
                             <span className={styles.toggleSlider}></span>
