@@ -7,6 +7,7 @@ import VideoUploadButton from '@/components/video/VideoUploadButton';
 import LessonTypeSelector from '@/components/course/LessonTypeSelector';
 import QuizBuilder from '@/components/course/QuizBuilder';
 import type { QuizData } from '@/types/course';
+import { validateQuiz } from '@/lib/quizValidation';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -268,8 +269,23 @@ export default function EditarCursoAdminPage() {
   };
 
   const handleTogglePublish = async () => {
-    setIsPublishing(true);
     const nuevoEstado = cursoEstado === 'publicado' ? 'borrador' : 'publicado';
+    // Al publicar (no al despublicar), bloquear si hay quizzes incompletos.
+    if (nuevoEstado === 'publicado') {
+      const quizErrors: string[] = [];
+      modules.forEach((m) => {
+        m.lessons.forEach((l) => {
+          if (l.tipo !== 'quiz') return;
+          const issues = validateQuiz(l.quizData);
+          if (issues.length) quizErrors.push(`"${l.title || 'Quiz sin título'}": ${issues.join('; ')}`);
+        });
+      });
+      if (quizErrors.length) {
+        notify('error', `Corrige los quizzes antes de publicar — ${quizErrors[0]}${quizErrors.length > 1 ? ` (y ${quizErrors.length - 1} más)` : ''}`);
+        return;
+      }
+    }
+    setIsPublishing(true);
     try {
       await cursosApi.update(cursoId, { estado: nuevoEstado });
       setCursoEstado(nuevoEstado);
@@ -431,6 +447,16 @@ export default function EditarCursoAdminPage() {
       notify('error', 'Error al eliminar el recurso');
     }
   }, [cursoId]);
+
+  const handleDescargarRecurso = useCallback(async (recursoId: string) => {
+    try {
+      await cursosApi.descargarRecurso(recursoId);
+    } catch (e) {
+      logError('admin/cursos/editar/descargarRecurso', e);
+      const detail = (e as { detail?: string })?.detail || 'No se pudo abrir el recurso.';
+      notify('error', detail);
+    }
+  }, []);
 
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -804,9 +830,9 @@ export default function EditarCursoAdminPage() {
                                       {lesson.recursos.map((r) => (
                                         <div key={r.id} className={styles.recursoItem}>
                                           <span className={styles.recursoType}>{r.tipo.toUpperCase()}</span>
-                                          <a href={r.url.startsWith('/') ? `${API_URL}${r.url}` : r.url} target="_blank" rel="noopener noreferrer" className={styles.recursoTitle}>
+                                          <button type="button" className={styles.recursoTitle} onClick={() => handleDescargarRecurso(r.id)} title="Descargar recurso">
                                             {r.titulo}
-                                          </a>
+                                          </button>
                                           <button type="button" className={styles.deleteRecursoBtn} onClick={() => deleteRecurso(module.id, lesson.id, r.id)}>✕</button>
                                         </div>
                                       ))}
@@ -836,8 +862,11 @@ export default function EditarCursoAdminPage() {
                                           onClick={() => addRecurso(module.id, lesson)}
                                           disabled={!pendingRecursoFiles[lesson.id]?.length}
                                         >
-                                          + Subir recurso
+                                          Subir recurso
                                         </button>
+                                        <p className={styles.recursoHint}>
+                                          Formatos: PDF, Word, Excel o PowerPoint · máx. 20 MB
+                                        </p>
                                       </div>
                                     </div>
                                   )}

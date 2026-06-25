@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usersApi, cursosApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 
 interface ApiUser {
@@ -40,10 +41,19 @@ interface InstructorCard {
 
 export default function AdminInstructoresPage() {
   const router = useRouter();
+  const { flags, loading: flagsLoading } = useFeatureFlags();
   const [instructors, setInstructors] = useState<InstructorCard[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Feature flag: si el rol instructor está apagado, esta sección no aplica.
+  // Redirige al dashboard (defensa para el acceso directo por URL).
+  useEffect(() => {
+    if (!flagsLoading && !flags.instructores) {
+      router.replace('/admin');
+    }
+  }, [flagsLoading, flags.instructores, router]);
 
   useEffect(() => {
     async function fetchData() {

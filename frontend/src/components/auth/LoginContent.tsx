@@ -81,8 +81,11 @@ export default function LoginContent() {
       } else {
         window.location.replace('/cursos');
       }
-    } catch {
-      setError('Correo o contraseña incorrectos');
+    } catch (e) {
+      // 403 = acceso deshabilitado (p. ej. rol instructor apagado): mostrar el
+      // motivo real del backend. Para el resto, mensaje genérico de credenciales.
+      const err = e as { detail?: string; status?: number };
+      setError(err?.status === 403 && err.detail ? err.detail : 'Correo o contraseña incorrectos');
     } finally {
       setLoading(false);
     }

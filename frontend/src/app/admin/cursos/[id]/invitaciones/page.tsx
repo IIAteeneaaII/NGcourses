@@ -126,9 +126,9 @@ export default function InvitacionesPage() {
   return (
     <div className={styles.pageContainer}>
       <div className={styles.pageHeader}>
-        <Link href={`/admin/cursos/${cursoId}/editar`} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+        <Link href="/admin/cursos" className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-          Volver al curso
+          Volver a cursos
         </Link>
         <h1 className={styles.pageTitle}>Gestionar Invitaciones</h1>
       </div>
@@ -173,11 +173,13 @@ export default function InvitacionesPage() {
                 <span>
                   <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
                     {r.estado === 'enviada' && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
-                    {r.estado === 'error' && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}
+                    {(r.estado === 'error' || r.estado === 'invalido') && <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>}
                     {r.estado === 'enviada'
                       ? 'Enviada'
                       : r.estado === 'ya_inscrito'
                       ? '⚠ Ya inscrito'
+                      : r.estado === 'invalido'
+                      ? `Correo inválido${r.detalle ? `: ${r.detalle}` : ''}`
                       : `Error${r.detalle ? `: ${r.detalle}` : ''}`}
                   </span>
                 </span>

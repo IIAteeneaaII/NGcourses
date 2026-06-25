@@ -6,6 +6,7 @@ from app.api.routes import (
     certificados,
     cursos,
     etiquetas,
+    feature_flags,
     inscripciones,
     invitaciones,
     items,
@@ -42,6 +43,7 @@ api_router.include_router(pagos.router)
 api_router.include_router(supervisor.router)
 api_router.include_router(solicitudes.router)
 api_router.include_router(webhooks.router)
+api_router.include_router(feature_flags.router)
 
 
 if settings.ENVIRONMENT == "local":

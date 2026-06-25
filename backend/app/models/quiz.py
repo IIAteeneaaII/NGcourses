@@ -56,6 +56,12 @@ class QuizEnviarIn(SQLModel):
     respuestas: list[RespuestaIn]
 
 
+class ReiniciarIntentosIn(SQLModel):
+    """Payload para que admin/instructor reinicie los intentos de un alumno en
+    una lección de quiz (lo desbloquea tras agotar el máximo)."""
+    usuario_id: uuid.UUID
+
+
 class RespuestaPublic(SQLModel):
     """Resultado de una respuesta individual — sin revelar cuál era la correcta."""
     pregunta_id: str
@@ -72,6 +78,9 @@ class QuizIntentoPublic(SQLModel):
     correctas: int
     creado_en: datetime
     respuestas: list[RespuestaPublic] = []
+    # Control de intentos (≥60% para aprobar, máx. 3 intentos antes de bloquear).
+    intentos_usados: int = 0
+    intentos_max: int = 0
 
 
 class QuizResultadoAlumno(SQLModel):

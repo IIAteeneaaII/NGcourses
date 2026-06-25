@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { usersApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import styles from './page.module.css';
 
 interface CreateUserForm {
@@ -38,6 +39,7 @@ const ITEMS_PER_PAGE = 10;
 
 export default function UsuariosPage() {
   const router = useRouter();
+  const { flags } = useFeatureFlags();
   const [users, setUsers] = useState<ApiUser[]>([]);
   const [total, setTotal] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
@@ -281,11 +283,22 @@ export default function UsuariosPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </Link>
-                          <label className={styles.toggleLabel} title="Activar/Suspender cuenta">
+                          {/* Si el rol instructor está deshabilitado, el toggle de
+                              estado de esas cuentas se bloquea (visible, no editable). */}
+                          <label
+                            className={styles.toggleLabel}
+                            title={user.rol === 'instructor' && !flags.instructores
+                              ? 'Rol de instructor deshabilitado: no se puede cambiar el estado'
+                              : 'Activar/Suspender cuenta'}
+                            style={user.rol === 'instructor' && !flags.instructores
+                              ? { opacity: 0.5, cursor: 'not-allowed' }
+                              : undefined}
+                          >
                             <input
                               type="checkbox"
                               checked={user.estado === 'activo'}
                               onChange={() => handleToggleActive(user)}
+                              disabled={user.rol === 'instructor' && !flags.instructores}
                               className={styles.toggleInput}
                             />
                             <span className={styles.toggleSlider}></span>
@@ -383,7 +396,7 @@ export default function UsuariosPage() {
                   className={styles.formInput}
                 >
                   <option value="estudiante">Estudiante</option>
-                  <option value="instructor">Instructor</option>
+                  {flags.instructores && <option value="instructor">Instructor</option>}
                   <option value="administrador">Administrador</option>
                 </select>
               </div>

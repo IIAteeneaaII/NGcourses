@@ -14,6 +14,7 @@ from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.security import get_password_hash
 from app.models import Message, NewPassword, Token, User, UserPublic
+from app.models._enums import RolUsuario
 from app.models.sistema import RefreshToken
 from app.utils import (
     generate_reset_password_email,
@@ -41,6 +42,20 @@ def login_access_token(
         raise HTTPException(status_code=400, detail="Incorrect email or password")
     elif not user.is_active:
         raise HTTPException(status_code=400, detail="Inactive user")
+
+    # Feature flag: si el rol instructor está deshabilitado, sus cuentas no pueden
+    # iniciar sesión (la funcionalidad queda congelada hasta reactivarlo). No
+    # afecta a admins/superusers.
+    if (
+        user.rol == RolUsuario.INSTRUCTOR
+        and not user.is_superuser
+        and not crud.feature_habilitada(session=session, nombre="instructores")
+    ):
+        raise HTTPException(
+            status_code=403,
+            detail="El acceso de instructores está deshabilitado temporalmente.",
+        )
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     token = security.create_access_token(user.id, expires_delta=access_token_expires)
     response.set_cookie(
