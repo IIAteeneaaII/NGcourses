@@ -40,6 +40,7 @@ interface UserLite {
   id: string;
   email: string;
   full_name: string | null;
+  rol: string;
 }
 
 type Tab = 'datos' | 'miembros' | 'licencias' | 'supervisor';
@@ -191,6 +192,10 @@ export default function OrganizacionDetallePage() {
     try {
       await organizacionesApi.quitarMiembro(orgId, user_id);
       loadMiembros();
+      // Quitar al supervisor (ADMIN_ORG) deja la org sin supervisor y al supervisor
+      // huérfano → invalida el Router Cache para que la lista de Organizaciones
+      // muestre el panel "supervisores sin organización" al volver (sin recargar).
+      router.refresh();
     } catch (e) {
       logError('organizacion.quitarMiembro', e);
     }
@@ -209,6 +214,8 @@ export default function OrganizacionDetallePage() {
       });
       setSupMsg('Supervisor creado. Se envió el correo de activación.');
       setSupForm({ email: '', full_name: '', password: '', telefono: '' });
+      // La org ya tiene supervisor → refresca la lista de Organizaciones al volver.
+      router.refresh();
     } catch (err: unknown) {
       const apiErr = err as { detail?: string };
       setSupError(apiErr?.detail || 'Error al crear supervisor');
@@ -311,7 +318,10 @@ export default function OrganizacionDetallePage() {
               <select className={styles.formInput} value={userAAsignar} onChange={(e) => setUserAAsignar(e.target.value)}>
                 <option value="">-- Seleccionar usuario --</option>
                 {usuariosDisponibles
-                  .filter((u) => !miembrosIds.has(u.id))
+                  // Solo empleados (estudiantes): la pestaña de Miembros no debe
+                  // asignar supervisores/admins. Un supervisor se gestiona desde
+                  // "Crear supervisor" / reparación de huérfanos, no como miembro.
+                  .filter((u) => !miembrosIds.has(u.id) && u.rol === 'estudiante')
                   .map((u) => (
                     <option key={u.id} value={u.id}>{u.full_name || u.email} ({u.email})</option>
                   ))}
