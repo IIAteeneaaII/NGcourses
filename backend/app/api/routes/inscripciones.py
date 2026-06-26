@@ -76,12 +76,11 @@ def inscribirse(
         and db_curso.marca == MarcaCurso.NEXTGEN
         and not db_curso.es_gratis
     ):
-        org_info = crud.get_organizacion_of_user(
+        org_ids = crud.get_org_ids_of_user(
             session=session, user_id=current_user.id
         )
-        org_id = org_info[0].id if org_info else None
-        if not org_id or not crud.tiene_licencia_activa(
-            session=session, org_id=org_id, curso_id=db_curso.id
+        if db_curso.id not in crud.cursos_con_licencia_activa_orgs(
+            session=session, org_ids=org_ids
         ):
             raise HTTPException(
                 status_code=403,

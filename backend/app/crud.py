@@ -775,6 +775,28 @@ def get_calificacion_by_usuario_curso(
     return session.exec(statement).first()
 
 
+def _recalcular_rating_curso(*, session: Session, curso_id: uuid.UUID) -> None:
+    """Recalcula calificacion_prom y total_resenas del curso a partir de las
+    reseñas PUBLICA. Se llama tras crear/editar una calificación."""
+    estrellas = session.exec(
+        select(Calificacion.estrellas).where(
+            Calificacion.curso_id == curso_id,
+            Calificacion.estado == EstadoCalificacion.PUBLICA,
+        )
+    ).all()
+    curso = session.get(Curso, curso_id)
+    if not curso:
+        return
+    if estrellas:
+        curso.calificacion_prom = round(sum(estrellas) / len(estrellas), 2)
+        curso.total_resenas = len(estrellas)
+    else:
+        curso.calificacion_prom = 0.0
+        curso.total_resenas = 0
+    session.add(curso)
+    session.commit()
+
+
 def get_calificaciones_curso(
     *, session: Session, curso_id: uuid.UUID, skip: int = 0, limit: int = 50
 ) -> tuple[list[Calificacion], int]:
@@ -807,11 +829,14 @@ def create_calificacion(
         estrellas=estrellas,
         titulo=titulo,
         comentario=comentario,
-        estado=EstadoCalificacion.PENDIENTE,
+        # Auto-publicar: la reseña aparece de inmediato y suma al promedio del
+        # curso. No hay moderación previa (decisión de producto para la beta).
+        estado=EstadoCalificacion.PUBLICA,
     )
     session.add(db_obj)
     session.commit()
     session.refresh(db_obj)
+    _recalcular_rating_curso(session=session, curso_id=curso_id)
     return db_obj
 
 
@@ -833,6 +858,7 @@ def update_calificacion(
     session.add(db_cal)
     session.commit()
     session.refresh(db_cal)
+    _recalcular_rating_curso(session=session, curso_id=db_cal.curso_id)
     return db_cal
 
 
@@ -1270,7 +1296,12 @@ def delete_organizacion(*, session: Session, org_id: uuid.UUID) -> None:
 def get_organizacion_of_user(
     *, session: Session, user_id: uuid.UUID
 ) -> tuple[Organizacion, RolOrganizacion] | None:
-    """Retorna (org, rol_org) del usuario, o None si no pertenece a ninguna."""
+    """Retorna (org, rol_org) del usuario, o None si no pertenece a ninguna.
+
+    Devuelve solo la PRIMERA org (un supervisor tiene exactamente una). Para el
+    catálogo/acceso de un ALUMNO, que puede pertenecer a varias orgs, usar
+    `get_org_ids_of_user` y unir las licencias de todas.
+    """
     row = session.exec(
         select(UsuarioOrganizacion).where(UsuarioOrganizacion.usuario_id == user_id)
     ).first()
@@ -1280,6 +1311,23 @@ def get_organizacion_of_user(
     if not org:
         return None
     return org, row.rol_org
+
+
+def get_org_ids_of_user(
+    *, session: Session, user_id: uuid.UUID
+) -> list[uuid.UUID]:
+    """Todas las organizaciones a las que pertenece el usuario.
+
+    Un alumno puede estar en varias (p.ej. empleado de dos empresas) y debe ver
+    los cursos licenciados por TODAS. Los supervisores siguen siendo 1↔1 (se
+    enforce al asignar miembros), pero este helper no lo asume.
+    """
+    rows = session.exec(
+        select(UsuarioOrganizacion.organizacion_id).where(
+            UsuarioOrganizacion.usuario_id == user_id
+        )
+    ).all()
+    return list(rows)
 
 
 def list_org_users(
@@ -1408,8 +1456,44 @@ def remove_user_from_organizacion(
             UsuarioOrganizacion.usuario_id == user_id,
         )
     ).first()
-    if row:
-        session.delete(row)
+    if not row:
+        return
+    session.delete(row)
+    session.commit()
+    # Revocar acceso: el alumno pierde los cursos a los que accedía SOLO por una
+    # licencia de esta org. Se ejecuta tras borrar la membresía para que el
+    # cálculo de "orgs restantes" ya no incluya a esta.
+    _revocar_inscripciones_tras_baja_org(
+        session=session, user_id=user_id, org_id=org_id
+    )
+
+
+def _revocar_inscripciones_tras_baja_org(
+    *, session: Session, user_id: uuid.UUID, org_id: uuid.UUID
+) -> None:
+    """Cancela las inscripciones del alumno a cursos que solo cubría la licencia
+    de la org de la que se le dio de baja. Conserva el acceso si el curso sigue
+    cubierto por otra org del alumno o si tiene un pago/cortesía individual."""
+    licenciados = cursos_con_licencia_activa(session=session, org_id=org_id)
+    if not licenciados:
+        return
+    org_ids_restantes = get_org_ids_of_user(session=session, user_id=user_id)
+    cubiertos_otras = cursos_con_licencia_activa_orgs(
+        session=session, org_ids=org_ids_restantes
+    )
+    comprados = cursos_con_pago_del_usuario(session=session, usuario_id=user_id)
+    afectadas = False
+    for curso_id in licenciados:
+        if curso_id in cubiertos_otras or curso_id in comprados:
+            continue
+        insc = get_inscripcion_by_usuario_curso(
+            session=session, usuario_id=user_id, curso_id=curso_id
+        )
+        if insc and insc.estado != EstadoInscripcion.CANCELADO:
+            insc.estado = EstadoInscripcion.CANCELADO
+            session.add(insc)
+            afectadas = True
+    if afectadas:
         session.commit()
 
 
@@ -1518,6 +1602,35 @@ def cursos_con_licencia_activa(
     return out
 
 
+def cursos_con_licencia_activa_orgs(
+    *, session: Session, org_ids: list[uuid.UUID]
+) -> set[uuid.UUID]:
+    """Unión de cursos con licencia ACTIVA y vigente para CUALQUIERA de las orgs.
+
+    Para alumnos multi-org: el catálogo y el acceso por licencia consideran todas
+    sus organizaciones, no una sola.
+    """
+    if not org_ids:
+        return set()
+    now = datetime.utcnow()
+    rows = session.exec(
+        select(LicenciaCurso).where(
+            LicenciaCurso.organizacion_id.in_(org_ids),  # type: ignore[attr-defined]
+            LicenciaCurso.estado == EstadoLicencia.ACTIVA,
+        )
+    ).all()
+    out: set[uuid.UUID] = set()
+    for lic in rows:
+        if lic.inicia_en and lic.inicia_en > now:
+            continue
+        if lic.termina_en and lic.termina_en < now:
+            continue
+        if lic.cupos_total and lic.cupos_usados >= lic.cupos_total:
+            continue
+        out.add(lic.curso_id)
+    return out
+
+
 def list_cursos_for_student(
     *, session: Session, user_id: uuid.UUID, skip: int = 0, limit: int = 100,
     categoria_id: uuid.UUID | None = None, search: str | None = None,
@@ -1527,8 +1640,7 @@ def list_cursos_for_student(
        - marca = NEXTGEN (visible para todos), OR
        - existe LicenciaCurso ACTIVA para la organización del usuario
     """
-    org_info = get_organizacion_of_user(session=session, user_id=user_id)
-    org_id = org_info[0].id if org_info else None
+    org_ids = get_org_ids_of_user(session=session, user_id=user_id)
 
     from sqlalchemy import or_
 
@@ -1548,10 +1660,10 @@ def list_cursos_for_student(
         Curso.marca == MarcaCurso.NEXTGEN,
         Curso.id.in_(insc_subq),  # type: ignore[attr-defined]
     ]
-    if org_id is not None:
+    if org_ids:
         lic_subq = select(LicenciaCurso.curso_id).where(
             LicenciaCurso.estado == EstadoLicencia.ACTIVA,
-            LicenciaCurso.organizacion_id == org_id,
+            LicenciaCurso.organizacion_id.in_(org_ids),  # type: ignore[attr-defined]
         )
         visibles.append(Curso.id.in_(lic_subq))  # type: ignore[attr-defined]
     stmt = stmt.where(or_(*visibles))

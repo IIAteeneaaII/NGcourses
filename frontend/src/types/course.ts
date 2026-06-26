@@ -63,6 +63,7 @@ export interface CourseInfo {
   syllabus: string[];
   image: string;
   bloqueadoPorLicencia?: boolean;
+  esDeMiOrg?: boolean;
   precio?: number | null;
   moneda?: string;
   destacado?: boolean;
@@ -106,6 +107,7 @@ export interface CourseCard {
   category?: string;
   marca?: 'ram' | 'nextgen';
   bloqueadoPorLicencia?: boolean;
+  esDeMiOrg?: boolean;
   precio?: number | null;
   moneda?: string;
   destacado?: boolean;

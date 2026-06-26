@@ -140,6 +140,24 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
               <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
                 Continuar curso
               </Link>
+            ) : course.esDeMiOrg ? (
+              // Cubierto por una licencia activa de la organización del alumno:
+              // se inscribe SIN pagar, aunque el curso tenga precio. Tiene
+              // prioridad sobre PayPal.
+              onInscribirse && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
+                  <button
+                    className={styles.startButton}
+                    onClick={onInscribirse}
+                    disabled={enrollLoading}
+                  >
+                    {enrollLoading ? 'Inscribiendo...' : 'Inscribirme'}
+                  </button>
+                  <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
+                    Incluido por tu organización
+                  </span>
+                </div>
+              )
             ) : requierePago ? (
               // Precio > 0: PayPal tiene prioridad sobre el bloqueo de licencia, ya que
               // RF10 permite que cualquier alumno compre el curso individualmente.
