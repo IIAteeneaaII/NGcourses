@@ -80,7 +80,7 @@ def asignar_etiqueta(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and current_user.id != db_curso.instructor_id:
         raise HTTPException(status_code=403, detail="Sin permiso")
@@ -107,7 +107,7 @@ def remover_etiqueta(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and current_user.id != db_curso.instructor_id:
         raise HTTPException(status_code=403, detail="Sin permiso")
