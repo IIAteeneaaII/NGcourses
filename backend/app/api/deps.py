@@ -74,11 +74,11 @@ def get_current_active_superuser(current_user: CurrentUser) -> User:
 
 # ISO 25010 §6.5 Mantenibilidad: dependency reutilizable para control de roles,
 # evita duplicación del mismo bloque en cursos.py, quiz.py, etc.
-_INSTRUCTOR_ROLES = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL}
+_INSTRUCTOR_ROLES = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR}
 
 
 def require_instructor_or_above(current_user: CurrentUser) -> User:
-    """Dependency: rechaza con 403 si el usuario no es instructor, admin o usuario_control."""
+    """Dependency: rechaza con 403 si el usuario no es instructor o administrador."""
     if not current_user.is_superuser and current_user.rol not in _INSTRUCTOR_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -109,12 +109,11 @@ AdminOrSuperuser = Annotated[User, Depends(require_admin_or_superuser)]
 _SUPERVISOR_ROLES = {
     RolUsuario.SUPERVISOR,
     RolUsuario.ADMINISTRADOR,
-    RolUsuario.USUARIO_CONTROL,
 }
 
 
 def require_supervisor_or_above(current_user: CurrentUser) -> User:
-    """Dependency: rechaza con 403 si el usuario no es supervisor, admin o usuario_control."""
+    """Dependency: rechaza con 403 si el usuario no es supervisor o administrador."""
     if not current_user.is_superuser and current_user.rol not in _SUPERVISOR_ROLES:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

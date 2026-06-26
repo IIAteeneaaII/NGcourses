@@ -33,7 +33,6 @@ const ROLES: Record<string, string> = {
   administrador: 'Administrador',
   instructor: 'Instructor',
   estudiante: 'Estudiante',
-  usuario_control: 'Control',
 };
 
 const ITEMS_PER_PAGE = 10;

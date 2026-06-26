@@ -56,7 +56,7 @@ def inscribirse(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no disponible")
@@ -124,7 +124,7 @@ def inscripciones_por_usuario(
 ) -> Any:
     """Lista inscripciones de un alumno específico. Solo admin."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin:
         raise HTTPException(status_code=403, detail="Sin permiso")
@@ -149,7 +149,7 @@ def get_inscripcion(
         raise HTTPException(status_code=404, detail="Inscripción no encontrada")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and db.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin acceso a esta inscripción")
@@ -172,7 +172,7 @@ def cancelar_inscripcion(
         raise HTTPException(status_code=409, detail="La inscripción ya está cancelada")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
 
     if not is_admin:
@@ -194,7 +194,7 @@ def inscripciones_por_curso(
 ) -> Any:
     """Lista inscripciones de un curso. Solo el instructor propietario o admin."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
 
     db_curso = crud.get_curso(session=session, curso_id=curso_id)
