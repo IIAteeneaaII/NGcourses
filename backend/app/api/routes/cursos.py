@@ -279,12 +279,18 @@ def get_curso(
             session=session, org_ids=org_ids
         )
         curso_data.es_de_mi_org = db_curso.id in cubiertos_por_licencia
+        tiene_pago = crud.usuario_tiene_pago_completado(
+            session=session, usuario_id=current_user.id, curso_id=db_curso.id
+        )
+        # Mismo criterio que el candado de POST /inscripciones/: puede auto-inscribirse
+        # si es público (NEXTGEN gratis), cubierto por su org, o ya lo pagó.
+        es_publico = db_curso.marca == MarcaCurso.NEXTGEN and db_curso.es_gratis
+        curso_data.puede_inscribirse = (
+            es_publico or curso_data.es_de_mi_org or tiene_pago
+        )
         # RF10/RF08: el bloqueo solo aplica a NEXTGEN de paga sin licencia ni pago
         # individual. Un curso cubierto por la org NUNCA queda bloqueado.
         if db_curso.marca == MarcaCurso.NEXTGEN and not db_curso.es_gratis:
-            tiene_pago = crud.usuario_tiene_pago_completado(
-                session=session, usuario_id=current_user.id, curso_id=db_curso.id
-            )
             curso_data.bloqueado_por_licencia = not (
                 curso_data.es_de_mi_org or tiene_pago
             )

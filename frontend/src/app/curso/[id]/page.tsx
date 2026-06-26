@@ -29,6 +29,7 @@ interface ApiCurso {
   instructor_nombre: string | null;
   bloqueado_por_licencia?: boolean;
   es_de_mi_org?: boolean;
+  puede_inscribirse?: boolean;
   precio?: number | string | null;
   moneda?: string;
   destacado?: boolean;
@@ -86,6 +87,7 @@ export default function CursoInfoPage() {
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
           bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
           esDeMiOrg: cursoRaw.es_de_mi_org ?? false,
+          puedeInscribirse: cursoRaw.puede_inscribirse ?? true,
           precio: cursoRaw.precio != null ? Number(cursoRaw.precio) : null,
           moneda: cursoRaw.moneda || 'MXN',
           destacado: cursoRaw.destacado ?? false,

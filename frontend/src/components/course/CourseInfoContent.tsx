@@ -168,7 +168,7 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
                   if (onPaymentSuccess) onPaymentSuccess();
                 }}
               />
-            ) : bloqueadoPorLicencia ? (
+            ) : bloqueadoPorLicencia || course.puedeInscribirse === false ? (
               <div className={styles.lockedBlock} role="status" aria-live="polite">
                 <h3 className={styles.lockedTitle}>Curso no disponible</h3>
                 <p className={styles.lockedMessage}>
