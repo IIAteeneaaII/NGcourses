@@ -1145,7 +1145,10 @@ def get_or_create_user_by_email(
 
     user = get_user_by_email(session=session, email=email)
     if user:
-        if organizacion_id is not None:
+        # La membresía de organización es SOLO para empleados (ESTUDIANTE). Un
+        # admin/instructor/supervisor invitado a un curso NO debe quedar como
+        # miembro de la org (sí se inscribe al curso en el flujo de canjeo).
+        if organizacion_id is not None and user.rol == RolUsuario.ESTUDIANTE:
             _ensure_user_in_org(session=session, user_id=user.id, organizacion_id=organizacion_id)
         # Usuario invitado antes que nunca activó: regenerar token y devolverlo
         # para que el llamador reenvíe el correo de activación.

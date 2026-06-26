@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { organizacionesApi, cursosApi, usersApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -49,6 +50,11 @@ export default function OrganizacionDetallePage() {
   const orgId = params?.id as string;
 
   const [tab, setTab] = useState<Tab>('datos');
+  const { flags } = useFeatureFlags();
+  // Beta: una org tiene un solo supervisor (creado al alta de la org). El tab para
+  // crear supervisores extra solo aparece si el flag 'multiples_supervisores' está ON.
+  const multiplesSupervisores = !!flags['multiples_supervisores'];
+  const tabs: Tab[] = ['datos', 'miembros', 'licencias', ...(multiplesSupervisores ? ['supervisor' as Tab] : [])];
   const [org, setOrg] = useState<Organizacion | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -244,7 +250,7 @@ export default function OrganizacionDetallePage() {
 
       <section className={styles.mainContent}>
         <div className={styles.tabsRow}>
-          {(['datos', 'miembros', 'licencias', 'supervisor'] as Tab[]).map((t) => (
+          {tabs.map((t) => (
             <button
               key={t}
               className={`${styles.tabButton} ${tab === t ? styles.tabActive : ''}`}

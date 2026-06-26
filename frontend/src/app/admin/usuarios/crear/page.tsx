@@ -75,11 +75,11 @@ export default function CrearUsuarioEmpresaPage() {
           Usuarios
         </button>
         <span style={{ color: 'rgba(11,27,43,.3)' }}>/</span>
-        <span style={{ fontSize: '14px', color: 'rgba(11,27,43,.6)' }}>Alta empresa</span>
+        <span style={{ fontSize: '14px', color: 'rgba(11,27,43,.6)' }}>Alta de empleado</span>
       </div>
 
       <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
-        Alta de usuario empresarial
+        Alta de empleado
       </h1>
       <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(11,27,43,.55)' }}>
         Crea un <strong>empleado (estudiante)</strong> y lo liga a una organización existente. El empleado
