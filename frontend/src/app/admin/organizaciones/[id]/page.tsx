@@ -41,6 +41,7 @@ interface UserLite {
   email: string;
   full_name: string | null;
   rol: string;
+  estado: string;
 }
 
 type Tab = 'datos' | 'miembros' | 'licencias' | 'supervisor';
@@ -318,10 +319,10 @@ export default function OrganizacionDetallePage() {
               <select className={styles.formInput} value={userAAsignar} onChange={(e) => setUserAAsignar(e.target.value)}>
                 <option value="">-- Seleccionar usuario --</option>
                 {usuariosDisponibles
-                  // Solo empleados (estudiantes): la pestaña de Miembros no debe
-                  // asignar supervisores/admins. Un supervisor se gestiona desde
-                  // "Crear supervisor" / reparación de huérfanos, no como miembro.
-                  .filter((u) => !miembrosIds.has(u.id) && u.rol === 'estudiante')
+                  // Solo empleados (estudiantes) YA ACTIVADOS: la pestaña de Miembros
+                  // no debe asignar supervisores/admins (se gestionan aparte) ni
+                  // cuentas que aún no se activaron (pendientes de activación).
+                  .filter((u) => !miembrosIds.has(u.id) && u.rol === 'estudiante' && u.estado === 'activo')
                   .map((u) => (
                     <option key={u.id} value={u.id}>{u.full_name || u.email} ({u.email})</option>
                   ))}
