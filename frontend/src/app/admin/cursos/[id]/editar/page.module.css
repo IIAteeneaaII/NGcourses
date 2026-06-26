@@ -35,19 +35,21 @@
   gap: 0.5rem;
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
-  background: var(--color-text-white);
-  border: 1px solid #d1d5db;
+  font-weight: 700;
+  color: var(--color-text-white);
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  border: none;
   border-radius: 0.5rem;
   cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 150, 143, 0.28);
   transition: all 0.2s ease-in-out;
 }
 
 .returnButton:hover {
-  background: var(--color-primary-60);
-  color: var(--color-text-primary);
-  border-color: var(--color-text-secondary);
+  color: var(--color-text-white);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 150, 143, 0.35);
+  filter: brightness(0.96);
 }
 
 .pageTitle {
@@ -856,19 +858,24 @@
 }
 
 .backButton {
-  color: var(--color-text-secondary);
-  background: var(--color-text-white);
-  border: 1px solid #d1d5db;
+  color: var(--color-text-white);
+  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 150, 143, 0.22);
 }
 
 .backButton:hover:not(:disabled) {
-  background: var(--color-primary-60);
-  border-color: var(--color-text-secondary);
+  color: var(--color-text-white);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 150, 143, 0.3);
+  filter: brightness(0.96);
 }
 
 .backButton:disabled {
-  opacity: 0.5;
+  opacity: 0.55;
   cursor: not-allowed;
+  box-shadow: none;
+  filter: grayscale(0.15);
 }
 
 .nextButton,
