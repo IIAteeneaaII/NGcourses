@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { organizacionesApi } from '@/lib/api/client';
+import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -57,6 +58,10 @@ export default function OrganizacionesPage() {
   // asignar 1 a 1 sin dejar una org con dos supervisores).
   const [orphans, setOrphans] = useState<SupervisorSinOrg[]>([]);
   const [orgsSinSup, setOrgsSinSup] = useState<Organizacion[]>([]);
+  const { flags } = useFeatureFlags();
+  // Con 'multiples_supervisores' un huérfano puede ir a cualquier org; sin el flag,
+  // solo a una org que no tenga supervisor (1 por org en la beta).
+  const orgsParaAsignar = flags['multiples_supervisores'] ? orgs : orgsSinSup;
   const [assignSel, setAssignSel] = useState<Record<string, string>>({});
   const [assigningId, setAssigningId] = useState<string | null>(null);
 
@@ -216,12 +221,12 @@ export default function OrganizacionesPage() {
                       <select
                         value={assignSel[o.user_id] || ''}
                         onChange={(e) => setAssignSel((p) => ({ ...p, [o.user_id]: e.target.value }))}
-                        disabled={orgsSinSup.length === 0}
+                        disabled={orgsParaAsignar.length === 0}
                       >
                         <option value="">
-                          {orgsSinSup.length === 0 ? 'No hay orgs sin supervisor' : 'Selecciona organización…'}
+                          {orgsParaAsignar.length === 0 ? 'No hay organizaciones disponibles' : 'Selecciona organización…'}
                         </option>
-                        {orgsSinSup.map((org) => <option key={org.id} value={org.id}>{org.nombre}</option>)}
+                        {orgsParaAsignar.map((org) => <option key={org.id} value={org.id}>{org.nombre}</option>)}
                       </select>
                     </td>
                     <td>

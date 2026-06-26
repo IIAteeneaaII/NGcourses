@@ -19,6 +19,12 @@ const FLAGS: FlagDef[] = [
     descripcion:
       'Habilita el rol de instructor: su panel, la asignación del rol a usuarios y la sección "Instructores". Mientras esté apagado, el rol queda oculto y no se pueden crear instructores nuevos (la funcionalidad no se borra, solo se desactiva).',
   },
+  {
+    nombre: 'multiples_supervisores',
+    titulo: 'Múltiples supervisores por organización',
+    descripcion:
+      'Permite que una organización tenga más de un supervisor. Apagado (recomendado para la beta): cada organización tiene un solo supervisor —el que se crea al dar de alta la empresa— y se oculta la opción de crear supervisores adicionales. Encendido: se habilita crear/agregar varios supervisores a una misma organización (un supervisor sigue perteneciendo a una sola org).',
+  },
 ];
 
 export default function ConfiguracionPage() {

@@ -259,14 +259,16 @@ def asignar_miembro(
                 detail="El supervisor ya pertenece a una organización (solo se permite una).",
             )
 
-    # Una organización tiene EXACTAMENTE un supervisor (ADMIN_ORG): no asignar un
-    # segundo. (Simétrico al "1 org por supervisor".)
-    if body.rol_org == RolOrganizacion.ADMIN_ORG and crud.org_tiene_supervisor(
-        session=session, org_id=org_id, excluir_user_id=user.id
+    # Una org tiene UN supervisor (ADMIN_ORG) salvo que el flag
+    # 'multiples_supervisores' esté activo. Por defecto (beta) se bloquea el 2º.
+    if (
+        body.rol_org == RolOrganizacion.ADMIN_ORG
+        and not crud.feature_habilitada(session=session, nombre="multiples_supervisores")
+        and crud.org_tiene_supervisor(session=session, org_id=org_id, excluir_user_id=user.id)
     ):
         raise HTTPException(
             status_code=409,
-            detail="Esta organización ya tiene un supervisor.",
+            detail="Esta organización ya tiene un supervisor. Habilita 'múltiples supervisores' en Configuración para permitir más.",
         )
 
     crud.add_user_to_organizacion(
@@ -298,6 +300,16 @@ def crear_supervisor(
     org = crud.get_organizacion(session=session, org_id=org_id)
     if not org:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
+
+    # En la beta (flag apagado) una org tiene un solo supervisor: el que se crea al
+    # dar de alta la org. No se permiten más salvo que 'multiples_supervisores' esté ON.
+    if not crud.feature_habilitada(
+        session=session, nombre="multiples_supervisores"
+    ) and crud.org_tiene_supervisor(session=session, org_id=org_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Esta organización ya tiene un supervisor. Habilita 'múltiples supervisores' en Configuración para crear más.",
+        )
 
     if crud.get_user_by_email(session=session, email=body.email):
         raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
