@@ -116,6 +116,23 @@ export default function OrganizacionesPage() {
   useEffect(() => { fetchOrgs(); }, [fetchOrgs]);
   useEffect(() => { fetchReparacion(); }, [fetchReparacion]);
 
+  // Al volver a esta pestaña/página (p.ej. tras quitar un supervisor en el detalle)
+  // refrescamos huérfanos + orgs, por si el Router Cache conservó la vista vieja.
+  useEffect(() => {
+    const refrescar = () => {
+      if (document.visibilityState === 'visible') {
+        fetchReparacion();
+        fetchOrgs();
+      }
+    };
+    window.addEventListener('focus', refrescar);
+    document.addEventListener('visibilitychange', refrescar);
+    return () => {
+      window.removeEventListener('focus', refrescar);
+      document.removeEventListener('visibilitychange', refrescar);
+    };
+  }, [fetchReparacion, fetchOrgs]);
+
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   const handleCreate = async (e: React.FormEvent) => {
