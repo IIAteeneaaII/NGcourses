@@ -249,8 +249,12 @@ def asignar_miembro(
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
-    # Un supervisor pertenece a EXACTAMENTE una organización. Se permite asignarle
-    # una si NO tiene (reparación de huérfanos), pero no una segunda.
+    # Un supervisor pertenece a EXACTAMENTE una organización y SIEMPRE como su
+    # ADMIN_ORG (nunca como simple miembro). Se permite asignarle una si NO tiene
+    # (reparación de huérfanos), pero no una segunda. Forzamos rol_org=ADMIN_ORG
+    # para que el límite de "1 supervisor por org" (abajo) aplique sin importar
+    # desde qué pantalla se asigne (p.ej. el tab de Miembros mandaba MIEMBRO y se
+    # saltaba el bloqueo).
     if user.rol == RolUsuario.SUPERVISOR:
         actual = crud.get_organizacion_of_user(session=session, user_id=user.id)
         if actual and actual[0].id != org_id:
@@ -258,6 +262,7 @@ def asignar_miembro(
                 status_code=409,
                 detail="El supervisor ya pertenece a una organización (solo se permite una).",
             )
+        body.rol_org = RolOrganizacion.ADMIN_ORG
 
     # Una org tiene UN supervisor (ADMIN_ORG) salvo que el flag
     # 'multiples_supervisores' esté activo. Por defecto (beta) se bloquea el 2º.
