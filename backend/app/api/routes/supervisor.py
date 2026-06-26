@@ -41,6 +41,10 @@ class UsuarioOrgPublic(SQLModel):
     full_name: str | None
     telefono: str | None
     is_active: bool
+    # Estado real de la cuenta: 'activo' | 'suspendido' | 'pendiente_activacion'.
+    # Permite distinguir "Pendiente de activación" de "Suspendido" (antes el front
+    # solo veía is_active=False y mostraba a los pendientes como suspendidos).
+    estado: str
     rol_org: str
     progreso_promedio: float
     cursos_inscritos: int
@@ -192,6 +196,7 @@ def usuarios_de_mi_org(
         result.append(UsuarioOrgPublic(
             id=u.id, email=u.email, full_name=u.full_name, telefono=u.telefono,
             is_active=u.is_active,
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
             rol_org=r.value if hasattr(r, "value") else str(r),
             progreso_promedio=prom, cursos_inscritos=len(inscripciones),
         ))
@@ -231,7 +236,9 @@ def crear_usuario(
     )
     return UsuarioOrgPublic(
         id=user.id, email=user.email, full_name=user.full_name, telefono=user.telefono,
-        is_active=user.is_active, rol_org=RolOrganizacion.MIEMBRO.value,
+        is_active=user.is_active,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
+        rol_org=RolOrganizacion.MIEMBRO.value,
         progreso_promedio=0.0, cursos_inscritos=0,
     )
 
