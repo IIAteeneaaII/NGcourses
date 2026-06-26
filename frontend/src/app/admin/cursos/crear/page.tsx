@@ -659,12 +659,13 @@ export default function CrearCursoPage() {
                     <div className={styles.imagePreview}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); setCoverUploadStatus('idle'); }}>
+                      <label className={styles.removeImageButton} style={{ cursor: 'pointer' }}>
+                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className={styles.fileInput} />
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
+                          <path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
                         </svg>
-                        Eliminar imagen
-                      </button>
+                        Cambiar imagen
+                      </label>
                       {coverUploadStatus === 'uploading' && (
                         <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
                           ⏳ Subiendo imagen al servidor...
