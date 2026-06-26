@@ -70,22 +70,31 @@ def inscribirse(
     if existing:
         raise HTTPException(status_code=409, detail="Ya estás inscrito en este curso")
 
-    # Bloqueo: cursos NEXTGEN no gratuitos requieren LicenciaCurso activa de la org
-    if (
-        not is_admin
-        and db_curso.marca == MarcaCurso.NEXTGEN
-        and not db_curso.es_gratis
-    ):
-        org_ids = crud.get_org_ids_of_user(
-            session=session, user_id=current_user.id
+    # Candado de auto-inscripción: un alumno solo puede inscribirse por su cuenta si
+    # el curso es PÚBLICO (NEXTGEN gratis), está cubierto por una LICENCIA ACTIVA de
+    # su organización (cualquier marca), o tiene un PAGO/cortesía individual. Cierra
+    # el hueco de re-inscribirse tras darlo de baja de la org (cursos RAM/de paga
+    # quedaban sin candado). Pagos, cortesías e invitaciones crean la inscripción por
+    # su propia vía (no este endpoint), así que no se ven afectados.
+    if not is_admin:
+        es_publico = (
+            db_curso.marca == MarcaCurso.NEXTGEN and db_curso.es_gratis
         )
-        if db_curso.id not in crud.cursos_con_licencia_activa_orgs(
-            session=session, org_ids=org_ids
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="Tu organización no ha adquirido este curso.",
+        if not es_publico:
+            org_ids = crud.get_org_ids_of_user(
+                session=session, user_id=current_user.id
             )
+            cubierto_por_org = db_curso.id in crud.cursos_con_licencia_activa_orgs(
+                session=session, org_ids=org_ids
+            )
+            tiene_pago = crud.usuario_tiene_pago_completado(
+                session=session, usuario_id=current_user.id, curso_id=db_curso.id
+            )
+            if not (cubierto_por_org or tiene_pago):
+                raise HTTPException(
+                    status_code=403,
+                    detail="No tienes acceso a este curso. Requiere una licencia de tu organización o adquirirlo.",
+                )
 
     db_inscripcion = crud.create_inscripcion(
         session=session,
