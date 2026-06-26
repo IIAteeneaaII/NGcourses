@@ -157,6 +157,21 @@ export default function MyCoursesContent({ courses, statistics, user }: MyCourse
           </section>
         )}
 
+        {coursesInProgress.length === 0 && coursesCompleted.length === 0 && (
+          <section className={styles.emptyState}>
+            <p className={styles.emptyTitle}>
+              {activeFilter === 'in_progress'
+                ? 'No tienes cursos en progreso.'
+                : activeFilter === 'completed'
+                  ? 'Aún no has completado ningún curso.'
+                  : 'Todavía no estás inscrito en ningún curso.'}
+            </p>
+            <Link href="/cursos" className={styles.emptyCta}>
+              Explorar cursos
+            </Link>
+          </section>
+        )}
+
         {(activeFilter === 'all' || activeFilter === 'completed') && coursesCompleted.length > 0 && (
           <section className={styles.section}>
             <h2 className={styles.sectionTitle}>Completados</h2>
