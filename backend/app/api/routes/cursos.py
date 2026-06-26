@@ -89,7 +89,7 @@ def _sanitize_quiz_for_student(contenido: str | None) -> str | None:
 
 def _require_instructor_or_admin(current_user: CurrentUser) -> None:
     """Raise 403 if user is not instructor or superuser."""
-    allowed = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL}
+    allowed = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR}
     if not current_user.is_superuser and current_user.rol not in allowed:
         raise HTTPException(status_code=403, detail="Se requiere rol de instructor o administrador")
 
@@ -137,7 +137,7 @@ def list_cursos(
     Soporta filtros: ?categoria_id=&search=&estado=&destacado=
     """
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
 
     if is_admin:
@@ -203,7 +203,7 @@ def get_curso(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     is_owner = current_user.id == db_curso.instructor_id
 
@@ -430,7 +430,7 @@ def _tiene_acceso_contenido(session: SessionDep, current_user: User, db_curso: A
     admin/instructor propietario siempre; alumno solo con inscripción activa o
     finalizada. Cancelado (dado de baja) o sin inscripción → False."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if is_admin or current_user.id == db_curso.instructor_id:
         return True
@@ -966,7 +966,7 @@ def download_recurso(
         raise HTTPException(status_code=404, detail="Recurso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     is_owner = current_user.id == curso.instructor_id
     if not (is_admin or is_owner):

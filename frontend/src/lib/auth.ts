@@ -12,7 +12,7 @@ export interface AuthUser {
   id: string;
   email: string;
   full_name: string | null;
-  rol: 'estudiante' | 'instructor' | 'supervisor' | 'usuario_control' | 'administrador';
+  rol: 'estudiante' | 'instructor' | 'supervisor' | 'administrador';
   is_superuser: boolean;
   is_active: boolean;
   organizacion?: OrganizacionInfo | null;
