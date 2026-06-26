@@ -43,6 +43,7 @@ export default function SupervisorUsuariosPage() {
       loadUsers();
     } catch (e) {
       logError('supervisor.quitarUsuario', e);
+      alert((e as { detail?: string })?.detail || 'No se pudo quitar al usuario.');
     }
   };
 
@@ -82,9 +83,13 @@ export default function SupervisorUsuariosPage() {
                     </td>
                     <td>{Math.round(u.progreso_promedio)}%</td>
                     <td>
-                      <button className={styles.deleteButton} onClick={() => handleQuitar(u.id)}>
-                        Quitar
-                      </button>
+                      {u.rol_org === 'admin_org' ? (
+                        <span className={styles.statusText}>Supervisor</span>
+                      ) : (
+                        <button className={styles.deleteButton} onClick={() => handleQuitar(u.id)}>
+                          Quitar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))
