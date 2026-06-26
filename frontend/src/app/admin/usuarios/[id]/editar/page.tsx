@@ -29,7 +29,6 @@ const ROLES: Record<string, string> = {
   administrador: 'Administrador',
   instructor: 'Instructor',
   estudiante: 'Estudiante',
-  usuario_control: 'Control',
 };
 
 export default function EditarUsuarioPage() {
