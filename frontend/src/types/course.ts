@@ -64,6 +64,7 @@ export interface CourseInfo {
   image: string;
   bloqueadoPorLicencia?: boolean;
   esDeMiOrg?: boolean;
+  puedeInscribirse?: boolean;
   precio?: number | null;
   moneda?: string;
   destacado?: boolean;

@@ -349,6 +349,11 @@ class CursoPublic(SQLModel):
     # organización (independiente de la marca). Permite al front agrupar la
     # sección "Cursos de tu organización" por pertenencia real, no por marca.
     es_de_mi_org: bool = False
+    # True si el alumno puede auto-inscribirse: curso público (NEXTGEN gratis),
+    # cubierto por licencia de su org, o con pago/cortesía individual. Mismo criterio
+    # que el candado de POST /inscripciones/. Default True para no bloquear a
+    # admin/instructor; se setea explícito para el alumno en get_curso.
+    puede_inscribirse: bool = True
 
 
 class CursoDetalle(CursoPublic):
