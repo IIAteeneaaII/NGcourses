@@ -159,21 +159,26 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
         </div>
 
         {(() => {
-          const orgCourses = filteredCourses.filter((c) => c.marca === 'ram');
-          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'nextgen');
-          const untagged = filteredCourses.filter((c) => !c.marca);
-          const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
+          // "Cursos de tu organización" = los cubiertos por una licencia ACTIVA de
+          // la org (cualquier marca), no por la marca del curso. Un curso NextGen
+          // licenciado a la org pertenece aquí, no en el catálogo general.
+          const orgCourses = filteredCourses.filter((c) => c.esDeMiOrg);
+          // "Cursos NextGen" = SOLO la marca NextGen (catálogo público), no cubiertos
+          // por la org. Antes el catch-all metía aquí cursos RAM no licenciados, que
+          // quedaban mal etiquetados como NextGen. Los cursos RAM que NO son de tu org
+          // no son públicos: no se listan en el catálogo (viven en "Mis cursos" si
+          // estás inscrito).
+          const nextgenCourses = filteredCourses.filter(
+            (c) => !c.esDeMiOrg && c.marca !== 'ram'
+          );
+          const totalVisibles = orgCourses.length + nextgenCourses.length;
 
-          if (!hasGroups) {
+          if (totalVisibles === 0) {
             return (
               <div className={styles.coursesGrid}>
-                {untagged.length > 0 ? (
-                  untagged.map((course) => <CourseCard key={course.id} course={course} />)
-                ) : (
-                  <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
-                    No se encontraron cursos con los filtros aplicados.
-                  </p>
-                )}
+                <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
+                  No se encontraron cursos con los filtros aplicados.
+                </p>
               </div>
             );
           }

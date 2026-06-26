@@ -161,13 +161,12 @@ def list_cursos(
             skip=skip, limit=limit, categoria_id=categoria_id, search=search,
             destacado=destacado,
         )
-        org_info = crud.get_organizacion_of_user(
+        # Alumno multi-org: las licencias se unen sobre TODAS sus organizaciones.
+        org_ids = crud.get_org_ids_of_user(
             session=session, user_id=current_user.id
         )
-        org_id = org_info[0].id if org_info else None
-        accesibles = (
-            crud.cursos_con_licencia_activa(session=session, org_id=org_id)
-            if org_id else set()
+        accesibles = crud.cursos_con_licencia_activa_orgs(
+            session=session, org_ids=org_ids
         )
         # RF10/RF08: cursos con pago individual (PayPal o cortesia) tambien son accesibles.
         comprados = crud.cursos_con_pago_del_usuario(
@@ -182,6 +181,10 @@ def list_cursos(
                 and c.id not in accesibles
                 and c.id not in comprados
             )
+            # "De mi organización" = cubierto por una licencia ACTIVA de la org,
+            # sin importar la marca (un curso NEXTGEN licenciado a la org también
+            # cuenta). Así el front agrupa la sección de la org correctamente.
+            item.es_de_mi_org = c.id in accesibles
             items.append(item)
         return CursosPublic(data=items, count=count)
 
@@ -264,27 +267,27 @@ def get_curso(
     curso_data.notas_revision = meta.get("notas_revision")
     curso_data.instructor_nombre = db_curso.instructor.full_name if db_curso.instructor else None
 
-    # Bloqueo por licencia: solo aplica a estudiantes (admins/instructores siempre acceden).
-    # RF10/RF08: el alumno desbloquea via licencia organizacional O via pago/cortesia individual.
-    if (
-        not is_admin
-        and not is_owner
-        and db_curso.marca == MarcaCurso.NEXTGEN
-        and not db_curso.es_gratis
-    ):
-        org_info = crud.get_organizacion_of_user(
+    # Cobertura por licencia organizacional + bloqueo: solo aplican a estudiantes
+    # (admins/instructores siempre acceden). `es_de_mi_org` indica que alguna org
+    # del alumno tiene licencia ACTIVA del curso → debe poder inscribirse SIN pagar
+    # (aunque el curso tenga precio); el front prioriza "Inscribirme" sobre PayPal.
+    if not is_admin and not is_owner:
+        org_ids = crud.get_org_ids_of_user(
             session=session, user_id=current_user.id
         )
-        org_id = org_info[0].id if org_info else None
-        tiene_licencia = bool(
-            org_id and crud.tiene_licencia_activa(
-                session=session, org_id=org_id, curso_id=db_curso.id
+        cubiertos_por_licencia = crud.cursos_con_licencia_activa_orgs(
+            session=session, org_ids=org_ids
+        )
+        curso_data.es_de_mi_org = db_curso.id in cubiertos_por_licencia
+        # RF10/RF08: el bloqueo solo aplica a NEXTGEN de paga sin licencia ni pago
+        # individual. Un curso cubierto por la org NUNCA queda bloqueado.
+        if db_curso.marca == MarcaCurso.NEXTGEN and not db_curso.es_gratis:
+            tiene_pago = crud.usuario_tiene_pago_completado(
+                session=session, usuario_id=current_user.id, curso_id=db_curso.id
             )
-        )
-        tiene_pago = crud.usuario_tiene_pago_completado(
-            session=session, usuario_id=current_user.id, curso_id=db_curso.id
-        )
-        curso_data.bloqueado_por_licencia = not (tiene_licencia or tiene_pago)
+            curso_data.bloqueado_por_licencia = not (
+                curso_data.es_de_mi_org or tiene_pago
+            )
     return curso_data
 
 

@@ -345,6 +345,10 @@ class CursoPublic(SQLModel):
     requisitos: str | None = None
     notas_revision: str | None = None
     bloqueado_por_licencia: bool = False
+    # True cuando el alumno accede a este curso por una licencia ACTIVA de su
+    # organización (independiente de la marca). Permite al front agrupar la
+    # sección "Cursos de tu organización" por pertenencia real, no por marca.
+    es_de_mi_org: bool = False
 
 
 class CursoDetalle(CursoPublic):
