@@ -91,7 +91,8 @@ export default function EditarUsuarioPage() {
     try {
       const payload: Record<string, unknown> = {
         full_name: form.full_name || null,
-        email: form.email,
+        // El correo NO se envía: es el identificador de la cuenta y no se puede
+        // cambiar al editar (el backend también lo ignora).
         rol: form.rol,
         estado: form.estado,
         telefono: form.telefono || null,
@@ -142,15 +143,17 @@ export default function EditarUsuarioPage() {
         </div>
 
         <div className={styles.formGroup}>
-          <label className={styles.label}>Email *</label>
+          <label className={styles.label}>Email</label>
           <input
             type="email"
-            required
             className={styles.input}
             value={form.email}
-            onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-            placeholder="correo@ejemplo.com"
+            disabled
+            style={{ background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}
           />
+          <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+            El correo no se puede cambiar: es el identificador de la cuenta.
+          </small>
         </div>
 
         <div className={styles.formGroup}>
