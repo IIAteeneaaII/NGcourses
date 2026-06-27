@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import ProfileContent from '@/components/profile/ProfileContent';
-import { authApi, cursosApi, inscripcionesApi, usersApi } from '@/lib/api/client';
+import { authApi, cursosApi, inscripcionesApi, progresoApi, usersApi } from '@/lib/api/client';
 import type { UserProfile, UserStatistics, CourseInProgress } from '@/types/course';
 import styles from './page.module.css';
 import { EditProfileSchema, ChangePasswordSchema } from '@/schemas/profile';
@@ -104,10 +104,27 @@ export default function PerfilPage() {
           activasRaw.map((i) => cursosApi.get(i.curso_id) as Promise<ApiCurso>)
         );
 
+        // Progreso real por curso. Se AÍSLA por completo: si la consulta de progreso
+        // falla o devuelve algo inesperado, NO debe vaciar la lista de cursos —
+        // simplemente cae a 0%. (Antes un valor undefined tiraba el map y el catch
+        // global dejaba "Cursos en progreso" vacío.)
+        let progresoDetails: PromiseSettledResult<{ progreso_pct: number }>[] = [];
+        try {
+          progresoDetails = await Promise.allSettled(
+            activasRaw.map((i) => progresoApi.curso(i.curso_id) as Promise<{ progreso_pct: number }>)
+          );
+        } catch {
+          progresoDetails = [];
+        }
+
         const inProgress: CourseInProgress[] = activasRaw.map((insc, idx) => {
           const res = cursoDetails[idx];
           const titulo = res.status === 'fulfilled' ? res.value.titulo : 'Curso';
-          return { id: insc.curso_id, title: titulo, progress: 0, order: idx + 1 };
+          const pr = progresoDetails[idx];
+          const progress = pr?.status === 'fulfilled' && pr.value
+            ? Math.round(pr.value.progreso_pct ?? 0)
+            : 0;
+          return { id: insc.curso_id, title: titulo, progress, order: idx + 1 };
         });
 
         const totalSeg = cursoDetails.reduce((acc, res) => {
