@@ -93,6 +93,10 @@ def update_user(*, session: Session, db_user: User, user_in: UserUpdate) -> Any:
     from app.models._enums import EstadoUsuario
 
     user_data = user_in.model_dump(exclude_unset=True)
+    # El correo es el identificador de la cuenta (creación/activación + login). NO
+    # se puede cambiar al editar un usuario (ni el alumno en su perfil ni el admin):
+    # cambiarlo rompería sesión/activación. Se ignora si llega (igual que /users/me).
+    user_data.pop("email", None)
     extra_data = {}
     if "password" in user_data:
         password = user_data["password"]

@@ -61,13 +61,18 @@ def inscribirse(
     if not is_admin and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no disponible")
 
-    # Verificar que no esté ya inscrito
+    # Solo bloquea si YA hay una inscripción vigente (activa/finalizada). Una
+    # inscripción CANCELADA (p.ej. tras una baja de org) NO cuenta como "ya
+    # inscrito": el catálogo/ficha la tratan como no inscrito y muestran
+    # "Inscribirme", así que el backend debe poder reactivarla (abajo) en vez de
+    # dar un 409 confuso. Antes cualquier registro existente, aunque cancelado,
+    # devolvía 409.
     existing = crud.get_inscripcion_by_usuario_curso(
         session=session,
         usuario_id=current_user.id,
         curso_id=inscripcion_in.curso_id,
     )
-    if existing:
+    if existing and existing.estado != EstadoInscripcion.CANCELADO:
         raise HTTPException(status_code=409, detail="Ya estás inscrito en este curso")
 
     # Candado de auto-inscripción: un alumno solo puede inscribirse por su cuenta si
@@ -95,6 +100,16 @@ def inscribirse(
                     status_code=403,
                     detail="No tienes acceso a este curso. Requiere una licencia de tu organización o adquirirlo.",
                 )
+
+    # Si había una inscripción cancelada y el alumno está autorizado, se reactiva
+    # (mismo criterio que el canje de invitación) en vez de crear una nueva, para
+    # no violar el unique (usuario_id, curso_id).
+    if existing:
+        existing.estado = EstadoInscripcion.ACTIVA
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return InscripcionPublic.model_validate(existing, from_attributes=True)
 
     db_inscripcion = crud.create_inscripcion(
         session=session,

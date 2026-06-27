@@ -160,14 +160,13 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
 
         {(() => {
           // "Cursos de tu organización" = los cubiertos por una licencia ACTIVA de
-          // la org (cualquier marca), no por la marca del curso. Un curso NextGen
-          // licenciado a la org pertenece aquí, no en el catálogo general.
-          const orgCourses = filteredCourses.filter((c) => c.esDeMiOrg);
-          // "Cursos NextGen" = SOLO la marca NextGen (catálogo público), no cubiertos
-          // por la org. Antes el catch-all metía aquí cursos RAM no licenciados, que
-          // quedaban mal etiquetados como NextGen. Los cursos RAM que NO son de tu org
-          // no son públicos: no se listan en el catálogo (viven en "Mis cursos" si
-          // estás inscrito).
+          // la org (cualquier marca) MÁS los RAM. El backend del catálogo solo
+          // devuelve cursos RAM cuando estás inscrito o tu org los licencia (nunca
+          // RAM "sueltos"), así que incluir RAM aquí sincroniza el catálogo con
+          // /perfil y /mis-cursos: un RAM en el que estás inscrito ya no se oculta,
+          // y no queda mal etiquetado como "NextGen".
+          const orgCourses = filteredCourses.filter((c) => c.esDeMiOrg || c.marca === 'ram');
+          // "Cursos NextGen" = SOLO la marca NextGen (catálogo público) no cubiertos.
           const nextgenCourses = filteredCourses.filter(
             (c) => !c.esDeMiOrg && c.marca !== 'ram'
           );
