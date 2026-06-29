@@ -7,6 +7,7 @@ import VideoUploadButton from '@/components/video/VideoUploadButton';
 import LessonTypeSelector from '@/components/course/LessonTypeSelector';
 import QuizBuilder from '@/components/course/QuizBuilder';
 import type { QuizData } from '@/types/course';
+import { validateQuiz } from '@/lib/quizValidation';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -121,6 +122,69 @@ export default function CrearCursoPage() {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  const totalVideoLessons = modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'video').length, 0);
+  const totalQuizLessons = modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'quiz').length, 0);
+  const hasAtLeastOneModule = modules.length > 0;
+  const hasAtLeastOneQuiz = totalQuizLessons > 0;
+
+  const quizValidationErrors = React.useMemo(() => {
+    const errors: string[] = [];
+    modules.forEach((m, moduleIndex) => {
+      m.lessons.forEach((l, lessonIndex) => {
+        if (l.tipo !== 'quiz') return;
+        const issues = validateQuiz(l.quizData);
+        if (issues.length) {
+          errors.push(`Módulo ${moduleIndex + 1}, ${l.title || `Quiz ${lessonIndex + 1}`}: ${issues.join('; ')}`);
+        }
+      });
+    });
+    return errors;
+  }, [modules]);
+
+  const getCourseStructureError = React.useCallback((action: 'guardar' | 'publicar' = 'publicar') => {
+    if (modules.length === 0) {
+      return action === 'publicar'
+        ? 'Agrega al menos un módulo antes de publicar el curso.'
+        : 'Agrega al menos un módulo antes de guardar el curso.';
+    }
+
+    if (totalQuizLessons === 0) {
+      return action === 'publicar'
+        ? 'Agrega al menos un quiz antes de publicar el curso.'
+        : 'Agrega al menos un quiz antes de guardar el curso.';
+    }
+
+    if (quizValidationErrors.length > 0) {
+      return `Corrige el quiz antes de ${action} — ${quizValidationErrors[0]}${quizValidationErrors.length > 1 ? ` (y ${quizValidationErrors.length - 1} más)` : ''}`;
+    }
+
+    return '';
+  }, [modules.length, totalQuizLessons, quizValidationErrors]);
+
+  const hasValidRequiredStructure = hasAtLeastOneModule && hasAtLeastOneQuiz && quizValidationErrors.length === 0;
+
+  const requireCourseStructure = React.useCallback((action: 'guardar' | 'publicar' = 'publicar') => {
+    const message = getCourseStructureError(action);
+    if (!message) return true;
+    setPublishError(message);
+    notify('error', message);
+    setCurrentStep(3);
+    return false;
+  }, [getCourseStructureError, notify]);
+
+
+  const persistQuizLessons = React.useCallback(async () => {
+    if (!cursoId) return;
+
+    const saves = modules.flatMap((module) =>
+      module.lessons
+        .filter((lesson) => lesson.tipo === 'quiz')
+        .map((lesson) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, lesson.quizData))
+    );
+
+    await Promise.all(saves);
+  }, [cursoId, modules]);
+
   // Creación inline de categoría
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -194,6 +258,19 @@ export default function CrearCursoPage() {
       }
       return;
     }
+    if (currentStep === 4) {
+      if (!requireCourseStructure('publicar')) return;
+      try {
+        await persistQuizLessons();
+      } catch {
+        const message = 'No se pudo guardar el contenido del quiz. Intenta de nuevo.';
+        setPublishError(message);
+        notify('error', message);
+        setCurrentStep(3);
+        return;
+      }
+    }
+
     if (currentStep < STEPS.length) {
       setCompletedSteps((prev) => { const next = new Set(prev); next.add(currentStep); return next; });
       setCurrentStep(currentStep + 1);
@@ -400,9 +477,11 @@ export default function CrearCursoPage() {
   // Publicar al finalizar (admin publica directamente)
   const handlePublish = async () => {
     if (!cursoId) return;
+    if (!requireCourseStructure('publicar')) return;
     setIsPublishing(true);
     setPublishError('');
     try {
+      await persistQuizLessons();
       await cursosApi.update(cursoId, {
         estado: 'publicado',
         titulo: title,
@@ -425,7 +504,7 @@ export default function CrearCursoPage() {
     switch (step) {
       case 1: return !!(title && description && level);
       case 2: return coverUploadStatus === 'success';
-      case 3: return modules.length > 0 && modules.some((m) => m.lessons.length > 0);
+      case 3: return hasValidRequiredStructure;
       case 4: return true;
       case 5: return true;
       default: return false;
@@ -478,7 +557,11 @@ export default function CrearCursoPage() {
               <button
                 key={step.id}
                 className={`${styles.stepButton} ${currentStep === step.id ? styles.active : ''} ${isStepMarkedComplete(step.id) ? styles.complete : ''} ${isStepLocked(step.id) ? styles.locked : ''}`}
-                onClick={() => !isStepLocked(step.id) && setCurrentStep(step.id)}
+                onClick={() => {
+                  if (isStepLocked(step.id)) return;
+                  if (step.id === 5 && !requireCourseStructure('publicar')) return;
+                  setCurrentStep(step.id);
+                }}
                 disabled={isStepLocked(step.id)}
                 title={isStepLocked(step.id) ? 'Completa los pasos anteriores para desbloquear' : undefined}
               >
@@ -659,13 +742,12 @@ export default function CrearCursoPage() {
                     <div className={styles.imagePreview}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <label className={styles.removeImageButton} style={{ cursor: 'pointer' }}>
-                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className={styles.fileInput} />
+                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); setCoverUploadStatus('idle'); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                         </svg>
-                        Cambiar imagen
-                      </label>
+                        Eliminar imagen
+                      </button>
                       {coverUploadStatus === 'uploading' && (
                         <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
                           ⏳ Subiendo imagen al servidor...
@@ -712,7 +794,13 @@ export default function CrearCursoPage() {
             {currentStep === 3 && cursoId && (
               <div className={styles.stepContent}>
                 <h2 className={styles.stepTitle}>Estructura del Curso</h2>
-                <p className={styles.stepDescription}>Agrega módulos, lecciones y sube los videos directamente.</p>
+                <p className={styles.stepDescription}>Agrega módulos, lecciones y sube los videos directamente. El video es opcional, pero el curso debe tener al menos un módulo y un quiz válido.</p>
+
+                {!hasValidRequiredStructure && (
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                    {getCourseStructureError('publicar')}
+                  </p>
+                )}
 
                 <div className={styles.modulesContainer}>
                   {modules.map((module, moduleIndex) => (
@@ -971,6 +1059,12 @@ export default function CrearCursoPage() {
                 <h2 className={styles.stepTitle}>Publicar Curso</h2>
                 <p className={styles.stepDescription}>Revisa el resumen y publica tu curso</p>
 
+                {!hasValidRequiredStructure && (
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                    {getCourseStructureError('publicar')}
+                  </p>
+                )}
+
                 <div className={styles.summaryGrid}>
                   <div className={styles.summaryCard}>
                     <span className={styles.summaryLabel}>Título</span>
@@ -993,9 +1087,9 @@ export default function CrearCursoPage() {
                     <span className={styles.summaryValue}>{totalLessons}</span>
                   </div>
                   <div className={styles.summaryCard}>
-                    <span className={styles.summaryLabel}>Videos subidos</span>
+                    <span className={styles.summaryLabel}>Videos subidos (opcional)</span>
                     <span className={styles.summaryValue}>
-                      {modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.bunnyVideoId).length, 0)} / {totalLessons}
+                      {modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'video' && l.bunnyVideoId).length, 0)} / {totalVideoLessons}
                     </span>
                   </div>
                 </div>
@@ -1024,7 +1118,7 @@ export default function CrearCursoPage() {
                         {publishError}
                       </p>
                     )}
-                    <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing}>
+                    <button className={styles.publishButton} onClick={handlePublish} disabled={isPublishing || !hasValidRequiredStructure}>
                       {isPublishing ? 'Publicando...' : 'Publicar curso'}
                     </button>
                   </>
