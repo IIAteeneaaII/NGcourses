@@ -236,11 +236,19 @@ def crear_invitaciones(
                     usuario_id=existing_user.id,
                     curso_id=body.curso_id,
                 )
-                if inscripcion_existente and inscripcion_existente.estado == EstadoInscripcion.ACTIVA:
+                # Bloquea invitar a quien ya tiene el curso (cursando o completado).
+                # CANCELADO sí se permite: es el reingreso de un alumno dado de baja.
+                if inscripcion_existente and inscripcion_existente.estado in (
+                    EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA
+                ):
                     resultados.append(InvitacionEnvioResultado(
                         email=email,
                         estado="ya_inscrito",
-                        detalle="El alumno ya está inscrito en este curso",
+                        detalle=(
+                            "El alumno ya completó este curso"
+                            if inscripcion_existente.estado == EstadoInscripcion.FINALIZADA
+                            else "El alumno ya está inscrito en este curso"
+                        ),
                     ))
                     continue
 
