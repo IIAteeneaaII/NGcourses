@@ -26,6 +26,9 @@ interface ApiInscripcion {
   curso_id: string;
   estado: 'activa' | 'finalizada' | 'cancelado';
   inscrito_en: string;
+  usuario_nombre?: string | null;
+  usuario_email?: string | null;
+  usuario_rol?: string | null;
 }
 
 interface ApiUsersResp { data: ApiAlumno[]; count: number }
@@ -58,6 +61,27 @@ function getInitials(alumno: ApiAlumno) {
 
 function getNombre(alumno: ApiAlumno) {
   return alumno.full_name || alumno.email;
+}
+
+// Resuelve la identidad del inscrito. Prioriza el nombre/email que ya entrega la
+// API por inscripción (sirve para cualquier usuario, no solo los de rol estudiante);
+// si no está en la lista local, lo reconstruye. Devuelve null solo si la cuenta fue
+// eliminada (la API no trae nombre ni email → inscripción huérfana).
+function resolveAlumno(
+  insc: ApiInscripcion,
+  alumnosMap: Record<string, ApiAlumno>
+): ApiAlumno | null {
+  const local = alumnosMap[insc.usuario_id];
+  if (local) return local;
+  if (insc.usuario_nombre || insc.usuario_email) {
+    return {
+      id: insc.usuario_id,
+      full_name: insc.usuario_nombre ?? null,
+      email: insc.usuario_email ?? '',
+      estado: 'activo',
+    };
+  }
+  return null;
 }
 
 // ── Componente ─────────────────────────────────────────────────────────────────
@@ -138,7 +162,10 @@ export default function AlumnosAdminPage() {
       const results = await Promise.allSettled(
         cursos.map(async (c) => {
           const resp = await inscripcionesApi.porCurso(c.id) as ApiInscripcionesResp;
-          return { ...c, total: resp.count ?? 0 };
+          // Solo alumnos: las estadísticas excluyen inscripciones de no-alumnos
+          // (instructor/supervisor/admin) o de cuentas eliminadas (rol nulo).
+          const total = (resp.data ?? []).filter((i) => i.usuario_rol === 'estudiante').length;
+          return { ...c, total };
         })
       );
       const conteos: CursoConConteo[] = results
@@ -337,35 +364,36 @@ export default function AlumnosAdminPage() {
               );
             })}
           </ul>
-          {alumno && <p className={styles.panelItemSub} style={{ marginTop: '1rem' }}>{alumno.email}</p>}
+          {alumno && <p className={styles.panelItemSub} style={{ marginTop: '1rem', whiteSpace: 'normal', overflowWrap: 'anywhere' }}>{alumno.email}</p>}
         </>
       );
     }
 
     if (panel.type === 'curso-alumnos') {
-      const { inscripciones } = panel;
+      // Solo alumnos: se excluyen inscripciones de no-alumnos o cuentas eliminadas.
+      const inscripciones = panel.inscripciones.filter((i) => i.usuario_rol === 'estudiante');
       return (
         <ul className={styles.panelList}>
           {inscripciones.length === 0 && (
             <li className={styles.panelLoading}>Sin alumnos inscritos</li>
           )}
           {inscripciones.map((insc) => {
-            const alumno = alumnosMap[insc.usuario_id];
+            const alumno = resolveAlumno(insc, alumnosMap);
             return (
               <li
                 key={insc.id}
-                className={`${styles.panelItem} ${styles.clickable}`}
+                className={`${styles.panelItem} ${alumno ? styles.clickable : ''}`}
                 onClick={() => alumno && handleVerCursosEnStats(alumno, panel.curso)}
               >
-                <div className={styles.alumnoCell} style={{ flex: 1 }}>
+                <div className={styles.alumnoCell} style={{ flex: 1, minWidth: 0 }}>
                   <div className={styles.avatar} style={{ width: '1.75rem', height: '1.75rem', fontSize: '0.75rem' }}>
-                    {alumno ? getInitials(alumno) : '?'}
+                    {alumno ? getInitials(alumno) : '—'}
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <div className={styles.panelItemName}>
-                      {alumno ? getNombre(alumno) : insc.usuario_id.slice(0, 8) + '…'}
+                      {alumno ? getNombre(alumno) : 'Cuenta eliminada'}
                     </div>
-                    {alumno && <div className={styles.panelItemSub}>{alumno.email}</div>}
+                    {alumno?.email && <div className={styles.panelItemSub}>{alumno.email}</div>}
                   </div>
                 </div>
                 <span className={`${styles.badge} ${badgeClass(insc.estado)}`}>
