@@ -172,6 +172,19 @@ export default function CrearCursoPage() {
     return false;
   }, [getCourseStructureError, notify]);
 
+
+  const persistQuizLessons = React.useCallback(async () => {
+    if (!cursoId) return;
+
+    const saves = modules.flatMap((module) =>
+      module.lessons
+        .filter((lesson) => lesson.tipo === 'quiz')
+        .map((lesson) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, lesson.quizData))
+    );
+
+    await Promise.all(saves);
+  }, [cursoId, modules]);
+
   // Creación inline de categoría
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -245,8 +258,17 @@ export default function CrearCursoPage() {
       }
       return;
     }
-    if (currentStep === 4 && !requireCourseStructure('publicar')) {
-      return;
+    if (currentStep === 4) {
+      if (!requireCourseStructure('publicar')) return;
+      try {
+        await persistQuizLessons();
+      } catch {
+        const message = 'No se pudo guardar el contenido del quiz. Intenta de nuevo.';
+        setPublishError(message);
+        notify('error', message);
+        setCurrentStep(3);
+        return;
+      }
     }
 
     if (currentStep < STEPS.length) {
@@ -459,6 +481,7 @@ export default function CrearCursoPage() {
     setIsPublishing(true);
     setPublishError('');
     try {
+      await persistQuizLessons();
       await cursosApi.update(cursoId, {
         estado: 'publicado',
         titulo: title,

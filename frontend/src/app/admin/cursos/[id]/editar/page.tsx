@@ -13,6 +13,27 @@ import styles from './page.module.css';
 
 const API_URL = '';
 
+
+function normalizeQuizData(raw: unknown): QuizData {
+  if (!raw) return { preguntas: [] };
+
+  if (typeof raw === 'string') {
+    try {
+      return normalizeQuizData(JSON.parse(raw));
+    } catch {
+      return { preguntas: [] };
+    }
+  }
+
+  if (typeof raw === 'object') {
+    const data = raw as { preguntas?: unknown; quizData?: unknown };
+    if (Array.isArray(data.preguntas)) return data as QuizData;
+    if (data.quizData) return normalizeQuizData(data.quizData);
+  }
+
+  return { preguntas: [] };
+}
+
 interface ApiCategoria { id: string; nombre: string }
 
 interface ApiLeccionRecurso {
@@ -29,7 +50,7 @@ interface ApiLeccion {
   bunny_video_id: string | null;
   duracion_seg: number;
   es_visible: boolean;
-  contenido?: string | null;
+  contenido?: unknown;
   recursos?: ApiLeccionRecurso[];
 }
 
@@ -189,6 +210,17 @@ export default function EditarCursoAdminPage() {
     return false;
   }, [getCourseStructureError, notify]);
 
+
+  const persistQuizLessons = React.useCallback(async () => {
+    const saves = modules.flatMap((module) =>
+      module.lessons
+        .filter((lesson) => lesson.tipo === 'quiz')
+        .map((lesson) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, lesson.quizData))
+    );
+
+    await Promise.all(saves);
+  }, [cursoId, modules]);
+
   // Creación inline de categoría
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -228,7 +260,7 @@ export default function EditarCursoAdminPage() {
             recursos: l.recursos || [],
             showRecursos: false,
             newRecursoTitulo: '',
-            quizData: l.contenido ? (() => { try { return JSON.parse(l.contenido!); } catch { return { preguntas: [] }; } })() : { preguntas: [] },
+            quizData: normalizeQuizData(l.contenido),
           })),
         }))
       );
@@ -293,8 +325,17 @@ export default function EditarCursoAdminPage() {
       }
       return;
     }
-    if (currentStep === 4 && !requireCourseStructure('guardar')) {
-      return;
+    if (currentStep === 4) {
+      if (!requireCourseStructure('guardar')) return;
+      try {
+        await persistQuizLessons();
+      } catch {
+        const message = 'No se pudo guardar el contenido del quiz. Intenta de nuevo.';
+        setSaveError(message);
+        notify('error', message);
+        setCurrentStep(3);
+        return;
+      }
     }
 
     if (currentStep < STEPS.length) goToStep(currentStep + 1);
@@ -308,6 +349,7 @@ export default function EditarCursoAdminPage() {
     if (!requireCourseStructure('guardar')) return;
     setIsSaving(true);
     try {
+      await persistQuizLessons();
       const precioNum = precio.trim() === '' ? null : Number(precio);
       await cursosApi.update(cursoId, {
         titulo: title,
@@ -329,6 +371,7 @@ export default function EditarCursoAdminPage() {
     if (nuevoEstado === 'publicado' && !requireCourseStructure('publicar')) return;
     setIsPublishing(true);
     try {
+      if (nuevoEstado === 'publicado') await persistQuizLessons();
       await cursosApi.update(cursoId, { estado: nuevoEstado });
       setCursoEstado(nuevoEstado);
       notify('success', nuevoEstado === 'publicado' ? 'Curso publicado' : 'Curso regresado a borrador');
