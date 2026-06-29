@@ -66,6 +66,7 @@ class MiembroPublic(SQLModel):
     full_name: str | None
     rol: str
     rol_org: str
+    estado: str
 
 
 class AsignarMiembro(SQLModel):
@@ -232,6 +233,7 @@ def list_miembros(
             full_name=u.full_name,
             rol=u.rol.value if hasattr(u.rol, "value") else str(u.rol),
             rol_org=r.value if hasattr(r, "value") else str(r),
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
         )
         for (u, r) in rows
     ]
@@ -283,6 +285,7 @@ def asignar_miembro(
         user_id=user.id, email=user.email, full_name=user.full_name,
         rol=user.rol.value if hasattr(user.rol, "value") else str(user.rol),
         rol_org=body.rol_org.value,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
     )
 
 
@@ -337,6 +340,7 @@ def crear_supervisor(
         user_id=user.id, email=user.email, full_name=user.full_name,
         rol=user.rol.value if hasattr(user.rol, "value") else str(user.rol),
         rol_org=RolOrganizacion.ADMIN_ORG.value,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
     )
 
 
