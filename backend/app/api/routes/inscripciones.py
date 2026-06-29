@@ -33,6 +33,7 @@ class InscripcionPublic(SQLModel):
     # Identidad del alumno (poblada en el listado por curso para instructor/admin).
     usuario_nombre: str | None = None
     usuario_email: str | None = None
+    usuario_rol: str | None = None
 
 
 class InscripcionesPublic(SQLModel):
@@ -60,6 +61,15 @@ def inscribirse(
     }
     if not is_admin and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no disponible")
+
+    # Las inscripciones a cursos son SOLO para alumnos. Un no-alumno
+    # (instructor/supervisor) accede al contenido vía preview (?from=admin), no
+    # como inscrito. El admin conserva su bypass para pruebas.
+    if not is_admin and current_user.rol != RolUsuario.ESTUDIANTE:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los alumnos pueden inscribirse a un curso.",
+        )
 
     # Solo bloquea si YA hay una inscripción vigente (activa/finalizada). Una
     # inscripción CANCELADA (p.ej. tras una baja de org) NO cuenta como "ya
@@ -246,5 +256,6 @@ def inscripciones_por_curso(
             estado=i.estado, inscrito_en=i.inscrito_en, ultimo_acceso_en=i.ultimo_acceso_en,
             usuario_nombre=u.full_name if u else None,
             usuario_email=u.email if u else None,
+            usuario_rol=u.rol.value if u else None,
         ))
     return InscripcionesPublic(data=data, count=count)

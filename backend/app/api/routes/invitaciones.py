@@ -11,7 +11,7 @@ from sqlmodel import SQLModel
 from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
-from app.models._enums import EstadoInscripcion
+from app.models._enums import EstadoInscripcion, RolUsuario
 from app.utils import email_formato_valido, generate_activacion_email, send_email
 
 logger = logging.getLogger(__name__)
@@ -118,6 +118,16 @@ def canjear_invitacion(
         session=session, email=inv.email, organizacion_id=creador_org_id,
     )
     requiere_activacion = bool(activacion_token)
+
+    # Las invitaciones a cursos son SOLO para alumnos. Las cuentas nuevas nacen
+    # ESTUDIANTE (no se bloquean); esto frena que una cuenta EXISTENTE con otro
+    # rol (instructor/supervisor/admin) quede inscrita al canjear y aparezca en
+    # las estadísticas de alumnos. Los no-alumnos previsualizan vía ?from=admin.
+    if user.rol != RolUsuario.ESTUDIANTE:
+        raise HTTPException(
+            status_code=403,
+            detail="Esta invitación es solo para alumnos. La cuenta de este correo tiene otro rol.",
+        )
 
     db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
     curso_titulo = db_curso.titulo if db_curso else ""
