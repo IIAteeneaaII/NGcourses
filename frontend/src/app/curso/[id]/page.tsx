@@ -14,16 +14,18 @@ interface ApiModulo {
 
 const API_URL = '';
 
-function getCourseBackHref(): string {
-  if (typeof document === 'undefined') return '/cursos';
+function getUserRoleFromCookie(): string {
+  if (typeof document === 'undefined') return '';
 
   const rolCookie = document.cookie
     .split(';')
     .map((cookie) => cookie.trim())
     .find((cookie) => cookie.startsWith('user_rol='));
 
-  const rol = rolCookie ? decodeURIComponent(rolCookie.split('=')[1] ?? '') : '';
+  return rolCookie ? decodeURIComponent(rolCookie.split('=')[1] ?? '') : '';
+}
 
+function getCourseBackHref(rol: string): string {
   if (rol === 'supervisor') return '/supervisor/cursos';
   if (rol === 'instructor') return '/instructor/cursos';
   if (rol === 'administrador') return '/admin/cursos';
@@ -65,9 +67,12 @@ export default function CursoInfoPage() {
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [backHref, setBackHref] = useState('/cursos');
+  const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
-    setBackHref(getCourseBackHref());
+    const rol = getUserRoleFromCookie();
+    setUserRole(rol);
+    setBackHref(getCourseBackHref(rol));
   }, []);
 
   useEffect(() => {
@@ -159,6 +164,9 @@ export default function CursoInfoPage() {
       enrollLoading={enrollLoading}
       bloqueadoPorLicencia={course.bloqueadoPorLicencia}
       backHref={backHref}
+      viewOnlyMode={userRole === 'supervisor'}
+      viewCourseHref={`/curso/${course.id}/videos?from=supervisor`}
+      viewCourseLabel="Ver curso"
     />
   );
 }

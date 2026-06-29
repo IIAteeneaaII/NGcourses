@@ -313,3 +313,37 @@
     font-size: 0.875rem;
   }
 }
+
+.readOnlyPanel {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(0, 150, 143, 0.22);
+  border-radius: 0.75rem;
+  background: rgba(0, 150, 143, 0.055);
+}
+
+.readOnlyTitle {
+  margin: 0 0 0.35rem;
+  color: var(--color-secondary-30);
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.readOnlyText {
+  margin: 0 0 1rem;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.readOnlyResources {
+  border-top: 1px solid rgba(0, 150, 143, 0.16);
+  padding-top: 0.875rem;
+}
+
+.readOnlySubtitle {
+  margin: 0 0 0.75rem;
+  color: var(--color-text-primary);
+  font-size: 0.925rem;
+  font-weight: 700;
+}

@@ -15,6 +15,9 @@ interface CourseInfoContentProps {
   enrollLoading?: boolean;
   backHref?: string;
   bloqueadoPorLicencia?: boolean;
+  viewOnlyMode?: boolean;
+  viewCourseHref?: string;
+  viewCourseLabel?: string;
 }
 
 function formatPrice(precio: number | null | undefined, moneda?: string): { label: string; isFree: boolean } {
@@ -24,7 +27,7 @@ function formatPrice(precio: number | null | undefined, moneda?: string): { labe
   return { label: `$${entero} ${moneda || 'MXN'}`, isFree: false };
 }
 
-export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia }: CourseInfoContentProps) {
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia, viewOnlyMode = false, viewCourseHref, viewCourseLabel = 'Ver curso' }: CourseInfoContentProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
@@ -136,28 +139,14 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
           </div>
 
           <div className={styles.actionsContainer}>
-            {isEnrolled ? (
+            {viewOnlyMode ? (
+              <Link href={viewCourseHref ?? `/curso/${course.id}/videos?from=supervisor`} className={styles.startButton}>
+                {viewCourseLabel}
+              </Link>
+            ) : isEnrolled ? (
               <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
                 Continuar curso
               </Link>
-            ) : course.esDeMiOrg ? (
-              // Cubierto por una licencia activa de la organización del alumno:
-              // se inscribe SIN pagar, aunque el curso tenga precio. Tiene
-              // prioridad sobre PayPal.
-              onInscribirse && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-start' }}>
-                  <button
-                    className={styles.startButton}
-                    onClick={onInscribirse}
-                    disabled={enrollLoading}
-                  >
-                    {enrollLoading ? 'Inscribiendo...' : 'Inscribirme'}
-                  </button>
-                  <span style={{ fontSize: '0.8125rem', color: 'var(--color-text-secondary)' }}>
-                    Incluido por tu organización
-                  </span>
-                </div>
-              )
             ) : requierePago ? (
               // Precio > 0: PayPal tiene prioridad sobre el bloqueo de licencia, ya que
               // RF10 permite que cualquier alumno compre el curso individualmente.
@@ -168,7 +157,7 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
                   if (onPaymentSuccess) onPaymentSuccess();
                 }}
               />
-            ) : bloqueadoPorLicencia || course.puedeInscribirse === false ? (
+            ) : bloqueadoPorLicencia ? (
               <div className={styles.lockedBlock} role="status" aria-live="polite">
                 <h3 className={styles.lockedTitle}>Curso no disponible</h3>
                 <p className={styles.lockedMessage}>

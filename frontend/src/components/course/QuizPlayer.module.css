@@ -251,3 +251,31 @@
     padding: 0.75rem 1rem;
   }
 }
+
+.optionReadOnly {
+  cursor: default;
+  background: #ffffff;
+}
+
+.optionReadOnly:hover {
+  background: #ffffff;
+}
+
+.optionCorrect {
+  border-color: rgba(0, 150, 143, 0.45);
+  background: rgba(0, 150, 143, 0.08);
+}
+
+.optionCorrect:hover {
+  background: rgba(0, 150, 143, 0.08);
+}
+
+.correctBadge {
+  margin-left: auto;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(0, 150, 143, 0.13);
+  color: var(--color-secondary-30, #004777);
+  font-size: 0.72rem;
+  font-weight: 700;
+}

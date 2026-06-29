@@ -65,6 +65,8 @@ export default function CursoVideosPage() {
   const router = useRouter();
   const id = params.id as string;
   const fromAdmin = searchParams.get('from') === 'admin';
+  const fromSupervisor = searchParams.get('from') === 'supervisor';
+  const previewMode = fromAdmin || fromSupervisor;
 
   const [course, setCourse] = useState<Course | null>(null);
   const [inscripcionId, setInscripcionId] = useState<string | null>(null);
@@ -87,7 +89,7 @@ export default function CursoVideosPage() {
         // del preview de admin) se redirige a la ficha del curso, que muestra el
         // CTA para inscribirse. El backend ya no entrega contenido ni progreso
         // sin inscripción; esto bloquea además el acceso a la ruta.
-        if (!inscripcion && !fromAdmin) {
+        if (!inscripcion && !previewMode) {
           setRedirecting(true);
           router.replace(`/curso/${id}`);
           return;
@@ -149,7 +151,7 @@ export default function CursoVideosPage() {
     }
 
     fetchData();
-  }, [id]);
+  }, [id, previewMode, router]);
 
   if (loading || redirecting) {
     return (
@@ -167,8 +169,10 @@ export default function CursoVideosPage() {
         initialCourse={course}
         inscripcionId={inscripcionId}
         bunnyLibraryId={bunnyLibraryId}
-        backHref={fromAdmin ? `/admin/cursos/${id}/preview` : undefined}
-        previewMode={fromAdmin}
+        backHref={fromAdmin ? `/admin/cursos/${id}/preview` : fromSupervisor ? `/curso/${id}` : undefined}
+        navHref={fromSupervisor ? '/supervisor/cursos' : fromAdmin ? '/admin/cursos' : undefined}
+        previewMode={previewMode}
+        readOnlyMode={fromSupervisor}
       />
     </ErrorBoundary>
   );
