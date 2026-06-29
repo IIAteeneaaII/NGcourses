@@ -1,0 +1,26 @@
+[extend]
+# Usa el conjunto de reglas predeterminadas de Gitleaks
+useDefault = true
+
+[[rules]]
+id = "bunny-api-key"
+description = "Bunny.net API Key"
+regex = '''(?i)(bunny[_\-]?api[_\-]?key|BUNNY_API_KEY)\s*=\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{8,16}-[0-9a-f]{4}-[0-9a-f]{4})'''
+secretGroup = 2
+keywords = ["bunny_api_key", "bunny-api-key"]
+tags = ["bunny", "api-key"]
+
+[[rules]]
+id = "bunny-token-key"
+description = "Bunny.net Token Key"
+regex = '''(?i)(bunny[_\-]?token[_\-]?key|BUNNY_TOKEN_KEY)\s*=\s*([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})'''
+secretGroup = 2
+keywords = ["bunny_token_key", "bunny-token-key"]
+tags = ["bunny", "token-key"]
+
+[allowlist]
+# Excluye archivos que no deben escanearse
+paths = [
+  '''.git''',
+  '''SAST_OUTPUT''',
+]
