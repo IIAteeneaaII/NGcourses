@@ -15,7 +15,7 @@ from sqlmodel import SQLModel, select
 from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.models import User
-from app.models._enums import EstadoSolicitud
+from app.models._enums import EstadoCurso, EstadoSolicitud
 from app.models.organizacion import Organizacion
 
 router = APIRouter(prefix="/solicitudes", tags=["solicitudes"])
@@ -115,6 +115,11 @@ def actualizar_solicitud_admin(
         curso = crud.get_curso(session=session, curso_id=body.curso_id)
         if not curso:
             raise HTTPException(status_code=404, detail="Curso no encontrado")
+        if curso.estado != EstadoCurso.PUBLICADO:
+            raise HTTPException(
+                status_code=409,
+                detail="Solo puedes licenciar cursos publicados a una organización.",
+            )
         crud.assign_licencia(
             session=session,
             org_id=solicitud.organizacion_id,

@@ -129,7 +129,9 @@ export default function OrganizacionDetallePage() {
 
   const loadCursos = useCallback(async () => {
     try {
-      const resp = await cursosApi.list({ limit: 200 }) as { data: Curso[] };
+      // Solo cursos publicados son licenciables (el backend también lo exige):
+      // licenciar un borrador lo dejaba invitable desde el supervisor.
+      const resp = await cursosApi.list({ estado: 'publicado', limit: 200 }) as { data: Curso[] };
       setCursosDisponibles(resp.data);
     } catch (e) {
       logError('cursos.list', e);
