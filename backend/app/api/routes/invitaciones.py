@@ -11,7 +11,7 @@ from sqlmodel import SQLModel
 from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
-from app.models._enums import EstadoInscripcion
+from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
 from app.utils import email_formato_valido, generate_activacion_email, send_email
 
 logger = logging.getLogger(__name__)
@@ -107,6 +107,18 @@ def canjear_invitacion(
     if inv.expira_en < datetime.utcnow():
         raise HTTPException(status_code=410, detail="Esta invitación ha expirado")
 
+    # Defensa: el curso debe seguir PUBLICADO al canjear. crear_invitaciones ya
+    # impide invitar a no-publicados, pero un curso pudo despublicarse DESPUÉS de
+    # enviar la invitación. Se valida antes de crear/activar la cuenta para no
+    # dejar cuentas ni inscripciones colgando de un curso no disponible.
+    db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
+    if not db_curso or db_curso.estado != EstadoCurso.PUBLICADO:
+        raise HTTPException(
+            status_code=409,
+            detail="Este curso ya no está disponible para inscripción.",
+        )
+    curso_titulo = db_curso.titulo
+
     org_info = crud.get_organizacion_of_user(
         session=session, user_id=inv.creado_por
     )
@@ -119,8 +131,15 @@ def canjear_invitacion(
     )
     requiere_activacion = bool(activacion_token)
 
-    db_curso = crud.get_curso(session=session, curso_id=inv.curso_id)
-    curso_titulo = db_curso.titulo if db_curso else ""
+    # Las invitaciones a cursos son SOLO para alumnos. Las cuentas nuevas nacen
+    # ESTUDIANTE (no se bloquean); esto frena que una cuenta EXISTENTE con otro
+    # rol (instructor/supervisor/admin) quede inscrita al canjear y aparezca en
+    # las estadísticas de alumnos. Los no-alumnos previsualizan vía ?from=admin.
+    if user.rol != RolUsuario.ESTUDIANTE:
+        raise HTTPException(
+            status_code=403,
+            detail="Esta invitación es solo para alumnos. La cuenta de este correo tiene otro rol.",
+        )
 
     # Cuenta nueva o pendiente: enviar email con link a /activar para que el
     # usuario establezca su contraseña. La contraseña NUNCA se envía ni se muestra.
@@ -183,6 +202,15 @@ def crear_invitaciones(
     db_curso = crud.get_curso(session=session, curso_id=body.curso_id)
     if not db_curso:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+    # Solo se puede invitar a cursos PUBLICADOS. Un curso en borrador/revisión/
+    # archivado/rechazado no tiene contenido entregable ni acceso válido para el
+    # alumno; invitarlo crearía inscripciones a un curso no disponible.
+    if db_curso.estado != EstadoCurso.PUBLICADO:
+        raise HTTPException(
+            status_code=409,
+            detail="Solo puedes enviar invitaciones de cursos publicados.",
+        )
 
     resultados: list[InvitacionEnvioResultado] = []
 

@@ -2,7 +2,7 @@ from sqlmodel import Session, create_engine, select
 
 from app import crud
 from app.core.config import settings
-from app.models import RolUsuario, User, UserCreate
+from app.models import EstadoUsuario, RolUsuario, User, UserCreate
 
 # pool_size=20: conexiones activas por worker (4 workers × 20 = 80 total)
 # max_overflow=10: conexiones extra en pico (hasta 120 total)
@@ -40,3 +40,12 @@ def init_db(session: Session) -> None:
             rol=RolUsuario.ADMINISTRADOR,
         )
         user = crud.create_user(session=session, user_create=user_in)
+    elif not (user.is_active and user.is_superuser and user.estado == EstadoUsuario.ACTIVO):
+        # Break-glass: el superusuario nunca debe quedar bloqueado. Si fue
+        # suspendido/desactivado por error, se reactiva en cada arranque (un
+        # redeploy recupera el acceso). Ver guard en routes/users.update_user.
+        user.is_active = True
+        user.is_superuser = True
+        user.estado = EstadoUsuario.ACTIVO
+        session.add(user)
+        session.commit()

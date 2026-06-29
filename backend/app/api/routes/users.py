@@ -95,6 +95,14 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Admin
             detail="El rol de instructor está deshabilitado actualmente.",
         )
 
+    # Un supervisor SIEMPRE pertenece a una organización: se crea desde
+    # "Organizaciones" (POST /organizaciones/ o /{org_id}/supervisor), no suelto.
+    if user_in.rol == RolUsuario.SUPERVISOR:
+        raise HTTPException(
+            status_code=400,
+            detail="Los supervisores se crean desde Organizaciones (deben tener una organización).",
+        )
+
     user = crud.get_user_by_email(session=session, email=user_in.email)
     if user:
         raise HTTPException(
@@ -263,13 +271,31 @@ def update_user(
             detail="The user with this id does not exist in the system",
         )
 
-    # Defensa en profundidad: solo superusers pueden modificar cuentas de admin
     payload = user_in.model_dump(exclude_unset=True)
-    if ("rol" in payload or "is_active" in payload) and not current_user.is_superuser:
-        if db_user.rol == RolUsuario.ADMINISTRADOR:
+
+    # Campos sensibles: rol, estado (suspender/activar) e is_active (acceso).
+    toca_sensibles = bool({"rol", "estado", "is_active"} & payload.keys())
+    target_es_admin = db_user.rol == RolUsuario.ADMINISTRADOR or db_user.is_superuser
+
+    # Solo el superusuario puede tocar rol/estado/acceso de una cuenta de admin o
+    # superuser. Evita que un admin normal suspenda a otros admins (incidente que
+    # dejó sin acceso a todas las cuentas admin) y protege la cuenta break-glass.
+    if toca_sensibles and target_es_admin and not current_user.is_superuser:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo el superusuario puede modificar cuentas de administrador.",
+        )
+
+    # Nadie puede suspender/desactivar su propia cuenta (evita auto-lockout).
+    if user_id == current_user.id:
+        se_desactiva = (
+            ("estado" in payload and payload["estado"] != EstadoUsuario.ACTIVO)
+            or payload.get("is_active") is False
+        )
+        if se_desactiva:
             raise HTTPException(
                 status_code=403,
-                detail="Solo superuser puede modificar cuentas de administrador",
+                detail="No puedes suspender ni desactivar tu propia cuenta.",
             )
 
     # Feature flag: no permitir asignar el rol instructor mientras esté apagado.

@@ -422,6 +422,8 @@ export const organizacionesApi = {
   create: (data: unknown) => apiClient.post('/api/v1/organizaciones/', data),
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/organizaciones/${id}`, data),
   delete: (id: string) => apiClient.delete(`/api/v1/organizaciones/${id}`),
+  supervisoresSinOrg: () => apiClient.get('/api/v1/organizaciones/supervisores-sin-organizacion'),
+  orgsSinSupervisor: () => apiClient.get('/api/v1/organizaciones/sin-supervisor'),
   listMiembros: (id: string) => apiClient.get(`/api/v1/organizaciones/${id}/miembros`),
   asignarMiembro: (id: string, data: { user_id: string; rol_org?: string }) =>
     apiClient.post(`/api/v1/organizaciones/${id}/miembros`, data),
@@ -459,7 +461,7 @@ export const supervisorApi = {
 // Solicitudes de curso de los supervisores, vistas/gestionadas por el admin (CP09).
 export const solicitudesAdminApi = {
   listar: () => apiClient.get('/api/v1/solicitudes'),
-  actualizar: (id: string, data: { estado: string; comentario?: string }) =>
+  actualizar: (id: string, data: { estado: string; comentario?: string; curso_id?: string }) =>
     apiClient.patch(`/api/v1/solicitudes/${id}`, data),
 };
 

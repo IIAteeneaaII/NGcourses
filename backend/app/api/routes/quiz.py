@@ -29,7 +29,7 @@ router = APIRouter(prefix="/quiz", tags=["quiz"])
 
 
 def _require_instructor_or_admin(current_user: CurrentUser) -> None:
-    allowed = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL}
+    allowed = {RolUsuario.INSTRUCTOR, RolUsuario.ADMINISTRADOR}
     if not current_user.is_superuser and current_user.rol not in allowed:
         raise HTTPException(status_code=403, detail="Se requiere rol de instructor o administrador")
 

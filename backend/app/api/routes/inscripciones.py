@@ -33,6 +33,7 @@ class InscripcionPublic(SQLModel):
     # Identidad del alumno (poblada en el listado por curso para instructor/admin).
     usuario_nombre: str | None = None
     usuario_email: str | None = None
+    usuario_rol: str | None = None
 
 
 class InscripcionesPublic(SQLModel):
@@ -56,37 +57,69 @@ def inscribirse(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no disponible")
 
-    # Verificar que no esté ya inscrito
+    # Las inscripciones a cursos son SOLO para alumnos. Un no-alumno
+    # (instructor/supervisor) accede al contenido vía preview (?from=admin), no
+    # como inscrito. El admin conserva su bypass para pruebas.
+    if not is_admin and current_user.rol != RolUsuario.ESTUDIANTE:
+        raise HTTPException(
+            status_code=403,
+            detail="Solo los alumnos pueden inscribirse a un curso.",
+        )
+
+    # Solo bloquea si YA hay una inscripción vigente (activa/finalizada). Una
+    # inscripción CANCELADA (p.ej. tras una baja de org) NO cuenta como "ya
+    # inscrito": el catálogo/ficha la tratan como no inscrito y muestran
+    # "Inscribirme", así que el backend debe poder reactivarla (abajo) en vez de
+    # dar un 409 confuso. Antes cualquier registro existente, aunque cancelado,
+    # devolvía 409.
     existing = crud.get_inscripcion_by_usuario_curso(
         session=session,
         usuario_id=current_user.id,
         curso_id=inscripcion_in.curso_id,
     )
-    if existing:
+    if existing and existing.estado != EstadoInscripcion.CANCELADO:
         raise HTTPException(status_code=409, detail="Ya estás inscrito en este curso")
 
-    # Bloqueo: cursos NEXTGEN no gratuitos requieren LicenciaCurso activa de la org
-    if (
-        not is_admin
-        and db_curso.marca == MarcaCurso.NEXTGEN
-        and not db_curso.es_gratis
-    ):
-        org_info = crud.get_organizacion_of_user(
-            session=session, user_id=current_user.id
+    # Candado de auto-inscripción: un alumno solo puede inscribirse por su cuenta si
+    # el curso es PÚBLICO (NEXTGEN gratis), está cubierto por una LICENCIA ACTIVA de
+    # su organización (cualquier marca), o tiene un PAGO/cortesía individual. Cierra
+    # el hueco de re-inscribirse tras darlo de baja de la org (cursos RAM/de paga
+    # quedaban sin candado). Pagos, cortesías e invitaciones crean la inscripción por
+    # su propia vía (no este endpoint), así que no se ven afectados.
+    if not is_admin:
+        es_publico = (
+            db_curso.marca == MarcaCurso.NEXTGEN and db_curso.es_gratis
         )
-        org_id = org_info[0].id if org_info else None
-        if not org_id or not crud.tiene_licencia_activa(
-            session=session, org_id=org_id, curso_id=db_curso.id
-        ):
-            raise HTTPException(
-                status_code=403,
-                detail="Tu organización no ha adquirido este curso.",
+        if not es_publico:
+            org_ids = crud.get_org_ids_of_user(
+                session=session, user_id=current_user.id
             )
+            cubierto_por_org = db_curso.id in crud.cursos_con_licencia_activa_orgs(
+                session=session, org_ids=org_ids
+            )
+            tiene_pago = crud.usuario_tiene_pago_completado(
+                session=session, usuario_id=current_user.id, curso_id=db_curso.id
+            )
+            if not (cubierto_por_org or tiene_pago):
+                raise HTTPException(
+                    status_code=403,
+                    detail="No tienes acceso a este curso. Requiere una licencia de tu organización o adquirirlo.",
+                )
+
+    # Si había una inscripción cancelada y el alumno está autorizado, se reactiva
+    # (mismo criterio que el canje de invitación) en vez de crear una nueva, para
+    # no violar el unique (usuario_id, curso_id).
+    if existing:
+        existing.estado = EstadoInscripcion.ACTIVA
+        session.add(existing)
+        session.commit()
+        session.refresh(existing)
+        return InscripcionPublic.model_validate(existing, from_attributes=True)
 
     db_inscripcion = crud.create_inscripcion(
         session=session,
@@ -125,7 +158,7 @@ def inscripciones_por_usuario(
 ) -> Any:
     """Lista inscripciones de un alumno específico. Solo admin."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin:
         raise HTTPException(status_code=403, detail="Sin permiso")
@@ -150,7 +183,7 @@ def get_inscripcion(
         raise HTTPException(status_code=404, detail="Inscripción no encontrada")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and db.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin acceso a esta inscripción")
@@ -173,7 +206,7 @@ def cancelar_inscripcion(
         raise HTTPException(status_code=409, detail="La inscripción ya está cancelada")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
 
     if not is_admin:
@@ -195,7 +228,7 @@ def inscripciones_por_curso(
 ) -> Any:
     """Lista inscripciones de un curso. Solo el instructor propietario o admin."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
 
     db_curso = crud.get_curso(session=session, curso_id=curso_id)
@@ -223,5 +256,6 @@ def inscripciones_por_curso(
             estado=i.estado, inscrito_en=i.inscrito_en, ultimo_acceso_en=i.ultimo_acceso_en,
             usuario_nombre=u.full_name if u else None,
             usuario_email=u.email if u else None,
+            usuario_rol=u.rol.value if u else None,
         ))
     return InscripcionesPublic(data=data, count=count)

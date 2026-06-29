@@ -159,21 +159,25 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
         </div>
 
         {(() => {
-          const orgCourses = filteredCourses.filter((c) => c.marca === 'ram');
-          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'nextgen');
-          const untagged = filteredCourses.filter((c) => !c.marca);
-          const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
+          // "Cursos de tu organización" = los cubiertos por una licencia ACTIVA de
+          // la org (cualquier marca) MÁS los RAM. El backend del catálogo solo
+          // devuelve cursos RAM cuando estás inscrito o tu org los licencia (nunca
+          // RAM "sueltos"), así que incluir RAM aquí sincroniza el catálogo con
+          // /perfil y /mis-cursos: un RAM en el que estás inscrito ya no se oculta,
+          // y no queda mal etiquetado como "NextGen".
+          const orgCourses = filteredCourses.filter((c) => c.esDeMiOrg || c.marca === 'ram');
+          // "Cursos NextGen" = SOLO la marca NextGen (catálogo público) no cubiertos.
+          const nextgenCourses = filteredCourses.filter(
+            (c) => !c.esDeMiOrg && c.marca !== 'ram'
+          );
+          const totalVisibles = orgCourses.length + nextgenCourses.length;
 
-          if (!hasGroups) {
+          if (totalVisibles === 0) {
             return (
               <div className={styles.coursesGrid}>
-                {untagged.length > 0 ? (
-                  untagged.map((course) => <CourseCard key={course.id} course={course} />)
-                ) : (
-                  <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
-                    No se encontraron cursos con los filtros aplicados.
-                  </p>
-                )}
+                <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
+                  No se encontraron cursos con los filtros aplicados.
+                </p>
               </div>
             );
           }

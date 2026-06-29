@@ -345,6 +345,15 @@ class CursoPublic(SQLModel):
     requisitos: str | None = None
     notas_revision: str | None = None
     bloqueado_por_licencia: bool = False
+    # True cuando el alumno accede a este curso por una licencia ACTIVA de su
+    # organización (independiente de la marca). Permite al front agrupar la
+    # sección "Cursos de tu organización" por pertenencia real, no por marca.
+    es_de_mi_org: bool = False
+    # True si el alumno puede auto-inscribirse: curso público (NEXTGEN gratis),
+    # cubierto por licencia de su org, o con pago/cortesía individual. Mismo criterio
+    # que el candado de POST /inscripciones/. Default True para no bloquear a
+    # admin/instructor; se setea explícito para el alumno en get_curso.
+    puede_inscribirse: bool = True
 
 
 class CursoDetalle(CursoPublic):

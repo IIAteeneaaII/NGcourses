@@ -15,7 +15,7 @@ export const EditUserSchema = z.object({
     .max(128)
     .optional()
     .or(z.literal('')),
-  rol: z.enum(['estudiante', 'instructor', 'supervisor', 'usuario_control', 'administrador']).optional(),
+  rol: z.enum(['estudiante', 'instructor', 'supervisor', 'administrador']).optional(),
   is_active: z.boolean().optional(),
 });
 
