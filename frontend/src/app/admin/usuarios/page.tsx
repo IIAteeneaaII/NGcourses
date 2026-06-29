@@ -31,6 +31,7 @@ interface ApiUsersResp {
 
 const ROLES: Record<string, string> = {
   administrador: 'Administrador',
+  supervisor: 'Supervisor',
   instructor: 'Instructor',
   estudiante: 'Estudiante',
 };
