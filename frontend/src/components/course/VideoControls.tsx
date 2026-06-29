@@ -28,6 +28,7 @@ interface VideoControlsProps {
   certFolio?: string | null;
   onDownloadCert?: (folio: string) => void;
   downloading?: boolean;
+  readOnlyMode?: boolean;
 }
 
 export default function VideoControls({
@@ -39,6 +40,7 @@ export default function VideoControls({
   certFolio,
   onDownloadCert,
   downloading,
+  readOnlyMode = false,
 }: VideoControlsProps) {
   const [activeTab, setActiveTab] = useState<'resumen' | 'recursos' | 'notas' | 'comentarios'>('resumen');
   const [isCompleted, setIsCompleted] = useState(false);
@@ -143,6 +145,42 @@ export default function VideoControls({
       default: return styles.iconOther;
     }
   };
+
+  if (readOnlyMode) {
+    return (
+      <div className={styles.readOnlyPanel}>
+        <h3 className={styles.readOnlyTitle}>Vista de solo lectura</h3>
+        <p className={styles.readOnlyText}>
+          Puedes revisar esta lección sin marcar avance, publicar comentarios ni generar certificado.
+        </p>
+        <div className={styles.readOnlyResources}>
+          <h4 className={styles.readOnlySubtitle}>Recursos de la lección</h4>
+          {resources && resources.length > 0 ? (
+            <ul className={styles.resourcesList}>
+              {resources.map((resource) => (
+                <li key={resource.id} className={styles.resourceItem}>
+                  <span className={`${styles.resourceIcon} ${getFileColor(resource.type)}`}>
+                    {getFileIcon(resource.type)}
+                  </span>
+                  <span className={styles.resourceName}>{resource.name}</span>
+                  <button
+                    type="button"
+                    className={styles.downloadButton}
+                    disabled={descargandoRecurso === resource.id}
+                    onClick={() => handleDescargarRecurso(resource.id)}
+                  >
+                    {descargandoRecurso === resource.id ? 'Descargando...' : 'Descargar'}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className={styles.emptyMessage}>No hay recursos disponibles para esta lección.</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

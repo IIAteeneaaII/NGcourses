@@ -31,9 +31,11 @@ interface Props {
   onAprobado?: () => void;
   /** Vista previa (admin/instructor sin inscripción): califica localmente sin guardar. */
   previewMode?: boolean;
+  /** Vista de supervisor: solo muestra preguntas y respuestas, sin enviar intento. */
+  readOnlyMode?: boolean;
 }
 
-export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoIntento, onAprobado, previewMode }: Props) {
+export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoIntento, onAprobado, previewMode, readOnlyMode }: Props) {
   const [selecciones, setSelecciones] = useState<Record<string, string>>({});
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
@@ -42,14 +44,14 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
   const [intentosMax, setIntentosMax] = useState(ultimoIntento?.intentos_max ?? 0);
   // Mientras se consulta el último intento al montar, mostramos "cargando" en vez
   // del quiz vacío (evita el parpadeo del quiz en blanco antes de ver el resultado).
-  const [cargandoIntento, setCargandoIntento] = useState(!previewMode && !!inscripcionId);
+  const [cargandoIntento, setCargandoIntento] = useState(!previewMode && !readOnlyMode && !!inscripcionId);
 
   const preguntas = quizData.preguntas ?? [];
 
   // Al montar (cambio de lección, por el `key`), restaura el último intento del
   // alumno: si ya aprobó/reprobó lo muestra, y sincroniza el conteo de intentos.
   useEffect(() => {
-    if (previewMode || !inscripcionId) return;
+    if (previewMode || readOnlyMode || !inscripcionId) return;
     let activo = true;
     (quizApi.ultimoIntento(leccionId, inscripcionId) as Promise<QuizIntentoPublic | null>)
       .then((resp) => {
@@ -61,7 +63,7 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
       .catch(() => { /* sin intento previo o error: se queda como nuevo */ })
       .finally(() => { if (activo) setCargandoIntento(false); });
     return () => { activo = false; };
-  }, [leccionId, inscripcionId, previewMode]);
+  }, [leccionId, inscripcionId, previewMode, readOnlyMode]);
 
   const handleSeleccion = (preguntaId: string, opcionId: string) => {
     setSelecciones((prev) => ({ ...prev, [preguntaId]: opcionId }));
@@ -176,6 +178,34 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
     );
   }
 
+  if (readOnlyMode) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.header}>
+          <div className={styles.headerIcon}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 11l3 3L22 4" />
+              <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
+            </svg>
+          </div>
+          <div>
+            <h2 className={styles.title}>Quiz de evaluación</h2>
+            <p className={styles.subtitle}>
+              Vista de supervisor: revisión de preguntas y respuestas correctas.
+            </p>
+          </div>
+          <div className={styles.counter}>{preguntas.length}</div>
+        </div>
+
+        <div className={styles.questionList}>
+          {preguntas.map((pregunta, idx) => (
+            <ReadOnlyQuestionCard key={pregunta.id} pregunta={pregunta} numero={idx + 1} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   const respondidas = preguntas.filter((p) => selecciones[p.id]).length;
 
   return (
@@ -234,6 +264,30 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
             Responde todas las preguntas para continuar
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+
+function ReadOnlyQuestionCard({ pregunta, numero }: { pregunta: QuizQuestion; numero: number }) {
+  return (
+    <div className={styles.questionCard}>
+      <div className={styles.questionHeader}>
+        <span className={styles.questionNum}>{numero}</span>
+        <p className={styles.enunciado}>{pregunta.enunciado || 'Sin enunciado'}</p>
+      </div>
+      <div className={styles.optionsList}>
+        {pregunta.opciones.map((opcion) => (
+          <div
+            key={opcion.id}
+            className={`${styles.optionLabel} ${styles.optionReadOnly} ${opcion.esCorrecta ? styles.optionCorrect : ''}`}
+          >
+            <span className={styles.optionMark}>{opcion.esCorrecta ? '✓' : '○'}</span>
+            <span className={styles.optionText}>{opcion.texto}</span>
+            {opcion.esCorrecta && <span className={styles.correctBadge}>Correcta</span>}
+          </div>
+        ))}
       </div>
     </div>
   );
