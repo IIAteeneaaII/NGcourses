@@ -139,6 +139,56 @@ export default function EditarCursoAdminPage() {
     setTimeout(() => setNotification(null), 3000);
   }, []);
 
+  const totalVideoLessons = modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'video').length, 0);
+  const totalQuizLessons = modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'quiz').length, 0);
+  const hasAtLeastOneModule = modules.length > 0;
+  const hasAtLeastOneQuiz = totalQuizLessons > 0;
+
+  const quizValidationErrors = React.useMemo(() => {
+    const errors: string[] = [];
+    modules.forEach((m, moduleIndex) => {
+      m.lessons.forEach((l, lessonIndex) => {
+        if (l.tipo !== 'quiz') return;
+        const issues = validateQuiz(l.quizData);
+        if (issues.length) {
+          errors.push(`Módulo ${moduleIndex + 1}, ${l.title || `Quiz ${lessonIndex + 1}`}: ${issues.join('; ')}`);
+        }
+      });
+    });
+    return errors;
+  }, [modules]);
+
+  const getCourseStructureError = React.useCallback((action: 'guardar' | 'publicar' = 'guardar') => {
+    if (modules.length === 0) {
+      return action === 'publicar'
+        ? 'Agrega al menos un módulo antes de publicar el curso.'
+        : 'Agrega al menos un módulo antes de guardar el curso.';
+    }
+
+    if (totalQuizLessons === 0) {
+      return action === 'publicar'
+        ? 'Agrega al menos un quiz antes de publicar el curso.'
+        : 'Agrega al menos un quiz antes de guardar el curso.';
+    }
+
+    if (quizValidationErrors.length > 0) {
+      return `Corrige el quiz antes de ${action} — ${quizValidationErrors[0]}${quizValidationErrors.length > 1 ? ` (y ${quizValidationErrors.length - 1} más)` : ''}`;
+    }
+
+    return '';
+  }, [modules.length, totalQuizLessons, quizValidationErrors]);
+
+  const hasValidRequiredStructure = hasAtLeastOneModule && hasAtLeastOneQuiz && quizValidationErrors.length === 0;
+
+  const requireCourseStructure = React.useCallback((action: 'guardar' | 'publicar' = 'guardar') => {
+    const message = getCourseStructureError(action);
+    if (!message) return true;
+    setSaveError(message);
+    notify('error', message);
+    setCurrentStep(3);
+    return false;
+  }, [getCourseStructureError, notify]);
+
   // Creación inline de categoría
   const [showNewCatInput, setShowNewCatInput] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
@@ -212,6 +262,7 @@ export default function EditarCursoAdminPage() {
   };
 
   const goToStep = (step: number) => {
+    if (step === 5 && !requireCourseStructure('guardar')) return;
     setCurrentStep(step);
   };
 
@@ -242,6 +293,10 @@ export default function EditarCursoAdminPage() {
       }
       return;
     }
+    if (currentStep === 4 && !requireCourseStructure('guardar')) {
+      return;
+    }
+
     if (currentStep < STEPS.length) goToStep(currentStep + 1);
   };
 
@@ -250,6 +305,7 @@ export default function EditarCursoAdminPage() {
   };
 
   const handleSave = async () => {
+    if (!requireCourseStructure('guardar')) return;
     setIsSaving(true);
     try {
       const precioNum = precio.trim() === '' ? null : Number(precio);
@@ -270,21 +326,7 @@ export default function EditarCursoAdminPage() {
 
   const handleTogglePublish = async () => {
     const nuevoEstado = cursoEstado === 'publicado' ? 'borrador' : 'publicado';
-    // Al publicar (no al despublicar), bloquear si hay quizzes incompletos.
-    if (nuevoEstado === 'publicado') {
-      const quizErrors: string[] = [];
-      modules.forEach((m) => {
-        m.lessons.forEach((l) => {
-          if (l.tipo !== 'quiz') return;
-          const issues = validateQuiz(l.quizData);
-          if (issues.length) quizErrors.push(`"${l.title || 'Quiz sin título'}": ${issues.join('; ')}`);
-        });
-      });
-      if (quizErrors.length) {
-        notify('error', `Corrige los quizzes antes de publicar — ${quizErrors[0]}${quizErrors.length > 1 ? ` (y ${quizErrors.length - 1} más)` : ''}`);
-        return;
-      }
-    }
+    if (nuevoEstado === 'publicado' && !requireCourseStructure('publicar')) return;
     setIsPublishing(true);
     try {
       await cursosApi.update(cursoId, { estado: nuevoEstado });
@@ -486,7 +528,7 @@ export default function EditarCursoAdminPage() {
     switch (step) {
       case 1: return !!(title && description);
       case 2: return !!(coverImagePreview);
-      case 3: return modules.length > 0 && modules.some((m) => m.lessons.length > 0);
+      case 3: return hasValidRequiredStructure;
       case 4: return true;
       case 5: return true;
       default: return false;
@@ -687,13 +729,12 @@ export default function EditarCursoAdminPage() {
                   {coverImagePreview ? (
                     <div className={styles.imagePreview}>
                       <img src={coverImagePreview} alt="Preview" className={styles.previewImage} />
-                      <label className={styles.removeImageButton} style={{ cursor: 'pointer' }}>
-                        <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={handleImageUpload} className={styles.fileInput} />
+                      <button className={styles.removeImageButton} onClick={() => { setCoverImagePreview(''); setCoverFile(null); setCoverUploadStatus('idle'); }}>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M17 1l4 4-4 4" /><path d="M3 11V9a4 4 0 0 1 4-4h14" /><path d="M7 23l-4-4 4-4" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+                          <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6" />
                         </svg>
                         Cambiar imagen
-                      </label>
+                      </button>
                       {coverUploadStatus === 'uploading' && (
                         <p style={{ marginTop: '0.5rem', color: '#2563eb', fontSize: '0.875rem', fontWeight: 500 }}>
                           ⏳ Subiendo imagen al servidor...
@@ -730,7 +771,13 @@ export default function EditarCursoAdminPage() {
             {currentStep === 3 && (
               <div className={styles.stepContent}>
                 <h2 className={styles.stepTitle}>Estructura del Curso</h2>
-                <p className={styles.stepDescription}>Administra módulos, lecciones, videos y recursos.</p>
+                <p className={styles.stepDescription}>Administra módulos, lecciones, videos y recursos. El video es opcional, pero el curso debe tener al menos un módulo y un quiz válido.</p>
+
+                {!hasValidRequiredStructure && (
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                    {getCourseStructureError('guardar')}
+                  </p>
+                )}
 
                 <div className={styles.modulesContainer}>
                   {modules.map((module, moduleIndex) => (
@@ -946,6 +993,12 @@ export default function EditarCursoAdminPage() {
                 <h2 className={styles.stepTitle}>Guardar Cambios</h2>
                 <p className={styles.stepDescription}>Revisa el resumen y guarda los cambios</p>
 
+                {!hasValidRequiredStructure && (
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                    {getCourseStructureError('guardar')}
+                  </p>
+                )}
+
                 <div className={styles.summaryGrid}>
                   <div className={styles.summaryCard}>
                     <span className={styles.summaryLabel}>Título</span>
@@ -968,9 +1021,9 @@ export default function EditarCursoAdminPage() {
                     <span className={styles.summaryValue}>{totalLessons}</span>
                   </div>
                   <div className={styles.summaryCard}>
-                    <span className={styles.summaryLabel}>Videos subidos</span>
+                    <span className={styles.summaryLabel}>Videos subidos (opcional)</span>
                     <span className={styles.summaryValue}>
-                      {modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.bunnyVideoId).length, 0)} / {totalLessons}
+                      {modules.reduce((acc, m) => acc + m.lessons.filter((l) => l.tipo === 'video' && l.bunnyVideoId).length, 0)} / {totalVideoLessons}
                     </span>
                   </div>
                 </div>
@@ -996,12 +1049,12 @@ export default function EditarCursoAdminPage() {
                   <button
                     className={styles.publishButton}
                     onClick={handleTogglePublish}
-                    disabled={isPublishing}
+                    disabled={isPublishing || (cursoEstado !== 'publicado' && !hasValidRequiredStructure)}
                     style={{ background: cursoEstado === 'publicado' ? '#6b7280' : '#16a34a' }}
                   >
                     {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Borrar' : 'Publicar curso'}
                   </button>
-                  <button className={styles.publishButton} onClick={handleSave} disabled={isSaving}>
+                  <button className={styles.publishButton} onClick={handleSave} disabled={isSaving || !hasValidRequiredStructure}>
                     {isSaving ? 'Guardando...' : 'Guardar cambios'}
                   </button>
                 </div>
