@@ -12,7 +12,7 @@ from app.api.deps import SessionDep, SupervisorOrAbove
 from app.core.config import settings
 from app.core.security import get_password_hash
 from app.models import User, UserCreate
-from app.models._enums import EstadoInscripcion, EstadoLicencia, RolOrganizacion, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, EstadoLicencia, RolOrganizacion, RolUsuario
 from app.models.inscripcion import Inscripcion, ProgresoLeccion
 from app.models.organizacion import LicenciaCurso, SolicitudCurso, UsuarioOrganizacion
 from app.utils import email_formato_valido
@@ -278,6 +278,14 @@ def invitar(
     curso = crud.get_curso(session=session, curso_id=body.curso_id)
     if not curso:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+    # Solo se puede invitar a cursos PUBLICADOS (mismo criterio que el panel de
+    # admin). Cubre el caso de un curso licenciado a la org y luego despublicado.
+    if curso.estado != EstadoCurso.PUBLICADO:
+        raise HTTPException(
+            status_code=409,
+            detail="Solo puedes enviar invitaciones de cursos publicados.",
+        )
 
     licencia = session.exec(
         select(LicenciaCurso).where(

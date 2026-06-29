@@ -10,7 +10,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models import User
-from app.models._enums import RolOrganizacion, RolUsuario
+from app.models._enums import EstadoCurso, RolOrganizacion, RolUsuario
 
 router = APIRouter(prefix="/organizaciones", tags=["organizaciones"])
 
@@ -375,6 +375,13 @@ def asignar_licencia(
     curso = crud.get_curso(session=session, curso_id=body.curso_id)
     if not curso:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
+    # Solo se licencian cursos PUBLICADOS: licenciar un borrador lo dejaba visible
+    # en "cursos de la org" y abría la puerta a invitar desde el supervisor.
+    if curso.estado != EstadoCurso.PUBLICADO:
+        raise HTTPException(
+            status_code=409,
+            detail="Solo puedes licenciar cursos publicados a una organización.",
+        )
     lic = crud.assign_licencia(session=session, org_id=org_id, curso_id=body.curso_id)
     return LicenciaPublic(
         id=lic.id, curso_id=lic.curso_id, curso_titulo=curso.titulo,
