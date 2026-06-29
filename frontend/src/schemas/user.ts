@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const CreateUserSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
   full_name: z.string().max(255).optional().or(z.literal('')),
-  organizacion_id: z.string().uuid('Organización inválida').optional().or(z.literal('')),
+  organizacion_id: z.string().uuid('Selecciona una organización'),
 });
 
 export const EditUserSchema = z.object({
