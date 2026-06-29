@@ -11,16 +11,13 @@ interface Props {
 
 export default function ProfileSetupModal({ currentEmail, onComplete }: Props) {
   const [fullName, setFullName] = useState('');
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    const validation = ProfileSetupSchema.safeParse({ fullName, currentPassword, newPassword, confirmPassword });
+    const validation = ProfileSetupSchema.safeParse({ fullName });
     if (!validation.success) {
       setError(validation.error.issues[0].message);
       return;
@@ -28,13 +25,9 @@ export default function ProfileSetupModal({ currentEmail, onComplete }: Props) {
     setLoading(true);
     try {
       await usersApi.updateMe({ full_name: fullName.trim() });
-      await usersApi.changePassword({
-        current_password: currentPassword,
-        new_password: newPassword,
-      });
       onComplete(fullName.trim());
     } catch {
-      setError('Contraseña actual incorrecta o error al guardar.');
+      setError('No se pudo guardar tu nombre. Intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -43,110 +36,63 @@ export default function ProfileSetupModal({ currentEmail, onComplete }: Props) {
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 9999,
-      background: 'rgba(0,0,0,0.7)',
+      background: 'rgba(11,27,43,0.55)',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: '1rem',
+      padding: '1rem', backdropFilter: 'blur(4px)',
     }}>
       <div style={{
-        background: '#fff', borderRadius: '1rem', padding: '2rem',
-        width: '100%', maxWidth: '420px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        background: '#fff', borderRadius: '20px', padding: '36px',
+        width: '100%', maxWidth: '440px',
+        border: '1px solid rgba(0,150,143,.12)',
+        boxShadow: '0 18px 55px rgba(11,27,43,.18)',
       }}>
-        <h2 style={{ margin: '0 0 0.5rem', color: '#004777', fontSize: '1.4rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/logo.png" alt="NextGen" style={{ width: '34px', height: '34px', objectFit: 'contain' }} />
+          <span style={{ fontWeight: 900, fontSize: '15px', color: '#0B1B2B' }}>
+            NextGen <span style={{ fontWeight: 400 }}>Course</span>
+          </span>
+        </div>
+
+        <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
           Completa tu perfil
         </h2>
-        <p style={{ margin: '0 0 1.5rem', color: '#6b7280', fontSize: '0.9rem' }}>
-          Antes de continuar, configura tu nombre y una contraseña segura.
+        <p style={{ margin: '0 0 24px', color: 'rgba(11,27,43,.65)', fontSize: '15px' }}>
+          Para terminar, dinos tu nombre. Así aparecerá en tus certificados.
         </p>
 
-        <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-              Nombre completo *
-            </label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Tu nombre y apellido"
-              required
-              style={{
-                width: '100%', padding: '0.6rem 0.75rem',
-                border: '1px solid #d1d5db', borderRadius: '0.5rem',
-                fontSize: '0.95rem', boxSizing: 'border-box',
-              }}
-            />
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            <label style={{ fontSize: '14px', color: 'rgba(11,27,43,.78)' }}>Nombre completo</label>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'white', border: '1px solid rgba(0,150,143,.16)', padding: '14px 16px' }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7, flexShrink: 0 }}>
+                <circle cx="12" cy="8" r="4" stroke="#0B1B2B" strokeWidth="1.8" />
+                <path d="M4 20c0-3.314 3.582-6 8-6s8 2.686 8 6" stroke="#0B1B2B" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => { setFullName(e.target.value); setError(''); }}
+                placeholder="Tu nombre y apellido"
+                required
+                autoFocus
+                style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+              />
+            </div>
           </div>
 
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-              Contraseña actual *
-            </label>
-            <input
-              type="password"
-              value={currentPassword}
-              onChange={(e) => setCurrentPassword(e.target.value)}
-              placeholder={`Si tu cuenta es nueva, ingresa tu correo: ${currentEmail}`}
-              required
-              style={{
-                width: '100%', padding: '0.6rem 0.75rem',
-                border: '1px solid #d1d5db', borderRadius: '0.5rem',
-                fontSize: '0.95rem', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-              Nueva contraseña *
-            </label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="Mínimo 8 caracteres"
-              required
-              style={{
-                width: '100%', padding: '0.6rem 0.75rem',
-                border: '1px solid #d1d5db', borderRadius: '0.5rem',
-                fontSize: '0.95rem', boxSizing: 'border-box',
-              }}
-            />
-          </div>
-
-          <div style={{ marginBottom: '1.25rem' }}>
-            <label style={{ display: 'block', marginBottom: '0.4rem', fontWeight: 600, fontSize: '0.875rem', color: '#374151' }}>
-              Confirmar contraseña *
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Repite la contraseña"
-              required
-              style={{
-                width: '100%', padding: '0.6rem 0.75rem',
-                border: '1px solid #d1d5db', borderRadius: '0.5rem',
-                fontSize: '0.95rem', boxSizing: 'border-box',
-              }}
-            />
-          </div>
+          <p style={{ margin: 0, fontSize: '13px', color: 'rgba(11,27,43,.5)' }}>
+            Cuenta: {currentEmail}
+          </p>
 
           {error && (
-            <p style={{ color: '#dc2626', fontSize: '0.875rem', marginBottom: '1rem' }}>
-              {error}
-            </p>
+            <p style={{ color: 'var(--color-error)', fontSize: '0.875rem', margin: 0 }}>{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%', padding: '0.75rem',
-              background: loading ? '#9ca3af' : '#f97316',
-              color: '#fff', border: 'none', borderRadius: '0.5rem',
-              fontSize: '1rem', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer',
-            }}
+            style={{ border: 0, width: '100%', padding: '14px 16px', borderRadius: '14px', fontWeight: 800, color: 'white', background: 'var(--color-accent-10)', cursor: loading ? 'not-allowed' : 'pointer', fontSize: '1.0625rem', opacity: loading ? 0.7 : 1 }}
           >
             {loading ? 'Guardando...' : 'Guardar y continuar'}
           </button>
