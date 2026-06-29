@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from app import crud
 from app.api.deps import AdminOrSuperuser, CurrentUser, SessionDep, get_current_active_superuser
 from app.core.config import settings
-from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario, TipoLeccion
 from app.models.inscripcion import Inscripcion
 from app.models.user import User
 from app.models.contenido import (
@@ -341,6 +341,29 @@ def update_curso(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     _require_curso_owner_or_admin(current_user, db_curso.instructor_id)
+
+    # Defensa: no se puede publicar (ni enviar a revisión) un curso con lecciones
+    # de video sin video. Cubre cualquier camino (admin, instructor si se reactiva
+    # el flag, o llamada directa a la API); el guardado/autosave a medias sí se
+    # permite. Mismo criterio que el bloqueo de quizzes incompletos (CP19).
+    if curso_in.estado in (EstadoCurso.PUBLICADO, EstadoCurso.REVISION):
+        sin_video = [
+            leccion.titulo or "sin título"
+            for modulo in db_curso.modulos
+            for leccion in modulo.lecciones
+            if leccion.tipo == TipoLeccion.VIDEO and not leccion.bunny_video_id
+        ]
+        if sin_video:
+            accion = "publicar" if curso_in.estado == EstadoCurso.PUBLICADO else "enviar a revisión"
+            muestra = ", ".join(f"'{t}'" for t in sin_video[:3])
+            extra = f" y {len(sin_video) - 3} más" if len(sin_video) > 3 else ""
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    f"No puedes {accion} el curso: hay lecciones de video sin video "
+                    f"({muestra}{extra}). Sube el video o elimina la lección."
+                ),
+            )
 
     db_curso = crud.update_curso(session=session, db_curso=db_curso, curso_in=curso_in)
     return db_curso
