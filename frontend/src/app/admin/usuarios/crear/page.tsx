@@ -37,7 +37,7 @@ export default function CrearUsuarioEmpresaPage() {
       await usersApi.createEmpresa({
         email: form.email,
         full_name: form.full_name || null,
-        ...(form.organizacion_id ? { organizacion_id: form.organizacion_id } : {}),
+        organizacion_id: form.organizacion_id,
       });
       setSuccess(true);
     } catch (err: unknown) {
@@ -160,17 +160,22 @@ export default function CrearUsuarioEmpresaPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Organización</label>
+            <label style={labelStyle}>Organización *</label>
             <select
+              required
               value={form.organizacion_id}
               onChange={(e) => setForm((f) => ({ ...f, organizacion_id: e.target.value }))}
               style={inputStyle}
             >
-              <option value="">Sin organización</option>
+              <option value="" disabled>Selecciona una organización</option>
               {orgs.map((o) => (
                 <option key={o.id} value={o.id}>{o.nombre}</option>
               ))}
             </select>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(11,27,43,.5)' }}>
+              Un empleado siempre pertenece a una empresa. Si no aparece, créala en{' '}
+              <a href="/admin/organizaciones" style={{ color: '#00968f', fontWeight: 600 }}>Organizaciones</a>.
+            </p>
           </div>
 
           {error && (
@@ -187,8 +192,8 @@ export default function CrearUsuarioEmpresaPage() {
             </button>
             <button
               type="submit"
-              disabled={loading}
-              style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#00968f', color: 'white', fontWeight: 700, cursor: loading ? 'not-allowed' : 'pointer', fontSize: '14px', opacity: loading ? 0.7 : 1 }}
+              disabled={loading || !form.organizacion_id}
+              style={{ padding: '10px 24px', borderRadius: '10px', border: 'none', background: '#00968f', color: 'white', fontWeight: 700, cursor: (loading || !form.organizacion_id) ? 'not-allowed' : 'pointer', fontSize: '14px', opacity: (loading || !form.organizacion_id) ? 0.7 : 1 }}
             >
               {loading ? 'Enviando...' : 'Crear y enviar correo'}
             </button>
