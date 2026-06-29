@@ -182,11 +182,13 @@ export default function SolicitudesEmpresasPage() {
                           <div style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>{s.solicitante_email}</div>
                         )}
                       </td>
-                      <td style={{ maxWidth: '280px' }}>
-                        <div style={{ fontWeight: 600 }}>{s.titulo_solicitud}</div>
-                        {s.descripcion && (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)' }}>{s.descripcion}</div>
-                        )}
+                      <td>
+                        <div className={styles.cursoCell}>
+                          <div className={styles.cursoTitulo}>{s.titulo_solicitud}</div>
+                          {s.descripcion && (
+                            <div className={styles.cursoDesc}>{s.descripcion}</div>
+                          )}
+                        </div>
                       </td>
                       <td>
                         <span className={`${styles.statusBadge} ${ESTADO_CLASS[s.estado] ?? ''}`}>
