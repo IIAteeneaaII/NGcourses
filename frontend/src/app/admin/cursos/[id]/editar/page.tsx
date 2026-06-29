@@ -179,6 +179,19 @@ export default function EditarCursoAdminPage() {
     return errors;
   }, [modules]);
 
+  // Lecciones de video sin video subido. Solo bloquea PUBLICAR (no guardar/
+  // autosave): el curso se arma incrementalmente, pero no se publica vacío.
+  const videoLessonsSinVideo = React.useMemo(() => {
+    const faltantes: string[] = [];
+    modules.forEach((m, moduleIndex) => {
+      m.lessons.forEach((l, lessonIndex) => {
+        if (l.tipo !== 'video' || l.bunnyVideoId) return;
+        faltantes.push(`Módulo ${moduleIndex + 1}, ${l.title || `Lección ${lessonIndex + 1}`}`);
+      });
+    });
+    return faltantes;
+  }, [modules]);
+
   const getCourseStructureError = React.useCallback((action: 'guardar' | 'publicar' = 'guardar') => {
     if (modules.length === 0) {
       return action === 'publicar'
@@ -196,10 +209,17 @@ export default function EditarCursoAdminPage() {
       return `Corrige el quiz antes de ${action} — ${quizValidationErrors[0]}${quizValidationErrors.length > 1 ? ` (y ${quizValidationErrors.length - 1} más)` : ''}`;
     }
 
+    // Solo al publicar: toda lección de video debe tener video subido.
+    if (action === 'publicar' && videoLessonsSinVideo.length > 0) {
+      return `Sube el video de cada lección de video antes de publicar — falta en ${videoLessonsSinVideo[0]}${videoLessonsSinVideo.length > 1 ? ` (y ${videoLessonsSinVideo.length - 1} más)` : ''}`;
+    }
+
     return '';
-  }, [modules.length, totalQuizLessons, quizValidationErrors]);
+  }, [modules.length, totalQuizLessons, quizValidationErrors, videoLessonsSinVideo]);
 
   const hasValidRequiredStructure = hasAtLeastOneModule && hasAtLeastOneQuiz && quizValidationErrors.length === 0;
+  // Publicar exige, además de la estructura, que ninguna lección de video esté sin video.
+  const canPublish = hasValidRequiredStructure && videoLessonsSinVideo.length === 0;
 
   const requireCourseStructure = React.useCallback((action: 'guardar' | 'publicar' = 'guardar') => {
     const message = getCourseStructureError(action);
@@ -1092,7 +1112,7 @@ export default function EditarCursoAdminPage() {
                   <button
                     className={styles.publishButton}
                     onClick={handleTogglePublish}
-                    disabled={isPublishing || (cursoEstado !== 'publicado' && !hasValidRequiredStructure)}
+                    disabled={isPublishing || (cursoEstado !== 'publicado' && !canPublish)}
                     style={{ background: cursoEstado === 'publicado' ? '#6b7280' : '#16a34a' }}
                   >
                     {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Borrar' : 'Publicar curso'}
