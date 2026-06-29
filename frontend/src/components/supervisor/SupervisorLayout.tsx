@@ -38,7 +38,7 @@ export const SupervisorLayout: React.FC<SupervisorLayoutProps> = ({ children }) 
 
   return (
     <div className={styles.container}>
-      <SupervisorHeader user={headerUser} onMenuClick={() => setSidebarOpen(true)} />
+      <SupervisorHeader user={headerUser} onMenuClick={() => setSidebarOpen((o) => !o)} />
 
       <AccessNotice />
       <div className={styles.contentWrapper}>
