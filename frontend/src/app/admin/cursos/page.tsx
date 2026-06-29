@@ -148,9 +148,20 @@ export default function CursosListPage() {
                   <span className={styles.assignedBadge}>
                     {course.creado_en?.slice(0, 10) ?? ''}
                   </span>
-                  <Link href={`/admin/cursos/${course.id}/invitaciones`} className={styles.editButton} title="Gestionar invitaciones">
-                    Invitaciones
-                  </Link>
+                  {course.estado === 'publicado' ? (
+                    <Link href={`/admin/cursos/${course.id}/invitaciones`} className={styles.editButton} title="Gestionar invitaciones">
+                      Invitaciones
+                    </Link>
+                  ) : (
+                    <span
+                      className={styles.editButton}
+                      style={{ opacity: 0.45, cursor: 'not-allowed' }}
+                      aria-disabled="true"
+                      title="Publica el curso para poder invitar"
+                    >
+                      Invitaciones
+                    </span>
+                  )}
                   <Link href={`/admin/cursos/${course.id}/editar`} className={styles.editButton}>
                     Editar
                   </Link>
