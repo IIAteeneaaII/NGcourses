@@ -26,6 +26,27 @@ interface CompletionModal {
   loading: boolean;
 }
 
+
+function parseQuizData(raw: unknown): QuizData {
+  if (!raw) return { preguntas: [] };
+
+  if (typeof raw === 'string') {
+    try {
+      return parseQuizData(JSON.parse(raw));
+    } catch {
+      return { preguntas: [] };
+    }
+  }
+
+  if (typeof raw === 'object') {
+    const data = raw as { preguntas?: unknown; quizData?: unknown };
+    if (Array.isArray(data.preguntas)) return data as QuizData;
+    if (data.quizData) return parseQuizData(data.quizData);
+  }
+
+  return { preguntas: [] };
+}
+
 export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, previewMode }: CourseVideoContentProps) {
   const router = useRouter();
   const [course, setCourse] = useState<Course>(initialCourse);
@@ -216,10 +237,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                 key={currentLesson.id}
                 leccionId={currentLesson.id}
                 inscripcionId={inscripcionId ?? null}
-                quizData={(() => {
-                  try { return currentLesson.contenido ? JSON.parse(currentLesson.contenido) as QuizData : { preguntas: [] }; }
-                  catch { return { preguntas: [] }; }
-                })()}
+                quizData={parseQuizData(currentLesson.contenido)}
                 onAprobado={handleMarkComplete}
                 previewMode={previewMode}
               />

@@ -20,12 +20,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .logoGroup {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 0;
 }
 
 .logoImg {
@@ -36,10 +38,13 @@
 }
 
 .logoTitle {
+  min-width: 0;
   font-size: 1.125rem;
   line-height: 1;
   color: var(--color-secondary-30);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .logoBold {
@@ -53,22 +58,28 @@
 /* User Dropdown */
 .userDropdown {
   position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .userButton {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: transparent;
-  border: 2px solid var(--color-secondary-30);
+  max-width: 16rem;
+  min-width: 0;
+  padding: 0.5rem 0.875rem;
+  background: rgba(0, 150, 143, 0.06);
+  border: 1.5px solid var(--color-secondary-30);
   border-radius: 9999px;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .userButton:hover {
-  background-color: var(--color-primary-60);
+  background-color: rgba(0, 150, 143, 0.1);
+  box-shadow: 0 6px 16px rgba(0, 150, 143, 0.14);
+  transform: translateY(-1px);
 }
 
 .userAvatar {
@@ -94,11 +105,19 @@
 }
 
 .userName {
+  min-width: 0;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-size: 0.9375rem;
+  font-weight: 600;
+  line-height: 1.1;
   color: var(--color-text-primary);
 }
 
 .dropdownArrow {
+  flex-shrink: 0;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
   transition: transform 0.2s ease;
@@ -157,14 +176,19 @@
   margin-bottom: 1rem;
 }
 
-.searchContainer {
+.searchToolbar {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.8rem;
+  flex-wrap: nowrap;
+  width: 100%;
 }
 
 .searchInputWrapper {
-  flex: 1;
+  flex: 1 1 auto;
+  max-width: none;
+  min-width: 24rem;
   position: relative;
 }
 
@@ -199,31 +223,41 @@
 }
 
 .coursesButton {
-  padding: 0.875rem 1.5rem;
+  min-height: 3.25rem;
+  padding: 0.875rem 1.35rem;
   background-color: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.5rem;
   font-size: 1rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .coursesButton:hover {
   background-color: var(--color-accent-10-hover);
+  box-shadow: 0 6px 14px rgba(0, 150, 143, 0.18);
+  transform: translateY(-1px);
 }
 
 /* Filters */
 .filtersContainer {
   display: flex;
-  justify-content: flex-end;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 0 0 auto;
 }
 
-.filterButton {
-  padding: 0.625rem 1.25rem;
+.filterSelectWrapper {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.filterSelect {
+  min-width: 6.5rem;
+  min-height: 3.25rem;
+  padding: 0.625rem 2.05rem 0.625rem 1.05rem;
   background-color: var(--color-primary-60-alt);
   color: var(--color-text-primary);
   border: 1px solid var(--color-border);
@@ -234,11 +268,90 @@
   font-family: inherit;
   appearance: none;
   -webkit-appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
+    linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
+  background-position: calc(100% - 1.05rem) 50%, calc(100% - 0.75rem) 50%;
+  background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
+  background-repeat: no-repeat;
 }
 
-.filterButton:hover {
+.filterSelect:hover,
+.filterSelect:focus {
+  outline: none;
   border-color: var(--color-secondary-30);
   color: var(--color-secondary-30);
+  box-shadow: 0 0 0 3px rgba(0, 150, 143, 0.08);
+}
+
+.clearFiltersButton {
+  min-height: 3.25rem;
+  padding: 0.75rem 1.15rem;
+  background-color: var(--color-primary-60-alt);
+  color: var(--color-secondary-30);
+  border: 1.5px solid rgba(0, 150, 143, 0.45);
+  border-radius: 9999px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 8px rgba(0, 150, 143, 0.08);
+}
+
+.clearFiltersButton:hover {
+  background-color: rgba(0, 150, 143, 0.1);
+  border-color: var(--color-secondary-30);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 900px) {
+  .searchToolbar {
+    flex-wrap: wrap;
+  }
+
+  .searchInputWrapper {
+    flex: 1 1 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .filtersContainer {
+    flex: 1 1 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  .main {
+    padding: 1.5rem 1.25rem;
+  }
+
+  .searchToolbar {
+    gap: 0.75rem;
+  }
+
+  .searchInputWrapper {
+    min-width: 0;
+  }
+
+  .searchInput {
+    font-size: 0.9375rem;
+  }
+
+  .filtersContainer {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .filterSelectWrapper,
+  .filterSelect {
+    width: 100%;
+  }
+
+  .coursesButton,
+  .clearFiltersButton {
+    flex: 1 1 auto;
+  }
 }
 
 /* Section Title (usado para agrupar por organización / NextGen) */
@@ -271,5 +384,92 @@
 @media (min-width: 1024px) {
   .coursesGrid {
     grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+
+/* Navbar alumno: evita que nombres largos rompan el header en móvil */
+@media (max-width: 640px) {
+  .header {
+    padding: 0.625rem 0;
+  }
+
+  .headerContent {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 0 0.875rem;
+    gap: 0.625rem;
+  }
+
+  .logoGroup {
+    flex: 1 1 auto;
+    overflow: hidden;
+  }
+
+  .logoImg {
+    height: 25px;
+  }
+
+  .logoTitle {
+    font-size: 0.98rem;
+  }
+
+  .userButton {
+    max-width: 8.75rem;
+    padding: 0.35rem 0.55rem;
+    gap: 0.35rem;
+    border-width: 1.25px;
+  }
+
+  .userAvatar,
+  .userAvatarImg {
+    width: 1.9rem;
+    height: 1.9rem;
+    font-size: 0.7rem;
+  }
+
+  .userName {
+    max-width: 5rem;
+    font-size: 0.8125rem;
+  }
+
+  .dropdownArrow {
+    font-size: 0.65rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .headerContent {
+    padding: 0 0.75rem;
+    gap: 0.5rem;
+  }
+
+  .logoImg {
+    height: 24px;
+  }
+
+  .logoTitle {
+    font-size: 0.9rem;
+  }
+
+  .logoLight {
+    display: none;
+  }
+
+  .userButton {
+    max-width: 7.25rem;
+    padding: 0.32rem 0.48rem;
+  }
+
+  .userAvatar,
+  .userAvatarImg {
+    width: 1.8rem;
+    height: 1.8rem;
+  }
+
+  .userName {
+    max-width: 4.15rem;
+    font-size: 0.78rem;
   }
 }

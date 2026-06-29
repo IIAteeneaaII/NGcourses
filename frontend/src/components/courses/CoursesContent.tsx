@@ -1,6 +1,5 @@
 'use client';
 
-'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -23,16 +22,12 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
   const [levelFilter, setLevelFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
-  const levels = Array.from(new Set(courses.map((c) => c.level).filter(Boolean)));
+  const levels = Array.from(new Set(courses.map((c) => c.level).filter(Boolean))) as string[];
   const categories = Array.from(new Set(courses.map((c) => c.category).filter(Boolean))) as string[];
 
   const filteredCourses = courses.filter((course) => {
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      !q ||
-      course.title.toLowerCase().includes(q) ||
-      course.instructor.toLowerCase().includes(q) ||
-      (course.category?.toLowerCase().includes(q) ?? false);
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q || course.title.toLowerCase().includes(q);
     const matchesLevel = !levelFilter || course.level === levelFilter;
     const matchesCategory = !categoryFilter || course.category === categoryFilter;
     return matchesSearch && matchesLevel && matchesCategory;
@@ -109,75 +104,78 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
         <section className={styles.searchSection}>
           <h1 className={styles.searchTitle}>Buscar cursos</h1>
 
-          <div className={styles.searchContainer}>
+          <div className={styles.searchToolbar}>
             <div className={styles.searchInputWrapper}>
               <svg className={styles.searchIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
               <input
                 type="text"
-                placeholder="Buscar por título, categoría o instructor"
+                placeholder="Buscar por título"
                 className={styles.searchInput}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            <div className={styles.filtersContainer}>
+              <div className={styles.filterSelectWrapper}>
+                <select
+                  className={styles.filterSelect}
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  aria-label="Filtrar por categoría"
+                >
+                  <option value="">Categoría</option>
+                  {categories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.filterSelectWrapper}>
+                <select
+                  className={styles.filterSelect}
+                  value={levelFilter}
+                  onChange={(e) => setLevelFilter(e.target.value)}
+                  aria-label="Filtrar por nivel"
+                >
+                  <option value="">Nivel</option>
+                  {levels.map((lvl) => (
+                    <option key={lvl} value={lvl}>{lvl}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className={styles.clearFiltersButton}
+              onClick={() => { setLevelFilter(''); setCategoryFilter(''); setSearchQuery(''); }}
+            >
+              Limpiar
+            </button>
+
             <button className={styles.coursesButton}>Cursos</button>
           </div>
         </section>
 
-        <div className={styles.filtersContainer}>
-          <select
-            className={styles.filterButton}
-            value={categoryFilter}
-            onChange={(e) => setCategoryFilter(e.target.value)}
-          >
-            <option value="">Categoría</option>
-            {categories.map((cat) => (
-              <option key={cat} value={cat}>{cat}</option>
-            ))}
-          </select>
-          <select
-            className={styles.filterButton}
-            value={levelFilter}
-            onChange={(e) => setLevelFilter(e.target.value)}
-          >
-            <option value="">Nivel</option>
-            {levels.map((lvl) => (
-              <option key={lvl} value={lvl}>{lvl}</option>
-            ))}
-          </select>
-          {(levelFilter || categoryFilter || searchQuery) && (
-            <button
-              className={styles.filterButton}
-              onClick={() => { setLevelFilter(''); setCategoryFilter(''); setSearchQuery(''); }}
-              style={{ color: 'var(--color-accent-10)' }}
-            >
-              Limpiar filtros
-            </button>
-          )}
-        </div>
-
         {(() => {
-          // "Cursos de tu organización" = los cubiertos por una licencia ACTIVA de
-          // la org (cualquier marca) MÁS los RAM. El backend del catálogo solo
-          // devuelve cursos RAM cuando estás inscrito o tu org los licencia (nunca
-          // RAM "sueltos"), así que incluir RAM aquí sincroniza el catálogo con
-          // /perfil y /mis-cursos: un RAM en el que estás inscrito ya no se oculta,
-          // y no queda mal etiquetado como "NextGen".
-          const orgCourses = filteredCourses.filter((c) => c.esDeMiOrg || c.marca === 'ram');
-          // "Cursos NextGen" = SOLO la marca NextGen (catálogo público) no cubiertos.
-          const nextgenCourses = filteredCourses.filter(
-            (c) => !c.esDeMiOrg && c.marca !== 'ram'
-          );
-          const totalVisibles = orgCourses.length + nextgenCourses.length;
+          const orgCourses = filteredCourses.filter((c) => c.marca === 'ram');
+          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'nextgen');
+          const untagged = filteredCourses.filter((c) => !c.marca);
+          const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
 
-          if (totalVisibles === 0) {
+          if (!hasGroups) {
             return (
               <div className={styles.coursesGrid}>
-                <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
-                  No se encontraron cursos con los filtros aplicados.
-                </p>
+                {untagged.length > 0 ? (
+                  untagged.map((course) => <CourseCard key={course.id} course={course} />)
+                ) : (
+                  <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
+                    No se encontraron cursos con los filtros aplicados.
+                  </p>
+                )}
               </div>
             );
           }
