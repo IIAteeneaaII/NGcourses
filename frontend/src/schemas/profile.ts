@@ -19,17 +19,12 @@ export const ChangePasswordSchema = z
     path: ['confirmar'],
   });
 
-export const ProfileSetupSchema = z
-  .object({
-    fullName: z.string().trim().min(2, 'Mínimo 2 caracteres').max(255),
-    currentPassword: z.string().min(1, 'Ingresa tu contraseña actual'),
-    newPassword: passwordField,
-    confirmPassword: z.string().min(1, 'Confirma tu contraseña'),
-  })
-  .refine(d => d.newPassword === d.confirmPassword, {
-    message: 'Las contraseñas no coinciden',
-    path: ['confirmPassword'],
-  });
+// El primer login de un alumno invitado solo necesita el nombre: la contraseña
+// ya se fijó en /activar. Antes pedía cambiar contraseña (flujo legacy de
+// contraseña-temporal=correo, ya retirado).
+export const ProfileSetupSchema = z.object({
+  fullName: z.string().trim().min(2, 'Mínimo 2 caracteres').max(255),
+});
 
 export type EditProfileData = z.infer<typeof EditProfileSchema>;
 export type ChangePasswordData = z.infer<typeof ChangePasswordSchema>;
