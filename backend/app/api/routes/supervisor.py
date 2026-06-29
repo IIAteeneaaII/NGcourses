@@ -41,6 +41,10 @@ class UsuarioOrgPublic(SQLModel):
     full_name: str | None
     telefono: str | None
     is_active: bool
+    # Estado real de la cuenta: 'activo' | 'suspendido' | 'pendiente_activacion'.
+    # Permite distinguir "Pendiente de activación" de "Suspendido" (antes el front
+    # solo veía is_active=False y mostraba a los pendientes como suspendidos).
+    estado: str
     rol_org: str
     progreso_promedio: float
     cursos_inscritos: int
@@ -192,6 +196,7 @@ def usuarios_de_mi_org(
         result.append(UsuarioOrgPublic(
             id=u.id, email=u.email, full_name=u.full_name, telefono=u.telefono,
             is_active=u.is_active,
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
             rol_org=r.value if hasattr(r, "value") else str(r),
             progreso_promedio=prom, cursos_inscritos=len(inscripciones),
         ))
@@ -231,7 +236,9 @@ def crear_usuario(
     )
     return UsuarioOrgPublic(
         id=user.id, email=user.email, full_name=user.full_name, telefono=user.telefono,
-        is_active=user.is_active, rol_org=RolOrganizacion.MIEMBRO.value,
+        is_active=user.is_active,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
+        rol_org=RolOrganizacion.MIEMBRO.value,
         progreso_promedio=0.0, cursos_inscritos=0,
     )
 
@@ -240,6 +247,11 @@ def crear_usuario(
 def quitar_usuario(
     *, user_id: uuid.UUID, session: SessionDep, current_user: SupervisorOrAbove,
 ) -> None:
+    if user_id == current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="No puedes quitarte a ti mismo de la organización.",
+        )
     org, _rol = _get_user_org(session, current_user.id)
     crud.remove_user_from_organizacion(
         session=session, org_id=org.id, user_id=user_id
@@ -327,14 +339,22 @@ def invitar(
 def listar_invitaciones(
     *, session: SessionDep, current_user: SupervisorOrAbove,
 ) -> Any:
-    """Lista invitaciones enviadas por este supervisor."""
+    """Lista invitaciones enviadas por este supervisor, acotadas a los cursos
+    actualmente licenciados a su organización (no las de cursos ajenos/sin licencia)."""
     org, _rol = _get_user_org(session, current_user.id)
     from app.models.invitacion import InvitacionCurso
+
+    licencias = crud.list_licencias_by_org(session=session, org_id=org.id)
+    curso_ids_org = {
+        lic.curso_id for lic in licencias if lic.estado == EstadoLicencia.ACTIVA
+    }
+
     invs = list(session.exec(
         select(InvitacionCurso).where(
             InvitacionCurso.creado_por == current_user.id
         ).order_by(InvitacionCurso.creado_en.desc())  # type: ignore[arg-type]
     ).all())
+    invs = [inv for inv in invs if inv.curso_id in curso_ids_org]
     result: list[InvitacionSupervisorPublic] = []
     for inv in invs:
         curso = crud.get_curso(session=session, curso_id=inv.curso_id)

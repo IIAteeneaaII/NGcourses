@@ -11,6 +11,7 @@ interface SupervisorUser {
   full_name: string | null;
   telefono: string | null;
   is_active: boolean;
+  estado: string;
   rol_org: string;
   progreso_promedio: number;
   cursos_inscritos: number;
@@ -43,6 +44,7 @@ export default function SupervisorUsuariosPage() {
       loadUsers();
     } catch (e) {
       logError('supervisor.quitarUsuario', e);
+      alert((e as { detail?: string })?.detail || 'No se pudo quitar al usuario.');
     }
   };
 
@@ -76,15 +78,23 @@ export default function SupervisorUsuariosPage() {
                     <td>{u.full_name || '—'}</td>
                     <td>{u.email}</td>
                     <td>
-                      <span className={`${styles.statusText} ${u.is_active ? styles.active : styles.inactive}`}>
-                        {u.is_active ? 'Activo' : 'Suspendido'}
+                      <span className={`${styles.statusText} ${u.estado === 'activo' ? styles.active : styles.inactive}`}>
+                        {u.estado === 'pendiente_activacion'
+                          ? 'Pendiente de activación'
+                          : u.estado === 'activo'
+                            ? 'Activo'
+                            : 'Suspendido'}
                       </span>
                     </td>
                     <td>{Math.round(u.progreso_promedio)}%</td>
                     <td>
-                      <button className={styles.deleteButton} onClick={() => handleQuitar(u.id)}>
-                        Quitar
-                      </button>
+                      {u.rol_org === 'admin_org' ? (
+                        <span className={styles.statusText}>Supervisor</span>
+                      ) : (
+                        <button className={styles.deleteButton} onClick={() => handleQuitar(u.id)}>
+                          Quitar
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))

@@ -83,7 +83,7 @@ def regenerar_pdf_certificado(
 ) -> Any:
     """Regenera el PDF de un certificado existente. Solo admin."""
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin:
         raise HTTPException(status_code=403, detail="Sin permiso")
@@ -141,7 +141,7 @@ def descargar_certificado(
         raise HTTPException(status_code=404, detail="Certificado no encontrado")
 
     is_admin = current_user.is_superuser or current_user.rol in {
-        RolUsuario.ADMINISTRADOR, RolUsuario.USUARIO_CONTROL
+        RolUsuario.ADMINISTRADOR
     }
     if not is_admin and db_cert.usuario_id != current_user.id:
         raise HTTPException(status_code=403, detail="Sin acceso a este certificado")

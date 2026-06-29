@@ -10,7 +10,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.models import User
-from app.models._enums import RolOrganizacion
+from app.models._enums import RolOrganizacion, RolUsuario
 
 router = APIRouter(prefix="/organizaciones", tags=["organizaciones"])
 
@@ -66,11 +66,19 @@ class MiembroPublic(SQLModel):
     full_name: str | None
     rol: str
     rol_org: str
+    estado: str
 
 
 class AsignarMiembro(SQLModel):
     user_id: uuid.UUID
     rol_org: RolOrganizacion = RolOrganizacion.MIEMBRO
+
+
+class SupervisorSinOrgPublic(SQLModel):
+    user_id: uuid.UUID
+    email: str
+    full_name: str | None
+    estado: str
 
 
 class CrearSupervisor(SQLModel):
@@ -151,6 +159,34 @@ def create_organizacion(
     return _to_public(org)
 
 
+@router.get("/supervisores-sin-organizacion", response_model=list[SupervisorSinOrgPublic])
+def supervisores_sin_organizacion(
+    *, session: SessionDep, current_user: AdminOrSuperuser,
+) -> Any:
+    """Supervisores legacy sin organización (su panel falla con 404). El admin les
+    asigna una con POST /{org_id}/miembros (rol_org=ADMIN_ORG)."""
+    users = crud.list_supervisores_sin_organizacion(session=session)
+    return [
+        SupervisorSinOrgPublic(
+            user_id=u.id,
+            email=u.email,
+            full_name=u.full_name,
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
+        )
+        for u in users
+    ]
+
+
+@router.get("/sin-supervisor", response_model=list[OrganizacionPublic])
+def organizaciones_sin_supervisor(
+    *, session: SessionDep, current_user: AdminOrSuperuser,
+) -> Any:
+    """Organizaciones sin supervisor (ADMIN_ORG) asignado. Sirve para asignarles
+    un supervisor huérfano sin dejar la org con dos supervisores."""
+    orgs = crud.list_organizaciones_sin_supervisor(session=session)
+    return [_to_public(o) for o in orgs]
+
+
 @router.get("/{org_id}", response_model=OrganizacionPublic)
 def get_organizacion(
     *, org_id: uuid.UUID, session: SessionDep, current_user: AdminOrSuperuser,
@@ -197,6 +233,7 @@ def list_miembros(
             full_name=u.full_name,
             rol=u.rol.value if hasattr(u.rol, "value") else str(u.rol),
             rol_org=r.value if hasattr(r, "value") else str(r),
+            estado=u.estado.value if hasattr(u.estado, "value") else str(u.estado),
         )
         for (u, r) in rows
     ]
@@ -213,6 +250,34 @@ def asignar_miembro(
     user = session.get(User, body.user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # Un supervisor pertenece a EXACTAMENTE una organización y SIEMPRE como su
+    # ADMIN_ORG (nunca como simple miembro). Se permite asignarle una si NO tiene
+    # (reparación de huérfanos), pero no una segunda. Forzamos rol_org=ADMIN_ORG
+    # para que el límite de "1 supervisor por org" (abajo) aplique sin importar
+    # desde qué pantalla se asigne (p.ej. el tab de Miembros mandaba MIEMBRO y se
+    # saltaba el bloqueo).
+    if user.rol == RolUsuario.SUPERVISOR:
+        actual = crud.get_organizacion_of_user(session=session, user_id=user.id)
+        if actual and actual[0].id != org_id:
+            raise HTTPException(
+                status_code=409,
+                detail="El supervisor ya pertenece a una organización (solo se permite una).",
+            )
+        body.rol_org = RolOrganizacion.ADMIN_ORG
+
+    # Una org tiene UN supervisor (ADMIN_ORG) salvo que el flag
+    # 'multiples_supervisores' esté activo. Por defecto (beta) se bloquea el 2º.
+    if (
+        body.rol_org == RolOrganizacion.ADMIN_ORG
+        and not crud.feature_habilitada(session=session, nombre="multiples_supervisores")
+        and crud.org_tiene_supervisor(session=session, org_id=org_id, excluir_user_id=user.id)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="Esta organización ya tiene un supervisor. Habilita 'múltiples supervisores' en Configuración para permitir más.",
+        )
+
     crud.add_user_to_organizacion(
         session=session, org_id=org_id, user_id=body.user_id, rol_org=body.rol_org
     )
@@ -220,6 +285,7 @@ def asignar_miembro(
         user_id=user.id, email=user.email, full_name=user.full_name,
         rol=user.rol.value if hasattr(user.rol, "value") else str(user.rol),
         rol_org=body.rol_org.value,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
     )
 
 
@@ -243,6 +309,16 @@ def crear_supervisor(
     if not org:
         raise HTTPException(status_code=404, detail="Organización no encontrada")
 
+    # En la beta (flag apagado) una org tiene un solo supervisor: el que se crea al
+    # dar de alta la org. No se permiten más salvo que 'multiples_supervisores' esté ON.
+    if not crud.feature_habilitada(
+        session=session, nombre="multiples_supervisores"
+    ) and crud.org_tiene_supervisor(session=session, org_id=org_id):
+        raise HTTPException(
+            status_code=409,
+            detail="Esta organización ya tiene un supervisor. Habilita 'múltiples supervisores' en Configuración para crear más.",
+        )
+
     if crud.get_user_by_email(session=session, email=body.email):
         raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
 
@@ -264,6 +340,7 @@ def crear_supervisor(
         user_id=user.id, email=user.email, full_name=user.full_name,
         rol=user.rol.value if hasattr(user.rol, "value") else str(user.rol),
         rol_org=RolOrganizacion.ADMIN_ORG.value,
+        estado=user.estado.value if hasattr(user.estado, "value") else str(user.estado),
     )
 
 

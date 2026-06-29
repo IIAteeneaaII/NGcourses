@@ -5,6 +5,10 @@ class RolUsuario(str, enum.Enum):
     ESTUDIANTE = "estudiante"
     INSTRUCTOR = "instructor"
     SUPERVISOR = "supervisor"
+    # DEPRECADO: rol legacy retirado para la beta. Ya no es asignable (fuera del
+    # frontend) ni otorga permisos (fuera de los role-sets de deps.py). Se mantiene
+    # el miembro solo para que el enum de Python siga alineado con el tipo
+    # `rolusuario` de Postgres (que aún incluye el valor); no se usa en ningún lado.
     USUARIO_CONTROL = "usuario_control"
     ADMINISTRADOR = "administrador"
 

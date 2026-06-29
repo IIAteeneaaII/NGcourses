@@ -44,6 +44,10 @@ class SolicitudesAdminPublic(SQLModel):
 class SolicitudUpdate(SQLModel):
     estado: EstadoSolicitud
     comentario: str | None = None
+    # Al APROBAR, opcionalmente se licencia un curso a la organización solicitante
+    # en el mismo paso → aparece de inmediato en sus "cursos de la organización".
+    # Si se omite, la solicitud solo queda aprobada (se licencia después).
+    curso_id: uuid.UUID | None = None
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────────
@@ -103,6 +107,18 @@ def actualizar_solicitud_admin(
         crud.add_comentario_solicitud(
             session=session, solicitud_id=solicitud.id,
             autor_id=current_user.id, comentario=body.comentario.strip(),
+        )
+
+    # Cerrar el ciclo: aprobar + licenciar el curso elegido a la org solicitante,
+    # para que aparezca en sus "cursos de la organización" sin un paso aparte.
+    if body.estado == EstadoSolicitud.APROBADA and body.curso_id is not None:
+        curso = crud.get_curso(session=session, curso_id=body.curso_id)
+        if not curso:
+            raise HTTPException(status_code=404, detail="Curso no encontrado")
+        crud.assign_licencia(
+            session=session,
+            org_id=solicitud.organizacion_id,
+            curso_id=body.curso_id,
         )
 
     solicitud = crud.set_solicitud_estado(

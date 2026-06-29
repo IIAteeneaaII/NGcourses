@@ -99,6 +99,11 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
         <div className={styles.coursesCard}>
           <h3 className={styles.cardTitle}>Cursos en Progreso</h3>
           <div className={styles.coursesList}>
+            {coursesInProgress.length === 0 && (
+              <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', margin: 0 }}>
+                No tienes cursos en progreso. Los cursos completados aparecen en <strong>Mis Cursos</strong>.
+              </p>
+            )}
             {coursesInProgress.map((course) => (
               <div key={course.id} className={styles.courseItem}>
                 <div className={styles.courseNumber}>
