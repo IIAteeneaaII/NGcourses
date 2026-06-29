@@ -311,10 +311,16 @@ def invitar(
                 insc = crud.get_inscripcion_by_usuario_curso(
                     session=session, usuario_id=existing_user.id, curso_id=body.curso_id,
                 )
-                if insc and insc.estado == EstadoInscripcion.ACTIVA:
+                # Bloquea invitar a quien ya tiene el curso (cursando o completado).
+                # CANCELADO sí se permite: es el reingreso de un alumno dado de baja.
+                if insc and insc.estado in (EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA):
                     resultados.append(InvitacionEnvioResultado(
                         email=email, estado="ya_inscrito",
-                        detalle="El usuario ya está inscrito en este curso",
+                        detalle=(
+                            "El usuario ya completó este curso"
+                            if insc.estado == EstadoInscripcion.FINALIZADA
+                            else "El usuario ya está inscrito en este curso"
+                        ),
                     ))
                     continue
 
