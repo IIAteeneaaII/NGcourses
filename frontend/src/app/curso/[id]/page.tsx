@@ -14,6 +14,23 @@ interface ApiModulo {
 
 const API_URL = '';
 
+function getCourseBackHref(): string {
+  if (typeof document === 'undefined') return '/cursos';
+
+  const rolCookie = document.cookie
+    .split(';')
+    .map((cookie) => cookie.trim())
+    .find((cookie) => cookie.startsWith('user_rol='));
+
+  const rol = rolCookie ? decodeURIComponent(rolCookie.split('=')[1] ?? '') : '';
+
+  if (rol === 'supervisor') return '/supervisor/cursos';
+  if (rol === 'instructor') return '/instructor/cursos';
+  if (rol === 'administrador') return '/admin/cursos';
+
+  return '/cursos';
+}
+
 interface ApiCurso {
   id: string;
   titulo: string;
@@ -28,8 +45,6 @@ interface ApiCurso {
   requisitos: string | null;
   instructor_nombre: string | null;
   bloqueado_por_licencia?: boolean;
-  es_de_mi_org?: boolean;
-  puede_inscribirse?: boolean;
   precio?: number | string | null;
   moneda?: string;
   destacado?: boolean;
@@ -49,6 +64,11 @@ export default function CursoInfoPage() {
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const [backHref, setBackHref] = useState('/cursos');
+
+  useEffect(() => {
+    setBackHref(getCourseBackHref());
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -86,8 +106,6 @@ export default function CursoInfoPage() {
           syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
           bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
-          esDeMiOrg: cursoRaw.es_de_mi_org ?? false,
-          puedeInscribirse: cursoRaw.puede_inscribirse ?? true,
           precio: cursoRaw.precio != null ? Number(cursoRaw.precio) : null,
           moneda: cursoRaw.moneda || 'MXN',
           destacado: cursoRaw.destacado ?? false,
@@ -140,6 +158,7 @@ export default function CursoInfoPage() {
       onPaymentSuccess={() => setIsEnrolled(true)}
       enrollLoading={enrollLoading}
       bloqueadoPorLicencia={course.bloqueadoPorLicencia}
+      backHref={backHref}
     />
   );
 }

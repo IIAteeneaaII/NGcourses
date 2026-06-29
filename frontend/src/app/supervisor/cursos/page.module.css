@@ -26,20 +26,38 @@
 }
 
 .cursoCard {
+  display: block;
   background: var(--color-text-white);
+  border: 1px solid transparent;
   border-radius: 0.9375rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   overflow: hidden;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .cursoCard:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 150, 143, 0.35);
+  box-shadow: 0 8px 20px rgba(0, 150, 143, 0.18);
+}
+
+.cursoCard:focus-visible {
+  outline: 3px solid rgba(0, 150, 143, 0.35);
+  outline-offset: 3px;
 }
 
 .cursoBody {
+  min-height: 100%;
   padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.cursoHeader {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -50,6 +68,31 @@
   font-weight: 700;
   color: var(--color-text-primary);
   margin: 0;
+}
+
+.cursoDescription {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardFooter {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--color-secondary-30);
+}
+
+.openHint {
+  font-size: 0.875rem;
+  font-weight: 700;
 }
 
 .badge {
@@ -85,4 +128,14 @@
 
 .ctaLink:hover {
   filter: brightness(1.1);
+}
+
+@media (max-width: 640px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cursoBody {
+    padding: 1.1rem;
+  }
 }
