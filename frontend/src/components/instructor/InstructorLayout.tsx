@@ -38,7 +38,7 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({ children }) 
 
   return (
     <div className={styles.container}>
-      <InstructorHeader user={headerUser} onMenuClick={() => setSidebarOpen(true)} />
+      <InstructorHeader user={headerUser} onMenuClick={() => setSidebarOpen((o) => !o)} />
 
       <AccessNotice />
       <div className={styles.contentWrapper}>
