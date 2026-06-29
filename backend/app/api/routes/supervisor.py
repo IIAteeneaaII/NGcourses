@@ -100,12 +100,20 @@ class SolicitudCreate(SQLModel):
     descripcion: str | None = None
 
 
+class ComentarioPublic(SQLModel):
+    comentario: str
+    creado_en: datetime
+
+
 class SolicitudPublic(SQLModel):
     id: uuid.UUID
     titulo_solicitud: str
     descripcion: str | None
     estado: str
     creado_en: datetime
+    actualizado_en: datetime | None = None
+    # Mensajes del admin (NextGen) dirigidos al supervisor sobre esta solicitud.
+    comentarios: list[ComentarioPublic] = []
 
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -451,5 +459,10 @@ def listar_solicitudes(
             id=s.id, titulo_solicitud=s.titulo_solicitud, descripcion=s.descripcion,
             estado=s.estado.value if hasattr(s.estado, "value") else str(s.estado),
             creado_en=s.creado_en,
+            actualizado_en=s.actualizado_en,
+            comentarios=[
+                ComentarioPublic(comentario=c.comentario, creado_en=c.creado_en)
+                for c in sorted(s.comentarios, key=lambda c: c.creado_en)
+            ],
         ) for s in items
     ]

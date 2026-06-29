@@ -153,3 +153,44 @@
   color: var(--color-text-secondary);
   padding: 2.5rem 1rem !important;
 }
+
+/* Columnas de texto largo (Título / Descripción): acotan el ancho y hacen wrap
+   para que no ensanchen la tabla ni se salga el contenido del margen. */
+.celdaTexto {
+  max-width: 260px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+.mensajes {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 320px;
+}
+
+.mensaje {
+  background: var(--color-primary-60);
+  border-left: 3px solid var(--color-secondary-30);
+  border-radius: 0.375rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.mensajeTexto {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-primary);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.mensajeFecha {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  color: var(--color-text-secondary);
+}
+
+.sinMensaje {
+  color: var(--color-text-secondary);
+}
