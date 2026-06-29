@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
-import { invitacionesApi } from '@/lib/api/client';
+import { invitacionesApi, cursosApi } from '@/lib/api/client';
 import type {
   CourseInvitation,
   CourseInvitationsResponse,
@@ -40,6 +40,11 @@ export default function InvitacionesPage() {
   const [sending, setSending] = useState(false);
   const [resultados, setResultados] = useState<InvitacionEnvioResult[]>([]);
 
+  // Estado del curso: solo se puede invitar a cursos publicados. Se asume true
+  // mientras carga para no parpadear el aviso; el backend bloquea igual.
+  const [cursoEstado, setCursoEstado] = useState<string | null>(null);
+  const cursoPublicado = cursoEstado === null || cursoEstado === 'publicado';
+
   const [invitaciones, setInvitaciones] = useState<CourseInvitation[]>([]);
   const [loadingList, setLoadingList] = useState(true);
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -62,6 +67,12 @@ export default function InvitacionesPage() {
     loadInvitaciones();
   }, [loadInvitaciones]);
 
+  useEffect(() => {
+    cursosApi.get(cursoId)
+      .then((c) => setCursoEstado((c as { estado?: string })?.estado ?? null))
+      .catch(() => setCursoEstado(null));
+  }, [cursoId]);
+
   async function handleSend() {
     const emails = emailsInput
       .split('\n')
@@ -69,6 +80,7 @@ export default function InvitacionesPage() {
       .filter(Boolean);
 
     if (emails.length === 0) return;
+    if (!cursoPublicado) return;
 
     setSending(true);
     setResultados([]);
@@ -136,6 +148,22 @@ export default function InvitacionesPage() {
       {/* Sección A — Enviar invitaciones */}
       <div className={styles.card}>
         <h2 className={styles.cardTitle}>Enviar invitaciones</h2>
+        {!cursoPublicado && (
+          <div
+            style={{
+              display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
+              background: '#fef9c3', border: '1px solid #fde047', color: '#854d0e',
+              borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem',
+              fontSize: '0.875rem', lineHeight: 1.5,
+            }}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} style={{ flexShrink: 0, marginTop: '0.1rem' }}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+            <span>
+              Este curso está en <strong>{cursoEstado}</strong>. Solo puedes enviar
+              invitaciones de cursos <strong>publicados</strong>. Publícalo para invitar alumnos.
+            </span>
+          </div>
+        )}
         <div className={styles.formGroup}>
           <label className={styles.label}>
             Correos electrónicos{' '}
@@ -146,11 +174,13 @@ export default function InvitacionesPage() {
             placeholder={'alumno1@empresa.com\nalumno2@empresa.com'}
             value={emailsInput}
             onChange={(e) => setEmailsInput(e.target.value)}
+            disabled={!cursoPublicado}
           />
           <button
             className={styles.sendButton}
             onClick={handleSend}
-            disabled={sending || !emailsInput.trim()}
+            disabled={sending || !emailsInput.trim() || !cursoPublicado}
+            title={!cursoPublicado ? 'Publica el curso para poder invitar' : undefined}
           >
             {sending ? 'Enviando...' : 'Enviar invitaciones'}
           </button>
