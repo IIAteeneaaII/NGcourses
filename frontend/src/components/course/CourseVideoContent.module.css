@@ -228,3 +228,14 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.readOnlyBanner {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid rgba(0, 150, 143, 0.35);
+  border-radius: 0.75rem;
+  background: rgba(0, 150, 143, 0.08);
+  color: var(--color-secondary-30);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
