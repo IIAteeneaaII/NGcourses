@@ -22,6 +22,19 @@ interface Miembro {
   full_name: string | null;
   rol: string;
   rol_org: string;
+  estado: string;
+}
+
+// Estado de la cuenta del miembro: distingue al supervisor recién creado que aún
+// no activa su cuenta (pendiente_activacion) de uno activo o suspendido.
+function EstadoMiembroBadge({ estado }: { estado: string }) {
+  const map: Record<string, { label: string; cls: string }> = {
+    activo: { label: 'Activo', cls: styles.estadoActivo },
+    pendiente_activacion: { label: 'Pendiente de activación', cls: styles.estadoPendiente },
+    suspendido: { label: 'Suspendido', cls: styles.estadoSuspendido },
+  };
+  const { label, cls } = map[estado] ?? { label: estado, cls: styles.estadoPendiente };
+  return <span className={`${styles.estadoBadge} ${cls}`}>{label}</span>;
 }
 
 interface Licencia {
@@ -76,6 +89,12 @@ export default function OrganizacionDetallePage() {
   const [supLoading, setSupLoading] = useState(false);
   const [supMsg, setSupMsg] = useState('');
   const [supError, setSupError] = useState('');
+
+  // Borrado de la organización (destructivo, con confirmación)
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
 
   const loadOrg = useCallback(async () => {
     setLoading(true);
@@ -225,6 +244,19 @@ export default function OrganizacionDetallePage() {
     }
   };
 
+  const handleDeleteOrg = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await organizacionesApi.delete(orgId);
+      router.push('/admin/organizaciones');
+    } catch (e) {
+      logError('organizacion.delete', e);
+      setDeleteError((e as { detail?: string })?.detail || 'No se pudo eliminar la organización.');
+      setDeleting(false);
+    }
+  };
+
   const formatDate = (iso: string | null) => {
     if (!iso) return '';
     try {
@@ -248,12 +280,26 @@ export default function OrganizacionDetallePage() {
           <h1 className={styles.pageTitle}>{org.nombre}</h1>
           <p className={styles.pageSubtitle}>Detalle y gestión de la organización</p>
         </div>
-        <button className={styles.backButton} onClick={() => router.push('/admin/organizaciones')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Volver
-        </button>
+        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+          <button className={styles.backButton} onClick={() => router.push('/admin/organizaciones')}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7" />
+            </svg>
+            Volver
+          </button>
+          <button
+            onClick={() => { setDeleteError(''); setDeleteConfirmText(''); setShowDeleteModal(true); }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
+              padding: '0.5rem 1.1rem', background: '#b91c1c', color: '#fff',
+              border: 'none', borderRadius: '0.5rem', fontSize: '0.875rem',
+              fontWeight: 600, cursor: 'pointer',
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
+            Eliminar organización
+          </button>
+        </div>
       </div>
 
       <section className={styles.mainContent}>
@@ -336,6 +382,7 @@ export default function OrganizacionDetallePage() {
                 <tr>
                   <th>Nombre</th>
                   <th>Email</th>
+                  <th>Estado</th>
                   <th>Rol global</th>
                   <th>Rol en org</th>
                   <th>Acciones</th>
@@ -346,6 +393,7 @@ export default function OrganizacionDetallePage() {
                   <tr key={m.user_id}>
                     <td>{m.full_name || '—'}</td>
                     <td>{m.email}</td>
+                    <td><EstadoMiembroBadge estado={m.estado} /></td>
                     <td>{m.rol}</td>
                     <td>{m.rol_org}</td>
                     <td>
@@ -355,7 +403,7 @@ export default function OrganizacionDetallePage() {
                     </td>
                   </tr>
                 )) : (
-                  <tr><td colSpan={5} className={styles.emptyState}>Sin miembros</td></tr>
+                  <tr><td colSpan={6} className={styles.emptyState}>Sin miembros</td></tr>
                 )}
               </tbody>
             </table>
@@ -440,6 +488,75 @@ export default function OrganizacionDetallePage() {
           </form>
         )}
       </section>
+
+      {showDeleteModal && (
+        <div
+          onClick={() => !deleting && setShowDeleteModal(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            zIndex: 1000, padding: '1rem',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: '0.9375rem', padding: '1.75rem',
+              maxWidth: '480px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
+            }}
+          >
+            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1.0625rem', fontWeight: 700, color: '#b91c1c' }}>
+              Eliminar &ldquo;{org.nombre}&rdquo;
+            </h3>
+            <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.55 }}>
+              Esta acción es <strong>permanente</strong>. Se eliminarán:
+            </p>
+            <ul style={{ margin: '0 0 1rem', paddingLeft: '1.1rem', fontSize: '0.875rem', color: 'var(--color-text-secondary)', lineHeight: 1.6 }}>
+              <li>La organización y sus <strong>licencias de cursos</strong>.</li>
+              <li>La <strong>cuenta del supervisor</strong> (punto de contacto).</li>
+              <li>Las solicitudes de cursos de la organización.</li>
+              <li>El acceso de los alumnos a los cursos que cubría <strong>solo</strong> esta organización (sus inscripciones se cancelan). Las cuentas de los alumnos NO se borran.</li>
+            </ul>
+            <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--color-text-primary)' }}>
+              Para confirmar, escribe el nombre de la organización: <strong>{org.nombre}</strong>
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              className={styles.formInput}
+              placeholder={org.nombre}
+              autoFocus
+            />
+            {deleteError && <p style={{ color: '#b91c1c', fontSize: '0.8125rem', marginTop: '0.75rem' }}>{deleteError}</p>}
+            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                style={{
+                  padding: '0.5rem 1.1rem', border: '1.5px solid #e2e8f0', borderRadius: '0.5rem',
+                  background: '#fff', color: 'var(--color-text-secondary)', fontWeight: 600,
+                  fontSize: '0.875rem', cursor: 'pointer',
+                }}
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDeleteOrg}
+                disabled={deleting || deleteConfirmText.trim() !== org.nombre}
+                style={{
+                  padding: '0.5rem 1.1rem', border: 'none', borderRadius: '0.5rem',
+                  background: '#b91c1c', color: '#fff', fontWeight: 700, fontSize: '0.875rem',
+                  cursor: deleting || deleteConfirmText.trim() !== org.nombre ? 'not-allowed' : 'pointer',
+                  opacity: deleting || deleteConfirmText.trim() !== org.nombre ? 0.5 : 1,
+                }}
+              >
+                {deleting ? 'Eliminando...' : 'Eliminar definitivamente'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

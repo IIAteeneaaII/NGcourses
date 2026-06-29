@@ -13,7 +13,7 @@ MAX_INTENTOS_QUIZ: int = 3       # Intentos máximos por quiz antes de bloquear 
 INVITACION_EXPIRACION_DIAS: int = 7  # Días de validez de un enlace de invitación
 
 from sqlalchemy.exc import IntegrityError
-from sqlmodel import Session, select, func
+from sqlmodel import Session, select, func, delete
 
 from app.core.security import get_password_hash, verify_password
 from app.models import Item, ItemCreate, User, UserCreate, UserUpdate
@@ -48,6 +48,12 @@ from app.models.organizacion import (
     UsuarioOrganizacion,
 )
 from app.models.pago import Pago
+from app.models.sistema import (
+    EventoAnalytics,
+    EventoSistema,
+    Notificacion,
+    RefreshToken,
+)
 from app.models._enums import EstadoPago
 
 
@@ -1290,11 +1296,67 @@ def update_organizacion(
     return org
 
 
+def _delete_user_cascade(*, session: Session, user_id: uuid.UUID) -> None:
+    """Borra un usuario y TODAS las filas que lo referencian sin ondelete CASCADE a
+    nivel FK, en orden hijo→padre, para no violar las llaves foráneas. Se usa al
+    eliminar una organización (borra la cuenta del supervisor/punto de contacto).
+    Pensado para cuentas de SUPERVISOR (no dueñas de cursos ni con contenido de
+    alumno); las tablas de alumno se purgan igual de forma defensiva. NO toca
+    `cursos` (instructor_id): un supervisor no es dueño de cursos."""
+    from app.models import Item
+    # Sesión / notificaciones / auditoría
+    session.exec(delete(RefreshToken).where(RefreshToken.usuario_id == user_id))
+    session.exec(delete(Notificacion).where(Notificacion.usuario_id == user_id))
+    session.exec(delete(EventoAnalytics).where(EventoAnalytics.usuario_id == user_id))
+    session.exec(delete(EventoSistema).where(EventoSistema.actor_usuario_id == user_id))
+    # Reseñas (votos antes que calificaciones)
+    session.exec(delete(VotoResena).where(VotoResena.usuario_id == user_id))
+    session.exec(delete(Calificacion).where(Calificacion.usuario_id == user_id))
+    # Cursado: certificados ANTES que inscripciones (cert.inscripcion_id no cascadea);
+    # al borrar inscripciones, progreso y quiz_intentos cascadean por inscripcion_id.
+    session.exec(delete(Certificado).where(Certificado.usuario_id == user_id))
+    session.exec(delete(Inscripcion).where(Inscripcion.usuario_id == user_id))
+    session.exec(delete(Pago).where(Pago.usuario_id == user_id))
+    # Invitaciones que creó y solicitudes/comentarios que escribió
+    session.exec(delete(InvitacionCurso).where(InvitacionCurso.creado_por == user_id))
+    session.exec(delete(ComentarioSolicitud).where(ComentarioSolicitud.autor_id == user_id))
+    session.exec(delete(SolicitudCurso).where(SolicitudCurso.solicitante_id == user_id))
+    # Membresías restantes e items
+    session.exec(delete(UsuarioOrganizacion).where(UsuarioOrganizacion.usuario_id == user_id))
+    session.exec(delete(Item).where(Item.owner_id == user_id))
+    user = session.get(User, user_id)
+    if user:
+        session.delete(user)
+    session.commit()
+
+
 def delete_organizacion(*, session: Session, org_id: uuid.UUID) -> None:
+    """Borrado seguro de una organización (no es un simple DELETE en cascada):
+    1) Da de baja a cada miembro reusando `remove_user_from_organizacion`, que
+       revoca las inscripciones cubiertas SOLO por la licencia de esta org (cierra
+       la fuga de acceso). Debe correr ANTES de borrar la org, mientras las
+       licencias todavía existen.
+    2) Borra la org → cascadean licencias, solicitudes (+comentarios) y cualquier
+       membresía restante.
+    3) Borra la(s) cuenta(s) de supervisor (punto de contacto), que tras el paso 1
+       quedaron sin organización (si no, quedarían huérfanas)."""
     org = session.get(Organizacion, org_id)
-    if org:
-        session.delete(org)
-        session.commit()
+    if not org:
+        return
+    miembros = list_org_users(session=session, org_id=org_id)
+    supervisores_ids = [
+        u.id for (u, rol_org) in miembros
+        if u.rol == RolUsuario.SUPERVISOR or rol_org == RolOrganizacion.ADMIN_ORG
+    ]
+    # 1. Baja de cada miembro (revoca accesos de alumnos cubiertos solo por esta org).
+    for (u, _rol) in miembros:
+        remove_user_from_organizacion(session=session, org_id=org_id, user_id=u.id)
+    # 2. Borrar la org (cascade: licencias, solicitudes+comentarios, membresías).
+    session.delete(org)
+    session.commit()
+    # 3. Borrar las cuentas de supervisor, ya sin organización.
+    for sup_id in supervisores_ids:
+        _delete_user_cascade(session=session, user_id=sup_id)
 
 
 def get_organizacion_of_user(

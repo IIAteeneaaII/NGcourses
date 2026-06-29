@@ -288,3 +288,16 @@
     padding: 0.75rem 0.5rem;
   }
 }
+
+/* ── Badge de estado de usuario ────────────────────────────────────── */
+.estadoBadge {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 1rem;
+  white-space: nowrap;
+}
+.estadoActivo { background: #dcfce7; color: #15803d; }
+.estadoPendiente { background: #fef9c3; color: #854d0e; }
+.estadoSuspendido { background: #fee2e2; color: #b91c1c; }
