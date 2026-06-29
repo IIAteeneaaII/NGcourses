@@ -30,7 +30,7 @@ from app.models import (
     UserUpdateMe,
 )
 from app.models._enums import EstadoUsuario, RolOrganizacion, RolUsuario
-from app.models.organizacion import UsuarioOrganizacion
+from app.models.organizacion import Organizacion, UsuarioOrganizacion
 from app.utils import generate_activacion_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -344,7 +344,8 @@ def delete_user(
 class UserEmpresaCreate(SQLModel):
     email: EmailStr
     full_name: str | None = None
-    organizacion_id: uuid.UUID | None = None
+    # Un empleado siempre pertenece a una organización (alta de empleado de RF-12).
+    organizacion_id: uuid.UUID
 
 
 class ActivarCuentaBody(SQLModel):
@@ -366,6 +367,10 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
     if existing:
         raise HTTPException(status_code=400, detail="Ya existe un usuario con ese correo.")
 
+    organizacion = session.get(Organizacion, user_in.organizacion_id)
+    if not organizacion:
+        raise HTTPException(status_code=404, detail="La organización indicada no existe.")
+
     token = secrets.token_urlsafe(32)
     placeholder_password = secrets.token_urlsafe(16)
 
@@ -382,13 +387,12 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
     session.add(user)
     session.flush()  # INSERT user antes de la membresía para satisfacer el FK
 
-    if user_in.organizacion_id:
-        membresia = UsuarioOrganizacion(
-            organizacion_id=user_in.organizacion_id,
-            usuario_id=user.id,
-            rol_org=RolOrganizacion.MIEMBRO,
-        )
-        session.add(membresia)
+    membresia = UsuarioOrganizacion(
+        organizacion_id=user_in.organizacion_id,
+        usuario_id=user.id,
+        rol_org=RolOrganizacion.MIEMBRO,
+    )
+    session.add(membresia)
 
     session.commit()
     session.refresh(user)
