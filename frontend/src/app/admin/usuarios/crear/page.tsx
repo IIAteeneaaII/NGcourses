@@ -14,6 +14,7 @@ export default function CrearUsuarioEmpresaPage() {
   const router = useRouter();
   const [form, setForm] = useState({ email: '', full_name: '', organizacion_id: '' });
   const [orgs, setOrgs] = useState<Organizacion[]>([]);
+  const [orgsLoaded, setOrgsLoaded] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -21,7 +22,8 @@ export default function CrearUsuarioEmpresaPage() {
   useEffect(() => {
     organizacionesApi.list({ limit: 100 })
       .then((r) => setOrgs((r as { data: Organizacion[] }).data))
-      .catch(() => setOrgs([]));
+      .catch(() => setOrgs([]))
+      .finally(() => setOrgsLoaded(true));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,7 +38,7 @@ export default function CrearUsuarioEmpresaPage() {
     try {
       await usersApi.createEmpresa({
         email: form.email,
-        full_name: form.full_name || null,
+        full_name: form.full_name.trim(),
         organizacion_id: form.organizacion_id,
       });
       setSuccess(true);
@@ -89,7 +91,7 @@ export default function CrearUsuarioEmpresaPage() {
         <a href="/admin/organizaciones" style={{ color: '#00968f', fontWeight: 600 }}>Organizaciones</a>.
       </p>
 
-      {!success && orgs.length === 0 && (
+      {!success && orgsLoaded && orgs.length === 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
           padding: '12px 16px', background: '#fffbeb',
@@ -149,9 +151,10 @@ export default function CrearUsuarioEmpresaPage() {
           </div>
 
           <div>
-            <label style={labelStyle}>Nombre completo</label>
+            <label style={labelStyle}>Nombre completo *</label>
             <input
               type="text"
+              required
               value={form.full_name}
               onChange={(e) => setForm((f) => ({ ...f, full_name: e.target.value }))}
               placeholder="Nombre Apellido"

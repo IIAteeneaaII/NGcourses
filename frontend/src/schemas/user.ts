@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const CreateUserSchema = z.object({
   email: z.string().email('Correo electrónico inválido'),
-  full_name: z.string().max(255).optional().or(z.literal('')),
+  full_name: z.string().trim().min(2, 'Ingresa el nombre completo').max(255),
   organizacion_id: z.string().uuid('Selecciona una organización'),
 });
 
