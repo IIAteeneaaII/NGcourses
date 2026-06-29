@@ -119,6 +119,24 @@
   padding: 2rem !important;
 }
 
+/* Celda "Curso solicitado": acota el ancho y fuerza el wrap del texto largo
+   (el max-width en <td> de una tabla auto-layout no se respeta; va en el div). */
+.cursoCell {
+  max-width: 280px;
+  overflow-wrap: anywhere;
+}
+
+.cursoTitulo {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.cursoDesc {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
 /* Action buttons */
 .actionButtons {
   display: flex;

@@ -5,12 +5,19 @@ import { supervisorApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
+interface Comentario {
+  comentario: string;
+  creado_en: string;
+}
+
 interface Solicitud {
   id: string;
   titulo_solicitud: string;
   descripcion: string | null;
   estado: string;
   creado_en: string;
+  actualizado_en: string | null;
+  comentarios: Comentario[];
 }
 
 const ESTADO_LABEL: Record<string, string> = {
@@ -111,23 +118,38 @@ export default function SupervisorSolicitudesPage() {
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Estado</th>
+                <th>Mensaje de NextGen</th>
                 <th>Fecha</th>
               </tr>
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={4} className={styles.emptyState}>Cargando...</td></tr>
+                <tr><td colSpan={5} className={styles.emptyState}>Cargando...</td></tr>
               ) : solicitudes.length > 0 ? (
                 solicitudes.map((s) => (
                   <tr key={s.id}>
-                    <td>{s.titulo_solicitud}</td>
-                    <td>{s.descripcion || '—'}</td>
+                    <td className={styles.celdaTexto}>{s.titulo_solicitud}</td>
+                    <td className={styles.celdaTexto}>{s.descripcion || '—'}</td>
                     <td>{ESTADO_LABEL[s.estado] || s.estado}</td>
+                    <td>
+                      {s.comentarios && s.comentarios.length > 0 ? (
+                        <div className={styles.mensajes}>
+                          {s.comentarios.map((c, i) => (
+                            <div key={i} className={styles.mensaje}>
+                              <p className={styles.mensajeTexto}>{c.comentario}</p>
+                              <span className={styles.mensajeFecha}>{formatDate(c.creado_en)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <span className={styles.sinMensaje}>—</span>
+                      )}
+                    </td>
                     <td>{formatDate(s.creado_en)}</td>
                   </tr>
                 ))
               ) : (
-                <tr><td colSpan={4} className={styles.emptyState}>Sin solicitudes</td></tr>
+                <tr><td colSpan={5} className={styles.emptyState}>Sin solicitudes</td></tr>
               )}
             </tbody>
           </table>
