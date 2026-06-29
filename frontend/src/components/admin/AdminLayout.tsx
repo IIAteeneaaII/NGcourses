@@ -38,7 +38,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   return (
     <div className={styles.container}>
-      <AdminHeader user={headerUser} onMenuClick={() => setSidebarOpen(true)} />
+      <AdminHeader user={headerUser} onMenuClick={() => setSidebarOpen((o) => !o)} />
 
       <AccessNotice />
       <div className={styles.contentWrapper}>
