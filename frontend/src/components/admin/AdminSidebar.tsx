@@ -205,7 +205,8 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     if (href === '/admin') {
       return pathname === '/admin';
     }
-    return pathname?.startsWith(href);
+
+    return pathname === href || pathname?.startsWith(`${href}/`);
   };
 
   // Oculta los items cuyo feature flag esté apagado (p. ej. Instructores).
