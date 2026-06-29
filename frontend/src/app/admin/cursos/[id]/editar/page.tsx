@@ -998,7 +998,7 @@ export default function EditarCursoAdminPage() {
                     disabled={isPublishing}
                     style={{ background: cursoEstado === 'publicado' ? '#6b7280' : '#16a34a' }}
                   >
-                    {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Despublicar' : 'Publicar curso'}
+                    {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Borrar' : 'Publicar curso'}
                   </button>
                   <button className={styles.publishButton} onClick={handleSave} disabled={isSaving}>
                     {isSaving ? 'Guardando...' : 'Guardar cambios'}
