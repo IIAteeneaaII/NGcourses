@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import MyCoursesContent from '@/components/my-courses/MyCoursesContent';
 import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
-import { inscripcionesApi, cursosApi, certificadosApi } from '@/lib/api/client';
+import { inscripcionesApi, cursosApi, certificadosApi, progresoApi } from '@/lib/api/client';
 import { getCurrentUser } from '@/lib/auth';
 
 interface ApiInscripcion {
@@ -81,11 +81,27 @@ export default function MisCursosPage() {
           inscripciones.map((i) => cursosApi.get(i.curso_id) as Promise<ApiCurso>)
         );
 
+        // Progreso real por curso (mismo índice que inscripciones). Aislado: si
+        // el fetch de progreso falla o devuelve algo inesperado, NO debe vaciar
+        // la lista — cae a 0%. (Mismo patrón que /perfil.)
+        let progresoDetails: PromiseSettledResult<{ progreso_pct: number }>[] = [];
+        try {
+          progresoDetails = await Promise.allSettled(
+            inscripciones.map((i) => progresoApi.curso(i.curso_id) as Promise<{ progreso_pct: number }>)
+          );
+        } catch {
+          progresoDetails = [];
+        }
+
         const userCourses: UserCourse[] = inscripciones.map((insc, idx) => {
           const cursoResult = cursoDetails[idx];
           const curso = cursoResult.status === 'fulfilled' ? cursoResult.value : null;
           const isCompleted = insc.estado === 'finalizada';
           const cert = certByCursoId[insc.curso_id];
+          const pr = progresoDetails[idx];
+          const progress = isCompleted
+            ? 100
+            : (pr?.status === 'fulfilled' && pr.value ? Math.round(pr.value.progreso_pct ?? 0) : 0);
 
           return {
             id: insc.curso_id,
@@ -94,7 +110,7 @@ export default function MisCursosPage() {
             lessonsCount: curso?.modulos?.reduce((acc, m) => acc + m.lecciones.length, 0) ?? 0,
             image: curso?.portada_url ?? '/placeholder-course.jpg',
             status: isCompleted ? 'completed' : 'in_progress',
-            progress: isCompleted ? 100 : undefined,
+            progress,
             completedDate: isCompleted ? insc.inscrito_en.slice(0, 10) : undefined,
             // Basta el folio: la descarga regenera el PDF si hiciera falta.
             certificadoFolio: cert ? cert.folio : undefined,
