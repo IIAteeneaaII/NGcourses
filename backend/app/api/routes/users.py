@@ -5,7 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import EmailStr
-from sqlmodel import SQLModel, col, delete, func, select
+from sqlmodel import Field, SQLModel, col, delete, func, select
 
 from app import crud
 from app.api.deps import (
@@ -16,7 +16,7 @@ from app.api.deps import (
 )
 from app.core.limiter import limiter
 from app.core.config import settings
-from app.core.security import get_password_hash, verify_password
+from app.core.security import get_password_hash, hash_token, verify_password
 from app.models import (
     Item,
     Message,
@@ -31,6 +31,7 @@ from app.models import (
 )
 from app.models._enums import EstadoUsuario, RolOrganizacion, RolUsuario
 from app.models.organizacion import UsuarioOrganizacion
+from app.models.sistema import RefreshToken
 from app.utils import generate_activacion_email, send_email
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -118,7 +119,7 @@ def create_user(*, session: SessionDep, user_in: UserCreate, current_user: Admin
     token = secrets.token_urlsafe(32)
     user.estado = EstadoUsuario.PENDIENTE_ACTIVACION
     user.is_active = False
-    user.token_activacion = token
+    user.token_activacion = hash_token(token)
     user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
     session.add(user)
     session.commit()
@@ -170,6 +171,16 @@ def update_password_me(
     hashed_password = get_password_hash(body.new_password)
     current_user.hashed_password = hashed_password
     session.add(current_user)
+    now = datetime.now(timezone.utc)
+    active_rts = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.usuario_id == current_user.id,
+            RefreshToken.revocado_en.is_(None),
+        )
+    ).all()
+    for rt in active_rts:
+        rt.revocado_en = now
+        session.add(rt)
     session.commit()
     return Message(message="Password updated successfully")
 
@@ -349,7 +360,7 @@ class UserEmpresaCreate(SQLModel):
 
 class ActivarCuentaBody(SQLModel):
     token: str
-    new_password: str
+    new_password: str = Field(min_length=12, max_length=128)
 
 
 class SolicitarReactivacionBody(SQLModel):
@@ -376,7 +387,7 @@ def create_user_empresa(*, session: SessionDep, user_in: UserEmpresaCreate) -> A
         rol=RolUsuario.ESTUDIANTE,
         estado=EstadoUsuario.PENDIENTE_ACTIVACION,
         is_active=False,
-        token_activacion=token,
+        token_activacion=hash_token(token),
         token_activacion_expira=datetime.now(timezone.utc) + timedelta(hours=72),
     )
     session.add(user)
@@ -407,7 +418,7 @@ def activar_cuenta(request: Request, session: SessionDep, body: ActivarCuentaBod
     Ruta pública. El empleado establece su contraseña y activa su cuenta.
     El token se invalida al usarse (uso único).
     """
-    user = session.exec(select(User).where(User.token_activacion == body.token)).first()
+    user = session.exec(select(User).where(User.token_activacion == hash_token(body.token))).first()
 
     if not user:
         raise HTTPException(status_code=400, detail="Token inválido")
@@ -442,7 +453,7 @@ def solicitar_reactivacion(request: Request, *, session: SessionDep, body: Solic
         return Message(message="Si el correo existe y está pendiente de activación, recibirás un nuevo enlace.")
 
     token = secrets.token_urlsafe(32)
-    user.token_activacion = token
+    user.token_activacion = hash_token(token)
     user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
     session.add(user)
     session.commit()
@@ -466,7 +477,7 @@ def reenviar_activacion(*, session: SessionDep, user_id: uuid.UUID) -> Any:
         raise HTTPException(status_code=400, detail="El usuario ya activó su cuenta")
 
     token = secrets.token_urlsafe(32)
-    user.token_activacion = token
+    user.token_activacion = hash_token(token)
     user.token_activacion_expira = datetime.now(timezone.utc) + timedelta(hours=72)
     session.add(user)
     session.commit()

@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Suspense, useEffect, useState } from 'react';
 
 import { invitacionesApi } from '@/lib/api/client';
@@ -64,11 +64,17 @@ function IconX() {
 
 function InvitacionContent() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  const [token, setToken] = useState<string | null>(null);
   const [estado, setEstado] = useState<Estado>({ type: 'loading' });
 
   useEffect(() => {
+    const hash = window.location.hash;
+    const t = hash.startsWith('#token=') ? decodeURIComponent(hash.slice(7)) : '';
+    setToken(t);
+  }, []);
+
+  useEffect(() => {
+    if (token === null) return;
     if (!token) { setEstado({ type: 'no_token' }); return; }
     invitacionesApi.canjear(token)
       .then((res) => setEstado({ type: 'success', data: res as CanjearResponse }))

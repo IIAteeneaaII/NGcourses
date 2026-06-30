@@ -13,7 +13,7 @@ from app.core import security
 from app.core.config import settings
 from app.core.limiter import limiter
 from app.core.security import get_password_hash
-from app.models import Message, NewPassword, Token, User, UserPublic
+from app.models import Message, NewPassword, PasswordRecoveryRequest, Token, User, UserPublic
 from app.models._enums import RolUsuario
 from app.models.sistema import RefreshToken
 from app.utils import (
@@ -63,7 +63,8 @@ def login_access_token(
         value=token,
         httponly=True,
         secure=settings.ENABLE_HTTPS,
-        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
@@ -86,7 +87,8 @@ def login_access_token(
             value=raw_rt,
             httponly=True,
             secure=settings.ENABLE_HTTPS,
-            samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+            samesite=settings.AUTH_COOKIE_SAMESITE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
             max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
             path="/",
         )
@@ -112,8 +114,16 @@ def logout(
                 session.commit()
         except Exception:
             session.rollback()
-    response.delete_cookie("access_token", path="/")
-    response.delete_cookie("refresh_token", path="/")
+    response.delete_cookie(
+        "access_token", path="/",
+        domain=settings.AUTH_COOKIE_DOMAIN,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+    )
+    response.delete_cookie(
+        "refresh_token", path="/",
+        domain=settings.AUTH_COOKIE_DOMAIN,
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+    )
     return Message(message="Sesión cerrada")
 
 
@@ -155,7 +165,8 @@ def refresh_access_token(
         value=new_token,
         httponly=True,
         secure=settings.ENABLE_HTTPS,
-        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         path="/",
     )
@@ -183,7 +194,8 @@ def refresh_access_token(
         value=new_raw,
         httponly=True,
         secure=settings.ENABLE_HTTPS,
-        samesite="strict" if settings.ENVIRONMENT != "local" else "lax",
+        samesite=settings.AUTH_COOKIE_SAMESITE,
+        domain=settings.AUTH_COOKIE_DOMAIN,
         max_age=settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60,
         path="/",
     )
@@ -198,24 +210,16 @@ def test_token(current_user: CurrentUser) -> Any:
     return current_user
 
 
-@router.post("/password-recovery/{email}")
-@limiter.limit("3/hour")
-def recover_password(request: Request, email: str, session: SessionDep) -> Message:
-    """
-    Password Recovery — genera token de un solo uso almacenado en DB.
-    Respuesta uniforme para evitar user enumeration (FND-004).
-    """
+def _do_recover_password(email: str, session: SessionDep) -> None:
     user = crud.get_user_by_email(session=session, email=email)
-
     if user and user.is_active:
         token = secrets.token_urlsafe(32)
-        user.password_reset_token = token
+        user.password_reset_token = security.hash_token(token)
         user.password_reset_expira = datetime.now(timezone.utc) + timedelta(
             hours=settings.EMAIL_RESET_TOKEN_EXPIRE_HOURS
         )
         session.add(user)
         session.commit()
-
         email_data = generate_reset_password_email(
             email_to=user.email, email=email, token=token
         )
@@ -224,6 +228,24 @@ def recover_password(request: Request, email: str, session: SessionDep) -> Messa
             subject=email_data.subject,
             html_content=email_data.html_content,
         )
+
+
+@router.post("/password-recovery")
+@limiter.limit("3/hour")
+def recover_password(request: Request, session: SessionDep, body: PasswordRecoveryRequest) -> Message:
+    """
+    Password Recovery — email en body JSON (CWE-598).
+    Respuesta uniforme para evitar user enumeration (FND-004).
+    """
+    _do_recover_password(body.email, session)
+    return Message(message="Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.")
+
+
+@router.post("/password-recovery/{email}", deprecated=True)
+@limiter.limit("3/hour")
+def recover_password_legacy(request: Request, email: str, session: SessionDep) -> Message:
+    """Deprecated: migrar a POST /password-recovery con email en body JSON."""
+    _do_recover_password(email, session)
     return Message(message="Si el correo existe en nuestro sistema, recibirás instrucciones para restablecer tu contraseña.")
 
 
@@ -234,7 +256,7 @@ def reset_password(request: Request, session: SessionDep, body: NewPassword) -> 
     Reset password — invalida el token al usarlo (uso único).
     """
     user = session.exec(
-        select(User).where(User.password_reset_token == body.token)
+        select(User).where(User.password_reset_token == security.hash_token(body.token))
     ).first()
 
     if not user:
@@ -255,29 +277,39 @@ def reset_password(request: Request, session: SessionDep, body: NewPassword) -> 
     user.password_reset_token = None
     user.password_reset_expira = None
     session.add(user)
+    now = datetime.now(timezone.utc)
+    active_rts = session.exec(
+        select(RefreshToken).where(
+            RefreshToken.usuario_id == user.id,
+            RefreshToken.revocado_en.is_(None),
+        )
+    ).all()
+    for rt in active_rts:
+        rt.revocado_en = now
+        session.add(rt)
     session.commit()
     return Message(message="Password updated successfully")
 
 
 @router.post(
-    "/password-recovery-html-content/{email}",
+    "/password-recovery-html-content",
     dependencies=[Depends(get_current_active_superuser)],
     response_class=HTMLResponse,
 )
-def recover_password_html_content(email: str, session: SessionDep) -> Any:
+def recover_password_html_content(body: PasswordRecoveryRequest, session: SessionDep) -> Any:
     """
     HTML Content for Password Recovery
     """
-    user = crud.get_user_by_email(session=session, email=email)
+    user = crud.get_user_by_email(session=session, email=body.email)
 
     if not user:
         raise HTTPException(
             status_code=404,
             detail="The user with this username does not exist in the system.",
         )
-    password_reset_token = generate_password_reset_token(email=email)
+    password_reset_token = generate_password_reset_token(email=body.email)
     email_data = generate_reset_password_email(
-        email_to=user.email, email=email, token=password_reset_token
+        email_to=user.email, email=body.email, token=password_reset_token
     )
 
     return HTMLResponse(

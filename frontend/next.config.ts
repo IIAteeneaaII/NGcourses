@@ -24,22 +24,8 @@ const nextConfig: NextConfig = {
     // Mientras se acceda por http:// (IP de EC2 sin certificado), estas dos
     // directivas rompen la carga de assets: 'upgrade-insecure-requests'
     // reescribe los sub-recursos a https:// y el navegador no los puede pedir.
+    // CSP se gestiona dinámicamente en src/middleware.ts (nonce por request).
     const httpsEnabled = process.env.ENABLE_HTTPS === 'true';
-
-    const csp = [
-      "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' https://www.paypal.com https://www.paypalobjects.com",
-      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-      "font-src 'self' data: https://fonts.gstatic.com",
-      "img-src 'self' data: blob: https://*.b-cdn.net https://www.paypalobjects.com https://www.paypal.com https://t.paypal.com",
-      "connect-src 'self' https://video.bunnycdn.com https://api-m.sandbox.paypal.com https://api-m.paypal.com https://www.paypal.com https://t.paypal.com https://*.sentry.io https://*.ingest.sentry.io",
-      "frame-src https://iframe.mediadelivery.net https://www.paypal.com https://www.sandbox.paypal.com",
-      "object-src 'none'",
-      "base-uri 'self'",
-      "form-action 'self'",
-      "frame-ancestors 'none'",
-      ...(httpsEnabled ? ["upgrade-insecure-requests"] : []),
-    ].join('; ');
 
     return [
       {
@@ -49,7 +35,6 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
           { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
-          { key: 'Content-Security-Policy', value: csp },
           // HSTS solo tiene sentido sobre HTTPS; el navegador lo ignora en HTTP.
           ...(httpsEnabled
             ? [{ key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' }]

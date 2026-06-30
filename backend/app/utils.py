@@ -148,7 +148,7 @@ def generate_password_reset_token(email: str) -> str:
 def generate_activacion_email(email_to: str, token: str) -> EmailData:
     project_name = settings.PROJECT_NAME
     subject = f"Activa tu cuenta en {project_name}"
-    link = f"{settings.FRONTEND_HOST}/activar?token={token}"
+    link = f"{settings.FRONTEND_HOST}/activar#token={token}"
     html_content = render_email_template(
         template_name="activacion_cuenta.html",
         context={
@@ -168,7 +168,7 @@ def generate_invitation_email(
 ) -> EmailData:
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Invitación al curso: {curso_titulo}"
-    link = f"{settings.FRONTEND_HOST}/invitacion?token={token}"
+    link = f"{settings.FRONTEND_HOST}/invitacion#token={token}"
     html_content = render_email_template(
         template_name="invitation_course.html",
         context={
