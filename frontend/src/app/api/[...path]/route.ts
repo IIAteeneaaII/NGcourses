@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:8000';
 
+
 async function handler(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
@@ -37,6 +38,8 @@ async function handler(
     headers,
     body,
     redirect: 'manual',
+    // Desactivar caché de Next.js para que los headers de respuesta sean frescos.
+    cache: 'no-store',
   });
 
   // Seguir 307/308 manualmente reinyectando el body
@@ -48,10 +51,10 @@ async function handler(
       headers,
       body,
       redirect: 'manual',
+      cache: 'no-store',
     });
   }
 
-  const httpsEnabled = process.env.ENABLE_HTTPS === 'true';
   const skip = ['transfer-encoding', 'connection', 'keep-alive', 'set-cookie'];
 
   const responseHeaders = new Headers();
@@ -61,25 +64,27 @@ async function handler(
     }
   });
 
-  // Reenviar Set-Cookie quitando el flag Secure cuando el sitio corre en HTTP.
-  // Sin esto el browser descarta silenciosamente la cookie HttpOnly del JWT.
-  const setCookies: string[] =
-    typeof (response.headers as { getSetCookie?: () => string[] }).getSetCookie === 'function'
-      ? (response.headers as { getSetCookie: () => string[] }).getSetCookie()
-      : [];
-  for (const cookie of setCookies) {
-    const processed = httpsEnabled ? cookie : cookie.replace(/;\s*Secure/gi, '');
-    responseHeaders.append('set-cookie', processed);
+  // getSetCookie() preserva cada Set-Cookie como entrada separada (no las mezcla).
+  // Fallback a get() si la API no está disponible (Node < 18.14).
+  const h = response.headers as unknown as { getSetCookie?: () => string[] };
+  const rawCookies: string[] = typeof h.getSetCookie === 'function'
+    ? h.getSetCookie()
+    : (() => { const r = response.headers.get('set-cookie'); return r ? [r] : []; })();
+
+  for (const raw of rawCookies) {
+    responseHeaders.append('set-cookie', raw);
   }
 
-  return new NextResponse(response.body, {
+  const responseBody = await response.arrayBuffer();
+
+  return new NextResponse(responseBody, {
     status: response.status,
     headers: responseHeaders,
   });
 }
 
-export const GET = handler;
-export const POST = handler;
-export const PUT = handler;
-export const PATCH = handler;
+export const GET    = handler;
+export const POST   = handler;
+export const PUT    = handler;
+export const PATCH  = handler;
 export const DELETE = handler;

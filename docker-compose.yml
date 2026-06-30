@@ -5,10 +5,10 @@ services:
     restart: always
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
-      interval: 10s
-      retries: 5
-      start_period: 30s
-      timeout: 10s
+      interval: 3s
+      retries: 10
+      start_period: 5s
+      timeout: 5s
     volumes:
       - app-db-data:/var/lib/postgresql/data/pgdata
     env_file:

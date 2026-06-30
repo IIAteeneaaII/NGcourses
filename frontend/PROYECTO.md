@@ -32,24 +32,7 @@ frontend/
 └── .env.local                  # Variables de entorno
 ```
 
-## Variables de Entorno
 
-Archivo `.env.local`:
-
-```env
-# FastAPI Backend
-NEXT_PUBLIC_API_URL=http://localhost:8000
-
-# Bunny.net Video Configuration
-NEXT_PUBLIC_BUNNY_LIBRARY_ID=583601
-NEXT_PUBLIC_BUNNY_VIDEO_ID=2694e857-a403-4f27-8b00-32b9ba4049c3
-
-# Bunny.net API Keys (Server-side only)
-BUNNY_API_KEY=f8370c09-4192-4941-bcde72f3c50e-ad1d-4367
-BUNNY_TOKEN_KEY=5e74ac0b-bb86-45c1-945b-e6f18ba8ebf5
-```
-
-## Instalación
 
 ### Opción 1: Desde la raíz del proyecto (Recomendado)
 

@@ -21,8 +21,10 @@ export default function ForgotPasswordPage() {
     }
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/password-recovery/${encodeURIComponent(email)}`, {
+      const res = await fetch('/api/v1/password-recovery', {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));

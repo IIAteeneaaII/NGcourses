@@ -153,6 +153,21 @@ def confirmar_pago(
             inscripcion_id=insc.id if insc else None,
         )
 
+    logger.info(
+        "Confirmación de pago iniciada: pago_id=%s usuario_id=%s paypal_order_id=%s",
+        pago.id, current_user.id, body.paypal_order_id,
+    )
+
+    if not pago.referencia_paypal or pago.referencia_paypal != body.paypal_order_id:
+        logger.warning(
+            "order_id inválido en confirmación: pago_id=%s esperado=%s recibido=%s",
+            pago.id, pago.referencia_paypal, body.paypal_order_id,
+        )
+        raise HTTPException(
+            status_code=400,
+            detail="El order_id de PayPal no corresponde a este pago",
+        )
+
     try:
         capture = paypal_svc.capture_order(body.paypal_order_id)
     except paypal_svc.PayPalError as e:
@@ -166,6 +181,24 @@ def confirmar_pago(
         raise HTTPException(
             status_code=402,
             detail=f"PayPal no completo el cobro (status={paypal_status})",
+        )
+
+    try:
+        captured_amount = Decimal(
+            capture["purchase_units"][0]["payments"]["captures"][0]["amount"]["value"]
+        )
+    except (KeyError, IndexError, TypeError, ValueError):
+        captured_amount = None
+
+    if captured_amount is None or captured_amount != pago.monto:
+        logger.error(
+            "Monto capturado por PayPal (%s) no coincide con pago %s (%.2f) — paypal_order_id=%s",
+            captured_amount, pago.id, pago.monto, body.paypal_order_id,
+        )
+        crud.update_pago_status(session=session, pago=pago, status=EstadoPago.FALLIDO)
+        raise HTTPException(
+            status_code=402,
+            detail="El monto capturado por PayPal no coincide con el esperado",
         )
 
     # FND-010: commit atómico — pago COMPLETADO + inscripción en una sola transacción
@@ -182,6 +215,11 @@ def confirmar_pago(
     session.refresh(pago)
     if insc:
         session.refresh(insc)
+
+    logger.info(
+        "Pago confirmado exitosamente: pago_id=%s monto=%.2f moneda=%s paypal_order_id=%s inscripcion_id=%s",
+        pago.id, pago.monto, pago.moneda, body.paypal_order_id, insc.id if insc else None,
+    )
 
     return ConfirmarPagoResponse(
         pago_id=pago.id,

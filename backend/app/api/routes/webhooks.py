@@ -38,13 +38,18 @@ async def bunny_webhook(
     """
     payload_bytes = await request.body()
 
-    # ISO 25010 §6.7 — Seguridad: validar firma siempre que haya secret configurado.
-    # Si no hay firma en el header O la validación falla → rechazar (fail-closed).
-    if settings.BUNNY_WEBHOOK_SECRET:
-        if not bunnycdn_signature or not bunny_svc.verify_webhook_signature(
-            payload_bytes, bunnycdn_signature
-        ):
-            raise HTTPException(status_code=401, detail="Firma de webhook inválida o ausente")
+    # Fail-closed: rechazar siempre si el secret no está configurado.
+    # Un secret ausente indica un entorno mal configurado; no procesar el webhook.
+    if not settings.BUNNY_WEBHOOK_SECRET:
+        raise HTTPException(
+            status_code=503,
+            detail="Webhook no disponible: BUNNY_WEBHOOK_SECRET no configurado",
+        )
+
+    if not bunnycdn_signature or not bunny_svc.verify_webhook_signature(
+        payload_bytes, bunnycdn_signature
+    ):
+        raise HTTPException(status_code=401, detail="Firma de webhook inválida o ausente")
 
     try:
         data = await request.json()

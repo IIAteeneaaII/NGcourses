@@ -2,7 +2,6 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
 import { ActivarCuentaSchema } from '@/schemas/auth';
 
 const getPasswordRules = (value: string) => [
@@ -14,9 +13,7 @@ const getPasswordRules = (value: string) => [
 ];
 
 function ActivarForm() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get('token') ?? '';
-
+  const [token, setToken] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -34,8 +31,11 @@ function ActivarForm() {
   const canSubmit = Boolean(token) && !loading && isPasswordValid && passwordsMatch;
 
   useEffect(() => {
-    if (!token) setError('El enlace no es válido. Contacta al administrador.');
-  }, [token]);
+    const hash = window.location.hash;
+    const t = hash.startsWith('#token=') ? decodeURIComponent(hash.slice(7)) : '';
+    setToken(t);
+    if (!t) setError('El enlace no es válido. Contacta al administrador.');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
