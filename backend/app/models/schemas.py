@@ -1,4 +1,5 @@
-from sqlmodel import SQLModel
+from pydantic import EmailStr
+from sqlmodel import Field, SQLModel
 
 
 # Generic message
@@ -15,8 +16,13 @@ class Token(SQLModel):
 # Contents of JWT token
 class TokenPayload(SQLModel):
     sub: str | None = None
+    jti: str | None = None
 
 
 class NewPassword(SQLModel):
     token: str
-    new_password: str
+    new_password: str = Field(min_length=12, max_length=128)
+
+
+class PasswordRecoveryRequest(SQLModel):
+    email: EmailStr
