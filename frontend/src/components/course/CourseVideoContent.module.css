@@ -239,3 +239,16 @@
   font-size: 0.9rem;
   font-weight: 600;
 }
+
+.quizLoadingCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 12rem;
+  padding: 2rem;
+  border-radius: 0.9375rem;
+  background: #ffffff;
+  color: var(--color-secondary-30);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}

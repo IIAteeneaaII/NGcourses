@@ -7,8 +7,9 @@ import VideoPlayer from '@/components/video/VideoPlayer';
 import LessonsSidebar from '@/components/course/LessonsSidebar';
 import VideoControls from '@/components/course/VideoControls';
 import QuizPlayer from '@/components/course/QuizPlayer';
-import type { Course, Lesson, QuizData } from '@/types/course';
+import type { Course, Lesson } from '@/types/course';
 import { progresoApi, certificadosApi } from '@/lib/api/client';
+import { normalizeQuizData } from '@/lib/quizData';
 import { logError } from '@/lib/logger';
 import styles from './CourseVideoContent.module.css';
 
@@ -30,25 +31,6 @@ interface CompletionModal {
 }
 
 
-function parseQuizData(raw: unknown): QuizData {
-  if (!raw) return { preguntas: [] };
-
-  if (typeof raw === 'string') {
-    try {
-      return parseQuizData(JSON.parse(raw));
-    } catch {
-      return { preguntas: [] };
-    }
-  }
-
-  if (typeof raw === 'object') {
-    const data = raw as { preguntas?: unknown; quizData?: unknown };
-    if (Array.isArray(data.preguntas)) return data as QuizData;
-    if (data.quizData) return parseQuizData(data.quizData);
-  }
-
-  return { preguntas: [] };
-}
 
 export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, navHref, previewMode, readOnlyMode }: CourseVideoContentProps) {
   const router = useRouter();
@@ -249,7 +231,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                 key={currentLesson.id}
                 leccionId={currentLesson.id}
                 inscripcionId={inscripcionId ?? null}
-                quizData={parseQuizData(currentLesson.contenido)}
+                quizData={normalizeQuizData(currentLesson.contenido ?? currentLesson)}
                 onAprobado={readOnlyMode ? undefined : handleMarkComplete}
                 previewMode={previewMode}
                 readOnlyMode={readOnlyMode}

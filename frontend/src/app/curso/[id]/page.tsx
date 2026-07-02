@@ -33,6 +33,12 @@ function getCourseBackHref(rol: string): string {
   return '/cursos';
 }
 
+function shouldCheckEnrollment(rol: string): boolean {
+  // Solo el alumno necesita consultar inscripción en la ficha del curso.
+  // Supervisor/admin/instructor entran en modo revisión y no deben esperar endpoints de inscripción.
+  return rol !== 'supervisor' && rol !== 'administrador' && rol !== 'instructor';
+}
+
 interface ApiCurso {
   id: string;
   titulo: string;
@@ -70,18 +76,21 @@ export default function CursoInfoPage() {
   const [userRole, setUserRole] = useState('');
 
   useEffect(() => {
-    const rol = getUserRoleFromCookie();
-    setUserRole(rol);
-    setBackHref(getCourseBackHref(rol));
-  }, []);
+    let active = true;
 
-  useEffect(() => {
     async function fetchData() {
       try {
-        const [cursoRaw, inscResp] = await Promise.all([
-          cursosApi.get(id) as Promise<ApiCurso>,
-          (inscripcionesApi.mis().catch(() => ({ data: [], count: 0 }))) as Promise<ApiInscripcionesResp>,
-        ]);
+        const rol = getUserRoleFromCookie();
+        if (!active) return;
+        setUserRole(rol);
+        setBackHref(getCourseBackHref(rol));
+
+        const cursoRaw = await cursosApi.get(id) as ApiCurso;
+
+        let inscResp: ApiInscripcionesResp = { data: [], count: 0 };
+        if (shouldCheckEnrollment(rol)) {
+          inscResp = await (inscripcionesApi.mis().catch(() => ({ data: [], count: 0 }))) as ApiInscripcionesResp;
+        }
 
         const totalLecciones = cursoRaw.modulos?.reduce(
           (acc: number, m: ApiModulo) => acc + m.lecciones.length,
@@ -116,16 +125,22 @@ export default function CursoInfoPage() {
           destacado: cursoRaw.destacado ?? false,
         };
 
+        if (!active) return;
         setCourse(courseInfo);
         setIsEnrolled(inscResp.data.some((i) => i.curso_id === id));
-      } catch {
-        setHasError(true);
+      } catch (e) {
+        logError('CursoInfoPage/fetchData', e);
+        if (active) setHasError(true);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     }
 
     fetchData();
+
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const handleInscribirse = async () => {
@@ -136,7 +151,7 @@ export default function CursoInfoPage() {
     } catch (e) {
       const err = e as ApiError;
       if (err?.status === 403) {
-        // Defensa en profundidad: si el flag se perdió por race, sincronizar UI
+        // Defensa en profundidad: si el flag se perdió por race, sincronizar UI.
         setCourse((prev) => (prev ? { ...prev, bloqueadoPorLicencia: true } : prev));
       }
       logError('CursoInfoPage/inscribirse', e);

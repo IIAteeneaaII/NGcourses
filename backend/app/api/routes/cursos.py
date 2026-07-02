@@ -101,6 +101,47 @@ def _require_curso_owner_or_admin(current_user: CurrentUser, instructor_id: uuid
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar este curso")
 
 
+def _supervisor_tiene_acceso_lectura(
+    *, session: SessionDep, current_user: CurrentUser, curso_id: uuid.UUID
+) -> bool:
+    """True si el supervisor puede revisar el contenido completo del curso.
+
+    El supervisor NO se inscribe y NO genera progreso; solo puede leer el contenido
+    de cursos PUBLICADOS que están cubiertos por una licencia ACTIVA de su
+    organización. Esto permite ver módulos, videos, recursos y quizzes con
+    respuestas correctas sin abrir permisos de edición.
+    """
+    if current_user.rol != RolUsuario.SUPERVISOR:
+        return False
+
+    org_ids = crud.get_org_ids_of_user(session=session, user_id=current_user.id)
+    if not org_ids:
+        return False
+
+    cursos_licenciados = crud.cursos_con_licencia_activa_orgs(
+        session=session, org_ids=org_ids
+    )
+    return curso_id in cursos_licenciados
+
+
+def _puede_ver_quiz_con_respuestas(
+    *, session: SessionDep, current_user: CurrentUser, db_curso: Any
+) -> bool:
+    """Admin, instructor dueño y supervisor licenciado pueden ver respuestas.
+
+    Los alumnos inscritos reciben el quiz sanitizado, sin `esCorrecta`.
+    """
+    is_admin = current_user.is_superuser or current_user.rol == RolUsuario.ADMINISTRADOR
+    is_owner = current_user.id == db_curso.instructor_id
+    is_supervisor_lectura = (
+        db_curso.estado == EstadoCurso.PUBLICADO
+        and _supervisor_tiene_acceso_lectura(
+            session=session, current_user=current_user, curso_id=db_curso.id
+        )
+    )
+    return is_admin or is_owner or is_supervisor_lectura
+
+
 # ── Cursos ────────────────────────────────────────────────────────────────────
 
 @router.get("/destacados", response_model=CursosPublic)
@@ -211,22 +252,37 @@ def get_curso(
     if not is_admin and not is_owner and db_curso.estado != EstadoCurso.PUBLICADO:
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
-    # Acceso al CONTENIDO reproducible: admin/instructor siempre; el alumno solo
-    # con inscripción ACTIVA. Sin inscripción activa (o cancelada/dada de baja)
-    # se devuelve la estructura como preview, pero sin video/quiz/recursos.
-    # Esto hace que "dar de baja del curso" revoque el acceso de verdad.
-    inscripcion = crud.get_inscripcion_by_usuario_curso(
-        session=session, usuario_id=current_user.id, curso_id=curso_id
+    # Acceso al CONTENIDO reproducible:
+    # - admin/instructor dueño: acceso completo;
+    # - supervisor: acceso completo SOLO si su organización tiene licencia activa;
+    # - alumno: acceso solo con inscripción ACTIVA o FINALIZADA.
+    #
+    # Sin acceso se devuelve la estructura como preview, pero sin video/quiz/recursos.
+    # Esto mantiene seguro el contenido y a la vez permite al supervisor revisar el
+    # curso sin inscribirse ni generar progreso.
+    supervisor_lectura = (
+        db_curso.estado == EstadoCurso.PUBLICADO
+        and _supervisor_tiene_acceso_lectura(
+            session=session, current_user=current_user, curso_id=curso_id
+        )
     )
+
+    inscripcion = None
+    if not (is_admin or is_owner or supervisor_lectura):
+        inscripcion = crud.get_inscripcion_by_usuario_curso(
+            session=session, usuario_id=current_user.id, curso_id=curso_id
+        )
+
     # Activa = cursando; finalizada = completado (puede repasar/ver certificado).
     # Cancelado (dado de baja) o sin inscripción → sin acceso al contenido.
     tiene_acceso_contenido = (
-        is_admin or is_owner
+        is_admin or is_owner or supervisor_lectura
         or (
             inscripcion is not None
             and inscripcion.estado in {EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA}
         )
     )
+    revelar_respuestas_quiz = is_admin or is_owner or supervisor_lectura
 
     # Cargar módulos y lecciones en 2 queries (evita N+1) — ISO 25010 §6.4
     modulos_db = crud.get_modulos(session=session, curso_id=curso_id)
@@ -247,9 +303,10 @@ def get_curso(
                 lp.thumbnail_url = None
                 lp.contenido = None
                 lp.recursos = []
-            elif not (is_admin or is_owner):
+            elif not revelar_respuestas_quiz:
                 # Alumno inscrito: ve el quiz pero sin la clave de respuestas.
-                # Admin/instructor sí la reciben (editor / preview con calificación local).
+                # Admin/instructor/supervisor lector sí reciben respuestas correctas
+                # para edición o revisión en modo lectura.
                 lp.contenido = _sanitize_quiz_for_student(lp.contenido)
             lecciones.append(lp)
         modulo_data.lecciones = lecciones
@@ -456,12 +513,20 @@ async def upload_cover(
 
 def _tiene_acceso_contenido(session: SessionDep, current_user: User, db_curso: Any) -> bool:
     """True si el usuario puede ver el CONTENIDO reproducible del curso:
-    admin/instructor propietario siempre; alumno solo con inscripción activa o
-    finalizada. Cancelado (dado de baja) o sin inscripción → False."""
+    admin/instructor propietario siempre; supervisor solo por licencia activa de
+    su organización; alumno solo con inscripción activa o finalizada. Cancelado
+    (dado de baja) o sin inscripción → False."""
     is_admin = current_user.is_superuser or current_user.rol in {
         RolUsuario.ADMINISTRADOR
     }
     if is_admin or current_user.id == db_curso.instructor_id:
+        return True
+    if (
+        db_curso.estado == EstadoCurso.PUBLICADO
+        and _supervisor_tiene_acceso_lectura(
+            session=session, current_user=current_user, curso_id=db_curso.id
+        )
+    ):
         return True
     insc = crud.get_inscripcion_by_usuario_curso(
         session=session, usuario_id=current_user.id, curso_id=db_curso.id
@@ -471,15 +536,55 @@ def _tiene_acceso_contenido(session: SessionDep, current_user: User, db_curso: A
     }
 
 
-def _strip_leccion_sin_acceso(lp: "LeccionPublic", tiene_acceso: bool) -> "LeccionPublic":
-    """Quita el contenido consumible (video/quiz/recursos) si no hay acceso."""
+def _strip_leccion_sin_acceso(
+    lp: "LeccionPublic",
+    tiene_acceso: bool,
+    *,
+    revelar_respuestas_quiz: bool = False,
+) -> "LeccionPublic":
+    """Quita el contenido consumible si no hay acceso.
+
+    Si hay acceso de alumno, mantiene el quiz pero sin `esCorrecta`; si hay
+    acceso de admin/instructor/supervisor lector, conserva las respuestas para
+    revisión.
+    """
     if not tiene_acceso:
         lp.hls_url = None
         lp.bunny_video_id = None
         lp.thumbnail_url = None
         lp.contenido = None
         lp.recursos = []
+    elif not revelar_respuestas_quiz:
+        lp.contenido = _sanitize_quiz_for_student(lp.contenido)
     return lp
+
+
+def _get_leccion_with_read_access(
+    session: SessionDep,
+    current_user: CurrentUser,
+    curso_id: uuid.UUID,
+    modulo_id: uuid.UUID,
+    leccion_id: uuid.UUID,
+):
+    """Valida acceso de lectura al contenido y retorna (curso, leccion)."""
+    from app.models.contenido import Leccion, Modulo
+
+    db_curso = crud.get_curso(session=session, curso_id=curso_id)
+    if not db_curso:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+
+    db_modulo = session.get(Modulo, modulo_id)
+    if not db_modulo or db_modulo.curso_id != curso_id:
+        raise HTTPException(status_code=404, detail="Módulo no encontrado")
+
+    db_leccion = session.get(Leccion, leccion_id)
+    if not db_leccion or db_leccion.modulo_id != modulo_id:
+        raise HTTPException(status_code=404, detail="Lección no encontrada")
+
+    if not _tiene_acceso_contenido(session, current_user, db_curso):
+        raise HTTPException(status_code=403, detail="Sin acceso a esta lección")
+
+    return db_curso, db_leccion
 
 
 @router.get("/{curso_id}/modulos", response_model=list[ModuloPublic])
@@ -494,13 +599,20 @@ def list_modulos(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     tiene_acceso = _tiene_acceso_contenido(session, current_user, db_curso)
+    revelar_respuestas_quiz = _puede_ver_quiz_con_respuestas(
+        session=session, current_user=current_user, db_curso=db_curso
+    )
     modulos_db = crud.get_modulos(session=session, curso_id=curso_id)
     result = []
     for m in modulos_db:
         lecciones = crud.get_lecciones(session=session, modulo_id=m.id)
         modulo_data = ModuloPublic.model_validate(m, from_attributes=True)
         modulo_data.lecciones = [
-            _strip_leccion_sin_acceso(LeccionPublic.model_validate(l, from_attributes=True), tiene_acceso)
+            _strip_leccion_sin_acceso(
+                LeccionPublic.model_validate(l, from_attributes=True),
+                tiene_acceso,
+                revelar_respuestas_quiz=revelar_respuestas_quiz,
+            )
             for l in lecciones
         ]
         result.append(modulo_data)
@@ -597,9 +709,16 @@ def list_lecciones(
 
     db_curso = crud.get_curso(session=session, curso_id=curso_id)
     tiene_acceso = bool(db_curso) and _tiene_acceso_contenido(session, current_user, db_curso)
+    revelar_respuestas_quiz = bool(db_curso) and _puede_ver_quiz_con_respuestas(
+        session=session, current_user=current_user, db_curso=db_curso
+    )
     lecciones = crud.get_lecciones(session=session, modulo_id=modulo_id)
     return [
-        _strip_leccion_sin_acceso(LeccionPublic.model_validate(l, from_attributes=True), tiene_acceso)
+        _strip_leccion_sin_acceso(
+            LeccionPublic.model_validate(l, from_attributes=True),
+            tiene_acceso,
+            revelar_respuestas_quiz=revelar_respuestas_quiz,
+        )
         for l in lecciones
     ]
 
@@ -795,7 +914,7 @@ def get_video_status(
     if not settings.bunny_enabled:
         raise HTTPException(status_code=503, detail="Bunny.net no configurado")
 
-    db_curso, db_leccion = _get_leccion_with_access(
+    db_curso, db_leccion = _get_leccion_with_read_access(
         session, current_user, curso_id, modulo_id, leccion_id
     )
 
@@ -878,7 +997,7 @@ def list_recursos(
     current_user: CurrentUser,
 ) -> Any:
     """Lista los recursos de una lección."""
-    db_curso, db_leccion = _get_leccion_with_access(
+    db_curso, db_leccion = _get_leccion_with_read_access(
         session, current_user, curso_id, modulo_id, leccion_id
     )
     recursos = crud.get_recursos_leccion(session=session, leccion_id=leccion_id)
@@ -999,13 +1118,7 @@ def download_recurso(
     }
     is_owner = current_user.id == curso.instructor_id
     if not (is_admin or is_owner):
-        inscripcion = crud.get_inscripcion_by_usuario_curso(
-            session=session, usuario_id=current_user.id, curso_id=curso.id
-        )
-        tiene_acceso = (
-            inscripcion is not None
-            and inscripcion.estado in {EstadoInscripcion.ACTIVA, EstadoInscripcion.FINALIZADA}
-        )
+        tiene_acceso = _tiene_acceso_contenido(session, current_user, curso)
         if not tiene_acceso:
             raise HTTPException(status_code=403, detail="Sin acceso a este recurso")
 

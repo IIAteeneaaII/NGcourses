@@ -2,13 +2,14 @@ export interface Lesson {
   id: string;
   name: string;
   tipo?: 'video' | 'quiz' | 'lectura';
+  moduleId?: string;
   videoId?: string;
   videoUrl?: string;
   duration?: number;
   completed: boolean;
   order: number;
   resources?: Resource[];
-  contenido?: string | null;  // JSON string con QuizData para lecciones tipo quiz
+  contenido?: unknown;  // JSON string u objeto con QuizData para lecciones tipo quiz
 }
 
 export interface Resource {
