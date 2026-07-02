@@ -17,8 +17,11 @@ interface CourseVideoContentProps {
   inscripcionId?: string | null;
   bunnyLibraryId?: string | null;
   backHref?: string;
+  navHref?: string;
   /** Vista previa de admin/instructor: el quiz se califica localmente sin inscripción. */
   previewMode?: boolean;
+  /** Vista de supervisor: permite revisar contenido sin inscripción ni progreso. */
+  readOnlyMode?: boolean;
 }
 
 interface CompletionModal {
@@ -47,7 +50,7 @@ function parseQuizData(raw: unknown): QuizData {
   return { preguntas: [] };
 }
 
-export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, previewMode }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, navHref, previewMode, readOnlyMode }: CourseVideoContentProps) {
   const router = useRouter();
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(
@@ -57,20 +60,22 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   const [completionModal, setCompletionModal] = useState<CompletionModal | null>(null);
   const [downloading, setDownloading] = useState(false);
   const [certFolio, setCertFolio] = useState<string | null>(null);
+  const resolvedBackHref = backHref ?? `/curso/${initialCourse.id}`;
+  const resolvedNavHref = navHref ?? (readOnlyMode ? '/supervisor/cursos' : '/cursos');
 
   // Para throttle del tracking: cada 10 segundos
   const lastSentTime = useRef<number>(0);
   const videoDuration = useRef<number>(0);
 
   useEffect(() => {
-    if (initialCourse.progress !== 100) return;
+    if (previewMode || readOnlyMode || initialCourse.progress !== 100) return;
     (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] }>)
       .then((resp) => {
         const cert = resp.data.find((c) => c.curso_id === initialCourse.id);
         if (cert) setCertFolio(cert.folio);
       })
       .catch(() => {});
-  }, [initialCourse.id, initialCourse.progress]);
+  }, [initialCourse.id, initialCourse.progress, previewMode, readOnlyMode]);
 
   const resolvedLibraryId = bunnyLibraryId || process.env.NEXT_PUBLIC_BUNNY_LIBRARY_ID || '';
   const bunnyConfig = currentLesson && !currentLesson.videoUrl && currentLesson.videoId && resolvedLibraryId
@@ -103,6 +108,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   }, [inscripcionId, currentLesson]);
 
   const handleMarkComplete = async () => {
+    if (readOnlyMode) return;
     if (!currentLesson) return;
     if (currentLesson.completed) return;
 
@@ -175,12 +181,12 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         <header className={styles.header}>
           <div className={styles.headerContent}>
             <div className={styles.logo}>Cursos Online</div>
-            <Link href="/cursos" className={styles.navTitle}>Cursos</Link>
+            <Link href={resolvedNavHref} className={styles.navTitle}>Cursos</Link>
           </div>
         </header>
         <div className={styles.main}>
           <div className={styles.backButtonContainer}>
-            <Link href={backHref ?? `/curso/${initialCourse.id}`} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+            <Link href={resolvedBackHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
               Volver a información del curso
             </Link>
@@ -198,7 +204,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       <header className={styles.header}>
         <div className={styles.headerContent}>
           <div className={styles.logo}>Cursos Online</div>
-          <Link href="/cursos" className={styles.navTitle}>
+          <Link href={resolvedNavHref} className={styles.navTitle}>
             Cursos
           </Link>
         </div>
@@ -207,8 +213,14 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       <div className={styles.main}>
         <h1 className={styles.pageTitle}>Videos: {course.title}</h1>
 
+        {readOnlyMode && (
+          <div className={styles.readOnlyBanner}>
+            Vista de supervisor: puedes revisar módulos, videos, recursos y preguntas sin inscribirte ni modificar progreso.
+          </div>
+        )}
+
         <div className={styles.backButtonContainer}>
-          <Link href={backHref ?? `/curso/${course.id}`} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
+          <Link href={resolvedBackHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
             Volver a información del curso
           </Link>
@@ -238,8 +250,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                 leccionId={currentLesson.id}
                 inscripcionId={inscripcionId ?? null}
                 quizData={parseQuizData(currentLesson.contenido)}
-                onAprobado={handleMarkComplete}
+                onAprobado={readOnlyMode ? undefined : handleMarkComplete}
                 previewMode={previewMode}
+                readOnlyMode={readOnlyMode}
               />
             ) : (
               <>
@@ -262,6 +275,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                   certFolio={certFolio}
                   onDownloadCert={handleDescargarCert}
                   downloading={downloading}
+                  readOnlyMode={readOnlyMode}
                 />
               </>
             )}

@@ -19,12 +19,45 @@ def custom_generate_unique_id(route: APIRoute) -> str:
     return f"{route.tags[0]}-{route.name}"
 
 
-if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
-    sentry_sdk.init(dsn=str(settings.SENTRY_DSN), enable_tracing=True)
+_SENTRY_SENSITIVE_KEYS = frozenset({
+    "password", "token", "secret", "authorization", "cookie", "x-api-key", "access_token",
+})
 
+
+def _scrub_sentry_event(event, _hint):
+    def _scrub(obj):
+        if isinstance(obj, dict):
+            return {
+                k: "[Filtered]" if k.lower() in _SENTRY_SENSITIVE_KEYS else _scrub(v)
+                for k, v in obj.items()
+            }
+        if isinstance(obj, list):
+            return [_scrub(i) for i in obj]
+        return obj
+
+    for section in ("request", "extra"):
+        if section in event:
+            event[section] = _scrub(event[section])
+    return event
+
+
+if settings.SENTRY_DSN and settings.ENVIRONMENT != "local":
+    sentry_sdk.init(
+        dsn=str(settings.SENTRY_DSN),
+        traces_sample_rate=0.1,
+        send_default_pii=False,
+        before_send=_scrub_sentry_event,
+    )
+
+_openapi_url = (
+    None if settings.ENVIRONMENT == "production"
+    else f"{settings.API_V1_STR}/openapi.json"
+)
 app = FastAPI(
     title=settings.PROJECT_NAME,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+    openapi_url=_openapi_url,
+    docs_url=None if settings.ENVIRONMENT == "production" else "/docs",
+    redoc_url=None if settings.ENVIRONMENT == "production" else "/redoc",
     generate_unique_id_function=custom_generate_unique_id,
 )
 
@@ -40,6 +73,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'none'"
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(), geolocation=(), payment=()"
+        )
         if settings.ENABLE_HTTPS:
             response.headers["Strict-Transport-Security"] = (
                 "max-age=63072000; includeSubDomains; preload"

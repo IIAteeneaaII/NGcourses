@@ -1,4 +1,4 @@
-from typing import Annotated, Any, Literal
+from typing import Annotated, Any, Literal, Optional
 
 from pydantic import (
     AnyUrl,
@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     )
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str  # Sin default — Pydantic lanza error si no está en .env
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 120  # 2 horas
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
     REFRESH_TOKEN_EXPIRE_DAYS: int = 30
     FRONTEND_HOST: str = "http://localhost:3000"
     ENVIRONMENT: Literal["local", "staging", "production"] = "local"
@@ -104,6 +104,14 @@ class Settings(BaseSettings):
     BUNNY_CDN_HOSTNAME: str | None = None   # e.g. "vz-0bae202f-e4d.b-cdn.net"
     BUNNY_WEBHOOK_SECRET: str | None = None # para validar firma HMAC del webhook
 
+    # Cookies — configurables por entorno sin tocar código
+    AUTH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
+    AUTH_COOKIE_DOMAIN: Optional[str] = None
+
+    # IPs de proxies inversos confiables (ej: IP interna de Traefik).
+    # Solo desde estas IPs se acepta X-Forwarded-For como fuente del IP real del cliente.
+    TRUSTED_PROXIES: Annotated[list[str], BeforeValidator(parse_cors)] = []
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def bunny_enabled(self) -> bool:
@@ -127,7 +135,7 @@ class Settings(BaseSettings):
         return "https://api-m.sandbox.paypal.com"
 
     def _check_default_secret(self, var_name: str, value: str | None) -> None:
-        if not value or value in ("changethis", "secret", ""):
+        if not value or value in ("changethis", "secret", "", "CAMBIAR"):
             raise ValueError(
                 f"{var_name} inválida — no usar valores default. "
                 f"Generar con: python -c \"import secrets; print(secrets.token_urlsafe(64))\""
@@ -138,6 +146,8 @@ class Settings(BaseSettings):
     @model_validator(mode="after")
     def _enforce_non_default_secrets(self) -> Self:
         self._check_default_secret("SECRET_KEY", self.SECRET_KEY)
+        if self.bunny_enabled:
+            self._check_default_secret("BUNNY_WEBHOOK_SECRET", self.BUNNY_WEBHOOK_SECRET)
         return self
 
 

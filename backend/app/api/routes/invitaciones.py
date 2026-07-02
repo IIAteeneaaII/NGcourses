@@ -5,12 +5,13 @@ import uuid
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
 from sqlmodel import SQLModel
 
 from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
+from app.core.limiter import limiter
 from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
 from app.utils import email_formato_valido, generate_activacion_email, send_email
 
@@ -90,8 +91,10 @@ def _to_public(inv: Any) -> InvitacionPublic:
 
 
 @router.post("/canjear", response_model=CanjearResponse, status_code=201)
+@limiter.limit("10/minute")
 def canjear_invitacion(
     *,
+    request: Request,
     session: SessionDep,
     body: CanjearRequest,
 ) -> Any:
@@ -277,10 +280,11 @@ def crear_invitaciones(
 
             resultados.append(InvitacionEnvioResultado(email=email, estado="enviada"))
 
-        except Exception as exc:
-            logger.error("Error al invitar %s: %s", email, exc)
+        except Exception:
+            email_hash = hashlib.sha256(email.encode()).hexdigest()[:8]
+            logger.exception("Error al invitar email_hash=%s", email_hash)
             resultados.append(InvitacionEnvioResultado(
-                email=email, estado="error", detalle=str(exc)
+                email=email, estado="error", detalle="Error al procesar invitación"
             ))
 
     return resultados
