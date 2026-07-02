@@ -224,6 +224,8 @@ export const cursosApi = {
   // Lecciones
   createLeccion: (curso_id: string, modulo_id: string, data: unknown) =>
     apiClient.post(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones`, data),
+  getLeccion: (curso_id: string, modulo_id: string, leccion_id: string) =>
+    apiClient.get(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`),
   updateLeccion: (curso_id: string, modulo_id: string, leccion_id: string, data: unknown) =>
     apiClient.patch(`/api/v1/cursos/${curso_id}/modulos/${modulo_id}/lecciones/${leccion_id}`, data),
   deleteLeccion: (curso_id: string, modulo_id: string, leccion_id: string) =>
@@ -479,6 +481,11 @@ export const featureFlagsApi = {
 };
 
 export const quizApi = {
+  /** Revisión/lectura: obtiene la configuración del quiz de una lección cuando el curso no la trae embebida. */
+  detalleLeccion: (leccion_id: string) =>
+    apiClient.get(`/api/v1/quiz/lecciones/${leccion_id}`),
+  preguntasLeccion: (leccion_id: string) =>
+    apiClient.get(`/api/v1/quiz/lecciones/${leccion_id}/preguntas`),
   /** El alumno envía sus respuestas y obtiene resultado inmediato. */
   enviar: (leccion_id: string, data: { inscripcion_id: string; respuestas: { pregunta_id: string; opcion_id: string }[] }) =>
     apiClient.post(`/api/v1/quiz/lecciones/${leccion_id}/enviar`, data),
