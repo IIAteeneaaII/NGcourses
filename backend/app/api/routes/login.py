@@ -11,7 +11,7 @@ from app import crud
 from app.api.deps import CurrentUser, SessionDep, get_current_active_superuser
 from app.core import security
 from app.core.config import settings
-from app.core.limiter import limiter
+from app.core.limiter import get_client_ip, limiter
 from app.core.security import get_password_hash
 from app.models import Message, NewPassword, PasswordRecoveryRequest, Token, User, UserPublic
 from app.models._enums import RolUsuario
@@ -72,8 +72,7 @@ def login_access_token(
     try:
         raw_rt = security.create_refresh_token_raw()
         rt_hash = security.hash_token(raw_rt)
-        ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-              or (request.client.host if request.client else None))
+        ip = get_client_ip(request)
         rt = RefreshToken(
             usuario_id=user.id,
             token_hash=rt_hash,
@@ -173,8 +172,7 @@ def refresh_access_token(
 
     new_raw = security.create_refresh_token_raw()
     new_hash = security.hash_token(new_raw)
-    ip = (request.headers.get("X-Forwarded-For", "").split(",")[0].strip()
-          or (request.client.host if request.client else None))
+    ip = get_client_ip(request)
 
     rt.revocado_en = datetime.now(timezone.utc)
     rt.reemplazado_por_token_hash = new_hash
@@ -208,6 +206,15 @@ def test_token(current_user: CurrentUser) -> Any:
     Test access token
     """
     return current_user
+
+
+@router.get("/auth/session")
+def get_session(current_user: CurrentUser) -> dict:
+    """Valida el JWT HttpOnly y devuelve rol e is_superuser para consumo server-to-server."""
+    return {
+        "rol": current_user.rol.value,
+        "is_superuser": current_user.is_superuser,
+    }
 
 
 def _do_recover_password(email: str, session: SessionDep) -> None:

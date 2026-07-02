@@ -272,10 +272,11 @@ def crear_invitaciones(
 
             resultados.append(InvitacionEnvioResultado(email=email, estado="enviada"))
 
-        except Exception as exc:
-            logger.error("Error al invitar %s: %s", email, exc)
+        except Exception:
+            email_hash = hashlib.sha256(email.encode()).hexdigest()[:8]
+            logger.exception("Error al invitar email_hash=%s", email_hash)
             resultados.append(InvitacionEnvioResultado(
-                email=email, estado="error", detalle=str(exc)
+                email=email, estado="error", detalle="Error al procesar invitación"
             ))
 
     return resultados

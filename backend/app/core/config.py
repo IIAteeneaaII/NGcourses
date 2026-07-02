@@ -108,6 +108,10 @@ class Settings(BaseSettings):
     AUTH_COOKIE_SAMESITE: Literal["lax", "strict", "none"] = "lax"
     AUTH_COOKIE_DOMAIN: Optional[str] = None
 
+    # IPs de proxies inversos confiables (ej: IP interna de Traefik).
+    # Solo desde estas IPs se acepta X-Forwarded-For como fuente del IP real del cliente.
+    TRUSTED_PROXIES: Annotated[list[str], BeforeValidator(parse_cors)] = []
+
     @computed_field  # type: ignore[prop-decorator]
     @property
     def bunny_enabled(self) -> bool:

@@ -14,6 +14,27 @@ const ROL_HOME: Record<string, string> = {
 
 const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
 
+// Llamada server-to-server para validar el JWT HttpOnly sin confiar en cookies JS.
+// En dev: si el backend no está levantado, getSession devuelve null y el código
+// usa las cookies de rol como fallback para no romper el entorno local.
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://localhost:8000';
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+async function getSession(
+  cookieHeader: string,
+): Promise<{ rol: string; is_superuser: boolean } | null> {
+  try {
+    const res = await fetch(`${BACKEND_URL}/api/v1/auth/session`, {
+      headers: { Cookie: cookieHeader },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return res.json() as Promise<{ rol: string; is_superuser: boolean }>;
+  } catch {
+    return null;
+  }
+}
+
 function buildCsp(nonce: string): string {
   const isDev = process.env.NODE_ENV === 'development';
   const httpsEnabled = process.env.ENABLE_HTTPS === 'true';
@@ -37,7 +58,7 @@ function buildCsp(nonce: string): string {
   ].join('; ');
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString('base64');
   const csp = buildCsp(nonce);
 
@@ -72,15 +93,32 @@ export function proxy(request: NextRequest) {
     return nextWithNonce();
   }
 
-  // Rutas con rol específico
+  // Rutas con rol específico — validación server-to-server contra JWT HttpOnly
   for (const [prefix, requiredRole] of Object.entries(ROLE_ROUTES)) {
     if (pathname.startsWith(prefix)) {
       if (!token) {
         return redirectWithCsp(new URL('/?error=auth', request.url));
       }
-      if (isSuperuser && prefix === '/admin') return nextWithNonce();
-      if (userRol !== requiredRole) {
-        const home = userRol ? (ROL_HOME[userRol] ?? '/cursos') : '/cursos';
+
+      const cookieHeader = request.headers.get('cookie') ?? '';
+      const session = await getSession(cookieHeader);
+
+      if (!session) {
+        // En dev: si el backend no responde, fallback a cookie para no bloquear el entorno local
+        if (IS_DEV && userRol) {
+          if (isSuperuser && prefix === '/admin') return nextWithNonce();
+          if (userRol !== requiredRole) {
+            const home = ROL_HOME[userRol] ?? '/cursos';
+            return redirectWithCsp(new URL(`${home}?error=role`, request.url));
+          }
+          return nextWithNonce();
+        }
+        return redirectWithCsp(new URL('/?error=auth', request.url));
+      }
+
+      if (session.is_superuser && prefix === '/admin') return nextWithNonce();
+      if (session.rol !== requiredRole) {
+        const home = ROL_HOME[session.rol] ?? '/cursos';
         return redirectWithCsp(new URL(`${home}?error=role`, request.url));
       }
       return nextWithNonce();
