@@ -76,7 +76,16 @@
 
 @media (min-width: 1024px) {
   .contentGrid {
-    grid-template-columns: 2fr 1fr;
+    /* Mismos tamaños de antes (video 2fr, panel 1fr); solo cambia el lado:
+       panel de contenido a la izquierda, video a la derecha. */
+    grid-template-columns: 1fr 2fr;
+  }
+}
+
+/* En móvil (columna única) el video va arriba del panel. */
+@media (max-width: 1023px) {
+  .videoSection {
+    order: -1;
   }
 }
 

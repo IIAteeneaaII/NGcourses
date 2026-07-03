@@ -225,6 +225,12 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         )}
 
         <div className={styles.contentGrid}>
+          <LessonsSidebar
+            modules={course.modules}
+            currentLessonId={currentLesson.id}
+            onLessonSelect={handleLessonSelect}
+          />
+
           <div className={styles.videoSection}>
             {currentLesson.tipo === 'quiz' ? (
               <QuizPlayer
@@ -252,6 +258,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                   progress={progress}
                   onMarkComplete={handleMarkComplete}
                   resources={currentLesson.resources}
+                  resumen={currentLesson.resumen}
                   courseId={course.id}
                   lessonId={currentLesson.id}
                   certFolio={certFolio}
@@ -262,12 +269,6 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
               </>
             )}
           </div>
-
-          <LessonsSidebar
-            modules={course.modules}
-            currentLessonId={currentLesson.id}
-            onLessonSelect={handleLessonSelect}
-          />
         </div>
       </div>
 

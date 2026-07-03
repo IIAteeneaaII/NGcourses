@@ -20,6 +20,7 @@ const API_URL = '';
 interface ApiLeccion {
   id: string;
   titulo: string;
+  resumen?: string | null;
   tipo: string;
   orden: number;
   duracion_seg: number;
@@ -146,6 +147,7 @@ export default function CursoVideosPage() {
             return {
               id: l.id,
               name: l.titulo,
+              resumen: l.resumen ?? undefined,
               tipo,
               moduleId: m.id,
               videoId: l.bunny_video_id || undefined,

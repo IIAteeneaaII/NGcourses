@@ -28,7 +28,7 @@ function slugify(text: string): string {
 
 interface ApiCategoria { id: string; nombre: string }
 interface ApiModulo { id: string; titulo: string; descripcion: string | null }
-interface ApiLeccion { id: string; titulo: string; bunny_video_id: string | null; es_visible: boolean }
+interface ApiLeccion { id: string; titulo: string; resumen?: string | null; bunny_video_id: string | null; es_visible: boolean }
 interface ApiLeccionRecurso { id: string; titulo: string; url: string; tipo: string }
 
 interface RecursoItem {
@@ -49,6 +49,7 @@ interface Module {
 interface Lesson {
   id: string;
   title: string;
+  resumen?: string;
   tipo: 'video' | 'quiz';
   isVisible: boolean;
   bunnyVideoId: string | null;
@@ -683,6 +684,19 @@ export default function CrearCursoPage() {
                                   </button>
                                 </div>
                                 <div className={styles.lessonInputs}>
+                                  <div style={{ marginBottom: '0.75rem' }}>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>
+                                      Resumen de la lección <span style={{ color: '#94a3b8' }}>(lo verá el alumno en la pestaña “Resumen”)</span>
+                                    </label>
+                                    <textarea
+                                      value={lesson.resumen ?? ''}
+                                      onChange={(e) => updateLessonLocal(module.id, lesson.id, { resumen: e.target.value })}
+                                      onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { resumen: lesson.resumen ?? '' }).catch((e) => logError('instructor/cursos/crear/autoSave', e))}
+                                      placeholder="Breve resumen de lo que trata esta lección…"
+                                      rows={3}
+                                      style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.85rem', resize: 'vertical' }}
+                                    />
+                                  </div>
                                   {lesson.tipo === 'video' ? (
                                     <VideoUploadButton
                                       cursoId={cursoId}

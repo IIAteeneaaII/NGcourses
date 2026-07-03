@@ -1,6 +1,7 @@
 export interface Lesson {
   id: string;
   name: string;
+  resumen?: string;
   tipo?: 'video' | 'quiz' | 'lectura';
   moduleId?: string;
   videoId?: string;

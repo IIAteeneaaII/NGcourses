@@ -23,6 +23,7 @@ interface VideoControlsProps {
   progress: number;
   onMarkComplete: () => void;
   resources?: Resource[];
+  resumen?: string;
   courseId?: string;
   lessonId?: string;
   certFolio?: string | null;
@@ -35,6 +36,7 @@ export default function VideoControls({
   progress,
   onMarkComplete,
   resources,
+  resumen,
   courseId,
   lessonId,
   certFolio,
@@ -198,6 +200,16 @@ export default function VideoControls({
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.75a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5zm0 6a.75.75 0 110-1.5.75.75 0 010 1.5z" /></svg>
         </button>
       </div>
+
+      {activeTab === 'resumen' && (
+        <div className={styles.tabContent}>
+          {resumen && resumen.trim() ? (
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: '#334155', margin: 0 }}>{resumen}</p>
+          ) : (
+            <p className={styles.emptyMessage}>Esta lección no tiene un resumen disponible.</p>
+          )}
+        </div>
+      )}
 
       {activeTab === 'recursos' && (
         <div className={styles.tabContent}>

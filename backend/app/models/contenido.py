@@ -145,6 +145,9 @@ class Leccion(SQLModel, table=True):
     id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True)
     modulo_id: uuid.UUID = Field(foreign_key="modulos.id", nullable=False, ondelete="CASCADE")
     titulo: str = Field(max_length=255)
+    # Resumen informativo de la lección (lo llena el editor; el alumno lo ve en la
+    # pestaña "Resumen" del reproductor). Solo lectura para el alumno.
+    resumen: str | None = Field(default=None, sa_column=Column("resumen", Text, nullable=True))
     tipo: TipoLeccion = Field(default=TipoLeccion.VIDEO, sa_type=_tipoleccion_type)
     orden: int = Field(default=0)
     duracion_seg: int = Field(default=0)
@@ -256,6 +259,7 @@ class LeccionPublic(SQLModel):
     id: uuid.UUID
     modulo_id: uuid.UUID
     titulo: str
+    resumen: str | None = None
     tipo: TipoLeccion
     orden: int
     duracion_seg: int
@@ -271,6 +275,7 @@ class LeccionPublic(SQLModel):
 
 class LeccionCreate(SQLModel):
     titulo: str
+    resumen: str | None = None
     tipo: TipoLeccion = TipoLeccion.VIDEO
     orden: int = 0
     duracion_seg: int = 0
@@ -282,6 +287,7 @@ class LeccionCreate(SQLModel):
 
 class LeccionUpdate(SQLModel):
     titulo: str | None = None
+    resumen: str | None = None
     tipo: TipoLeccion | None = None
     orden: int | None = None
     duracion_seg: int | None = None
