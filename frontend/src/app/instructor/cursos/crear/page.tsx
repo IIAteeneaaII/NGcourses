@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { cursosApi, categoriasApi } from '@/lib/api/client';
 import VideoUploadButton from '@/components/video/VideoUploadButton';
 import LessonTypeSelector from '@/components/course/LessonTypeSelector';
+import LessonMoveButtons from '@/components/course/LessonMoveButtons';
 import QuizBuilder from '@/components/course/QuizBuilder';
 import type { QuizData } from '@/types/course';
 import { logError } from '@/lib/logger';
@@ -263,6 +264,23 @@ export default function CrearCursoPage() {
     } catch {
       alert('Error al eliminar la lección');
     }
+  };
+
+  // Reordenar una lección dentro de su módulo (botones ↑/↓): intercambia con la
+  // vecina en el estado local y persiste el nuevo `orden` de ambas.
+  const moveLesson = (moduleId: string, index: number, dir: 'up' | 'down') => {
+    if (!cursoId) return;
+    const mod = modules.find((m) => m.id === moduleId);
+    if (!mod) return;
+    const target = index + (dir === 'up' ? -1 : 1);
+    if (target < 0 || target >= mod.lessons.length) return;
+    const lessons = [...mod.lessons];
+    [lessons[index], lessons[target]] = [lessons[target], lessons[index]];
+    setModules((prev) => prev.map((m) => (m.id === moduleId ? { ...m, lessons } : m)));
+    cursosApi.updateLeccion(cursoId, moduleId, lessons[index].id, { orden: index + 1 })
+      .catch((e) => logError('instructor/cursos/crear/reorder', e));
+    cursosApi.updateLeccion(cursoId, moduleId, lessons[target].id, { orden: target + 1 })
+      .catch((e) => logError('instructor/cursos/crear/reorder', e));
   };
 
   const updateLessonRecursoField = (moduleId: string, lessonId: string, field: 'newRecursoTitulo' | 'showRecursos', value: string | boolean) => {
@@ -652,6 +670,12 @@ export default function CrearCursoPage() {
                                     />
                                     <span className={styles.toggleSlider}></span>
                                   </label>
+                                  <LessonMoveButtons
+                                    onUp={() => moveLesson(module.id, lessonIndex, 'up')}
+                                    onDown={() => moveLesson(module.id, lessonIndex, 'down')}
+                                    disableUp={lessonIndex === 0}
+                                    disableDown={lessonIndex === module.lessons.length - 1}
+                                  />
                                   <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar lección">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <path d="M18 6L6 18M6 6l12 12" />
