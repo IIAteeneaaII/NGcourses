@@ -3,8 +3,8 @@ Servicio Bunny.net Stream API.
 Documentación: https://docs.bunny.net/reference/manage-videos
 
 Claves utilizadas:
-  BUNNY_API_KEY   → AccessKey en el header REST API (operaciones CRUD de video)
-  BUNNY_TOKEN_KEY → Firma SHA256 para autorizar uploads TUS (distinta a la API key)
+  BUNNY_API_KEY   → AccessKey del REST API Y firma SHA256 del upload TUS (Bunny usa
+                    la misma API key de la librería para ambos; NO hay key aparte)
   BUNNY_LIBRARY_ID → ID numérico de la librería de video
   BUNNY_CDN_HOSTNAME → Hostname del pull zone (e.g. vz-0bae202f-e4d.b-cdn.net)
 
@@ -31,10 +31,6 @@ BUNNY_TUS_URL = "https://video.bunnycdn.com/tusupload"
 
 def _api_key(override: str | None = None) -> str:
     return override or settings.BUNNY_API_KEY or ""
-
-def _token_key(override: str | None = None) -> str:
-    """Token key para firmar uploads TUS (BUNNY_TOKEN_KEY)."""
-    return override or settings.BUNNY_TOKEN_KEY or settings.BUNNY_API_KEY or ""
 
 def _lib(override: str | None = None) -> str:
     return override or settings.BUNNY_LIBRARY_ID or ""
@@ -149,15 +145,18 @@ def _upload_expiry() -> str:
 def _sign_upload(
     video_id: str,
     library_id: str | None = None,
-    token_key: str | None = None,
+    api_key: str | None = None,
 ) -> tuple[str, str]:
     """
     Genera la firma SHA256 para autorizar upload TUS.
-    Fórmula: SHA256(libraryId + tokenKey + expiry + videoId)
+    Bunny autentica el TUS con la API key de la librería (la MISMA del REST),
+    no con una key separada. Verificado contra tusupload: firmar con la API key
+    devuelve 201; con cualquier otra key, 401. Por eso NO se usa BUNNY_TOKEN_KEY.
+    Fórmula: SHA256(libraryId + apiKey + expiry + videoId).
     Retorna (signature, expiry).
     """
     expiry = _upload_expiry()
-    raw = f"{_lib(library_id)}{_token_key(token_key)}{expiry}{video_id}"
+    raw = f"{_lib(library_id)}{_api_key(api_key)}{expiry}{video_id}"
     signature = hashlib.sha256(raw.encode()).hexdigest()
     return signature, expiry
 
@@ -170,13 +169,13 @@ def get_tus_headers(
     video_id: str,
     file_size: int = 0,
     library_id: str | None = None,
-    token_key: str | None = None,
+    api_key: str | None = None,
 ) -> dict[str, str]:
     """
     Headers necesarios que el frontend debe enviar al hacer el upload TUS.
     El frontend (VideoUploadButton) los inyecta en el XMLHttpRequest.
     """
-    signature, expiry = _sign_upload(video_id, library_id, token_key)
+    signature, expiry = _sign_upload(video_id, library_id, api_key)
     return {
         "AuthorizationSignature": signature,
         "AuthorizationExpire": expiry,
