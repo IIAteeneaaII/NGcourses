@@ -21,6 +21,12 @@ export const metadata: Metadata = {
   },
 };
 
+// Render dinámico obligatorio en toda la app: el CSP usa un nonce por-request
+// (generado en el middleware). Una página prerenderizada/cacheada sirve HTML sin
+// nonce → 'strict-dynamic' bloquea todos sus scripts. Forzar dynamic hace que
+// Next renderice en cada request e inyecte el nonce en sus <script>.
+export const dynamic = 'force-dynamic';
+
 export default function RootLayout({
   children,
 }: Readonly<{
