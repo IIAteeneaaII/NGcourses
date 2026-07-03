@@ -63,9 +63,13 @@ export async function proxy(request: NextRequest) {
   const csp = buildCsp(nonce);
 
   // Pasar nonce a Server Components vía request header.
-  // Next.js lo aplica a sus propios scripts de hidratación.
+  // Next.js lee el nonce del header Content-Security-Policy del request para
+  // aplicarlo a sus propios scripts de hidratación (chunks de /_next/static).
+  // Sin este header en el request, los scripts salen sin nonce y 'strict-dynamic'
+  // los bloquea. x-nonce queda disponible para uso propio de la app.
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('Content-Security-Policy', csp);
 
   function nextWithNonce(): NextResponse {
     const res = NextResponse.next({ request: { headers: requestHeaders } });
