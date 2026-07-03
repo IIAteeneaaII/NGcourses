@@ -244,16 +244,18 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
               />
             ) : (
               <>
-                <VideoPlayer
-                  key={currentLesson.id}
-                  config={bunnyConfig}
-                  videoUrl={currentLesson.videoUrl}
-                  onTimeUpdate={handleTimeUpdate}
-                  onEnded={() => {
-                    handleTimeUpdate(videoDuration.current);
-                    handleMarkComplete();
-                  }}
-                />
+                {currentLesson.tipo !== 'lectura' && (
+                  <VideoPlayer
+                    key={currentLesson.id}
+                    config={bunnyConfig}
+                    videoUrl={currentLesson.videoUrl}
+                    onTimeUpdate={handleTimeUpdate}
+                    onEnded={() => {
+                      handleTimeUpdate(videoDuration.current);
+                      handleMarkComplete();
+                    }}
+                  />
+                )}
                 <VideoControls
                   progress={progress}
                   onMarkComplete={handleMarkComplete}

@@ -55,6 +55,15 @@
   opacity: 0.88;
 }
 
+.lectura {
+  background: var(--color-secondary, #0ea5e9);
+  color: var(--color-text-white, #ffffff);
+}
+
+.lectura:hover:not(:disabled) {
+  opacity: 0.88;
+}
+
 .cancelHint {
   font-size: 0.75rem;
   color: var(--color-text-secondary, #718096);

@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import styles from './LessonTypeSelector.module.css';
 
 interface Props {
-  onSelect: (tipo: 'video' | 'quiz') => void;
+  onSelect: (tipo: 'video' | 'quiz' | 'lectura') => void;
   onCancel: () => void;
   isCreating?: boolean;
 }
@@ -44,6 +44,19 @@ export default function LessonTypeSelector({ onSelect, onCancel, isCreating = fa
           <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
         </svg>
         Quiz
+      </button>
+      <button
+        type="button"
+        className={`${styles.typeButton} ${styles.lectura}`}
+        onClick={() => onSelect('lectura')}
+        disabled={isCreating}
+        title="Lección práctica: solo material/recursos, sin video ni calificación"
+      >
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
+          <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+        </svg>
+        Práctica
       </button>
       <span className={styles.cancelHint}>Esc para cancelar</span>
     </div>

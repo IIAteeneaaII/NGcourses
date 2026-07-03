@@ -89,7 +89,7 @@ interface Lesson {
   id: string;
   title: string;
   resumen: string;
-  tipo: 'video' | 'quiz';
+  tipo: 'video' | 'quiz' | 'lectura';
   isVisible: boolean;
   bunnyVideoId: string | null;
   recursos: RecursoItem[];
@@ -278,7 +278,7 @@ export default function EditarCursoAdminPage() {
             id: l.id,
             title: l.titulo,
             resumen: l.resumen ?? '',
-            tipo: (l.tipo === 'quiz' ? 'quiz' : 'video') as 'video' | 'quiz',
+            tipo: (l.tipo === 'quiz' ? 'quiz' : l.tipo === 'lectura' ? 'lectura' : 'video') as 'video' | 'quiz' | 'lectura',
             isVisible: l.es_visible,
             bunnyVideoId: l.bunny_video_id,
             recursos: l.recursos || [],
@@ -441,13 +441,13 @@ export default function EditarCursoAdminPage() {
   };
 
   // Lecciones
-  const confirmAddLesson = async (moduleId: string, tipo: 'video' | 'quiz') => {
+  const confirmAddLesson = async (moduleId: string, tipo: 'video' | 'quiz' | 'lectura') => {
     const mod = modules.find((m) => m.id === moduleId);
     if (!mod) return;
     setChoosingForModule(null);
     try {
       const resp = await cursosApi.createLeccion(cursoId, moduleId, {
-        titulo: tipo === 'quiz' ? 'Nueva lección - Quiz' : 'Nueva lección',
+        titulo: tipo === 'quiz' ? 'Nueva lección - Quiz' : tipo === 'lectura' ? 'Nueva lección - Práctica' : 'Nueva lección',
         tipo,
         orden: mod.lessons.length + 1,
         es_visible: true,
@@ -942,7 +942,7 @@ export default function EditarCursoAdminPage() {
                                   </button>
                                 </div>
                                 <div className={styles.lessonInputs}>
-                                  <div style={{ marginBottom: '0.75rem' }}>
+                                  <div style={{ marginBottom: '0.75rem', gridColumn: lesson.tipo === 'lectura' ? '1 / -1' : undefined }}>
                                     <label style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>
                                       Resumen de la lección <span style={{ color: '#94a3b8' }}>(lo verá el alumno en la pestaña “Resumen”)</span>
                                     </label>
@@ -951,8 +951,8 @@ export default function EditarCursoAdminPage() {
                                       onChange={(e) => updateLessonLocal(module.id, lesson.id, { resumen: e.target.value })}
                                       onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { resumen: lesson.resumen }).catch((e) => logError('admin/cursos/editar/autoSave', e))}
                                       placeholder="Breve resumen de lo que trata esta lección…"
-                                      rows={3}
-                                      style={{ width: '100%', padding: '0.5rem', borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.85rem', resize: 'vertical' }}
+                                      rows={lesson.tipo === 'lectura' ? 10 : 3}
+                                      style={{ width: '100%', padding: '0.6rem', borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.9rem', lineHeight: 1.5, resize: 'vertical' }}
                                     />
                                   </div>
                                   {lesson.tipo === 'video' ? (
@@ -963,12 +963,16 @@ export default function EditarCursoAdminPage() {
                                       currentBunnyVideoId={lesson.bunnyVideoId}
                                       onUploadComplete={(videoId) => updateLessonLocal(module.id, lesson.id, { bunnyVideoId: videoId })}
                                     />
-                                  ) : (
+                                  ) : lesson.tipo === 'quiz' ? (
                                     <QuizBuilder
                                       quizData={lesson.quizData}
                                       onChange={(qd) => updateLessonLocal(module.id, lesson.id, { quizData: qd })}
                                       onSave={(data) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, data).catch((e) => logError('admin/cursos/editar/autoSave', e))}
                                     />
+                                  ) : (
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#64748b' }}>
+                                      Lección práctica: sin video ni calificación. Adjunta el material abajo en <strong>Recursos</strong>; el alumno lo descarga y marca la lección como completada.
+                                    </p>
                                   )}
                                   <button
                                     type="button"
