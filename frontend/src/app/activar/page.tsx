@@ -4,6 +4,21 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { ActivarCuentaSchema } from '@/schemas/auth';
 
+// FastAPI devuelve `detail` como string (HTTPException) o como arreglo de
+// errores de validación (422). Extrae siempre un mensaje legible para no
+// renderizar "[object Object]".
+function parseApiDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    const msg = detail
+      .map((e) => (e && typeof e === 'object' && 'msg' in e ? String((e as { msg: unknown }).msg) : ''))
+      .filter(Boolean)
+      .join('. ');
+    return msg;
+  }
+  return '';
+}
+
 const getPasswordRules = (value: string) => [
   { label: 'Mínimo 8 caracteres', valid: value.length >= 8 },
   { label: 'Una mayúscula', valid: /[A-Z]/.test(value) },
@@ -55,7 +70,7 @@ function ActivarForm() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const detail: string = body.detail ?? '';
+        const detail = parseApiDetail(body.detail);
         if (detail === 'Token expirado') { setTokenExpirado(true); return; }
         if (detail === 'Token inválido') throw new Error('El enlace no es válido. Contacta al administrador.');
         throw new Error(detail || 'Error al activar la cuenta.');

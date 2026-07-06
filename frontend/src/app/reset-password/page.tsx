@@ -4,6 +4,20 @@ import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { ResetPasswordSchema } from '@/schemas/auth';
 
+// FastAPI devuelve `detail` como string (HTTPException) o como arreglo de
+// errores de validación (422). Extrae siempre un mensaje legible para no
+// renderizar "[object Object]".
+function parseApiDetail(detail: unknown): string {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) {
+    return detail
+      .map((e) => (e && typeof e === 'object' && 'msg' in e ? String((e as { msg: unknown }).msg) : ''))
+      .filter(Boolean)
+      .join('. ');
+  }
+  return '';
+}
+
 function ResetPasswordForm() {
   const [token, setToken] = useState('');
 
@@ -41,7 +55,7 @@ function ResetPasswordForm() {
 
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        const detail: string = body.detail ?? '';
+        const detail = parseApiDetail(body.detail);
         if (detail === 'Token expired') throw new Error('El enlace ha expirado. Solicita uno nuevo.');
         if (detail === 'Invalid token') throw new Error('El enlace no es válido. Solicita uno nuevo.');
         throw new Error(detail || 'Error al restablecer la contraseña.');
