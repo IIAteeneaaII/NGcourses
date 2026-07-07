@@ -28,6 +28,12 @@
   align-items: center;
   gap: 0.5rem;
   min-width: 0;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.logoGroup:hover {
+  opacity: 0.85;
 }
 
 .logoImg {

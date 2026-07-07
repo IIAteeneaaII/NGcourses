@@ -211,6 +211,7 @@ export default function CursoVideosPage() {
         navHref={fromSupervisor ? '/supervisor/cursos' : fromAdmin ? '/admin/cursos' : undefined}
         previewMode={previewMode}
         readOnlyMode={fromSupervisor}
+        showUserMenu={!previewMode}
       />
     </ErrorBoundary>
   );

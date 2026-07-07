@@ -182,6 +182,7 @@ export default function CursoInfoPage() {
       viewOnlyMode={userRole === 'supervisor'}
       viewCourseHref={`/curso/${course.id}/videos?from=supervisor`}
       viewCourseLabel="Ver curso"
+      showUserMenu={shouldCheckEnrollment(userRole)}
     />
   );
 }

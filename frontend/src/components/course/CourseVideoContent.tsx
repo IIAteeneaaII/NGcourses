@@ -11,6 +11,7 @@ import type { Course, Lesson } from '@/types/course';
 import { progresoApi, certificadosApi } from '@/lib/api/client';
 import { normalizeQuizData } from '@/lib/quizData';
 import { logError } from '@/lib/logger';
+import StudentUserMenu from '@/components/shared/StudentUserMenu';
 import styles from './CourseVideoContent.module.css';
 
 interface CourseVideoContentProps {
@@ -23,6 +24,8 @@ interface CourseVideoContentProps {
   previewMode?: boolean;
   /** Vista de supervisor: permite revisar contenido sin inscripción ni progreso. */
   readOnlyMode?: boolean;
+  /** Muestra el menú de usuario del alumno en la barra superior (solo alumno real). */
+  showUserMenu?: boolean;
 }
 
 interface CompletionModal {
@@ -32,7 +35,7 @@ interface CompletionModal {
 
 
 
-export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, navHref, previewMode, readOnlyMode }: CourseVideoContentProps) {
+export default function CourseVideoContent({ initialCourse, inscripcionId, bunnyLibraryId, backHref, navHref, previewMode, readOnlyMode, showUserMenu }: CourseVideoContentProps) {
   const router = useRouter();
   const [course, setCourse] = useState<Course>(initialCourse);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(
@@ -162,8 +165,15 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       <div className={styles.container}>
         <header className={styles.header}>
           <div className={styles.headerContent}>
-            <div className={styles.logo}>Cursos Online</div>
-            <Link href={resolvedNavHref} className={styles.navTitle}>Cursos</Link>
+            <Link href={resolvedNavHref} className={styles.logoLink}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+              <span className={styles.logoTitle}>
+                <span className={styles.logoBold}>NextGen</span>
+                <span className={styles.logoLight}> Course</span>
+              </span>
+            </Link>
+            {showUserMenu && <StudentUserMenu />}
           </div>
         </header>
         <div className={styles.main}>
@@ -185,15 +195,20 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Cursos Online</div>
-          <Link href={resolvedNavHref} className={styles.navTitle}>
-            Cursos
+          <Link href={resolvedNavHref} className={styles.logoLink}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NextGen</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
           </Link>
+          {showUserMenu && <StudentUserMenu />}
         </div>
       </header>
 
       <div className={styles.main}>
-        <h1 className={styles.pageTitle}>Videos: {course.title}</h1>
+        <h1 className={styles.pageTitle}>Curso: {course.title}</h1>
 
         {readOnlyMode && (
           <div className={styles.readOnlyBanner}>

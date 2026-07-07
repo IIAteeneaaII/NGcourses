@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { CourseInfo } from '@/types/course';
 import PayPalCheckout from './PayPalCheckout';
+import StudentUserMenu from '@/components/shared/StudentUserMenu';
 import styles from './CourseInfoContent.module.css';
 
 interface CourseInfoContentProps {
@@ -18,6 +19,8 @@ interface CourseInfoContentProps {
   viewOnlyMode?: boolean;
   viewCourseHref?: string;
   viewCourseLabel?: string;
+  /** Muestra el menú de usuario del alumno en la barra superior (solo alumno real). */
+  showUserMenu?: boolean;
 }
 
 function formatPrice(precio: number | null | undefined, moneda?: string): { label: string; isFree: boolean } {
@@ -27,7 +30,7 @@ function formatPrice(precio: number | null | undefined, moneda?: string): { labe
   return { label: `$${entero} ${moneda || 'MXN'}`, isFree: false };
 }
 
-export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia, viewOnlyMode = false, viewCourseHref, viewCourseLabel = 'Ver curso' }: CourseInfoContentProps) {
+export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia, viewOnlyMode = false, viewCourseHref, viewCourseLabel = 'Ver curso', showUserMenu }: CourseInfoContentProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
@@ -36,10 +39,15 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Cursos Online</div>
-          <Link href={backHref} className={styles.navLink}>
-            Cursos
+          <Link href={backHref} className={styles.logoLink}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NextGen</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
           </Link>
+          {showUserMenu && <StudentUserMenu />}
         </div>
       </header>
 

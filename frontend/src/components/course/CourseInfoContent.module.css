@@ -35,6 +35,48 @@
   color: var(--color-secondary-30);
 }
 
+/* Logo NextGen como botón de regreso al dashboard */
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  min-width: 0;
+  transition: opacity 0.15s ease;
+}
+
+.logoLink:hover {
+  opacity: 0.85;
+}
+
+.logoImg {
+  height: 28px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.logoTitle {
+  font-size: 1.125rem;
+  line-height: 1;
+  color: var(--color-secondary-30);
+  white-space: nowrap;
+}
+
+.logoBold {
+  font-weight: 900;
+}
+
+.logoLight {
+  font-weight: 300;
+}
+
+@media (max-width: 480px) {
+  .logoLight {
+    display: none;
+  }
+}
+
 .main {
   max-width: 1000px;
   margin: 0 auto;

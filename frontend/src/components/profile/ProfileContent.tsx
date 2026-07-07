@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import type { UserProfile, UserStatistics, CourseInProgress } from '@/types/course';
 import MisCompras from './MisCompras';
+import StudentUserMenu from '@/components/shared/StudentUserMenu';
 import styles from './ProfileContent.module.css';
 
 interface ProfileContentProps {
@@ -19,11 +20,15 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
     <div className={styles.container}>
       <header className={styles.header}>
         <div className={styles.headerContent}>
-          <div className={styles.logo}>Cursos Online</div>
-          <Link href="/cursos" className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-            Volver al Dashboard
+          <Link href="/cursos" className={styles.logoLink}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
+            <span className={styles.logoTitle}>
+              <span className={styles.logoBold}>NextGen</span>
+              <span className={styles.logoLight}> Course</span>
+            </span>
           </Link>
+          <StudentUserMenu />
         </div>
       </header>
 
