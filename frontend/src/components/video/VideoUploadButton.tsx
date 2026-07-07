@@ -88,6 +88,13 @@ export default function VideoUploadButton({
         retryDelays: [0, 3000, 5000, 10000],
         chunkSize: 50 * 1024 * 1024, // 50 MB por chunk — menos requests, upload más rápido
         headers: tusHeaders,
+        // Cada `video-init` crea un video Bunny NUEVO (y borra el anterior), así que
+        // reanudar una subida previa NUNCA es válido: tus haría HEAD a una URL vieja
+        // (→ 401) o reportaría "completo" sin subir un byte al video nuevo, dejándolo
+        // en 0 bytes / "processing" para siempre. Forzamos que cada upload sea limpio.
+        storeFingerprintForResuming: false,
+        removeFingerprintOnSuccess: true,
+        fingerprint: async () => `tus-bunny-${videoId}`, // único por video, no por archivo
         metadata: {
           filename: file.name,
           filetype: file.type,
