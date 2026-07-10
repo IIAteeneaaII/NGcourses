@@ -221,8 +221,6 @@ export default function EditarCursoAdminPage() {
   }, [modules.length, totalQuizLessons, quizValidationErrors, videoLessonsSinVideo]);
 
   const hasValidRequiredStructure = hasAtLeastOneModule && hasAtLeastOneQuiz && quizValidationErrors.length === 0;
-  // Publicar exige, además de la estructura, que ninguna lección de video esté sin video.
-  const canPublish = hasValidRequiredStructure && videoLessonsSinVideo.length === 0;
 
   const requireCourseStructure = React.useCallback((action: 'guardar' | 'publicar' = 'guardar') => {
     const message = getCourseStructureError(action);
@@ -1157,7 +1155,7 @@ export default function EditarCursoAdminPage() {
                   <button
                     className={styles.publishButton}
                     onClick={handleTogglePublish}
-                    disabled={isPublishing || (cursoEstado !== 'publicado' && !canPublish)}
+                    disabled={isPublishing}
                     style={{ background: cursoEstado === 'publicado' ? '#6b7280' : '#16a34a' }}
                   >
                     {isPublishing ? 'Procesando...' : cursoEstado === 'publicado' ? 'Borrar' : 'Publicar curso'}
