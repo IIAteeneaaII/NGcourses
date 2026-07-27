@@ -1962,19 +1962,6 @@ def cursos_con_pago_del_usuario(
 
 
 
-def reenviar_invitacion(*, session: Session, invitacion_id: uuid.UUID) -> tuple[Any, str]:
-    inv = get_invitacion_by_id(session=session, invitacion_id=invitacion_id)
-    if not inv:  # ← AGREGAR ESTO
-        raise HTTPException(status_code=404, detail="Invitación no encontrada")
-    raw_token = secrets.token_urlsafe(32)
-    inv.token_hash = hashlib.sha256(raw_token.encode()).hexdigest()
-    inv.expira_en = datetime.utcnow() + timedelta(days=INVITACION_EXPIRACION_DIAS)
-    session.add(inv)
-    session.commit()
-    session.refresh(inv)
-    return inv, raw_token
-
-
 # ── Feature Flags ─────────────────────────────────────────────────────────────
 
 
