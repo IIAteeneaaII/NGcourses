@@ -93,10 +93,10 @@ services:
       - traefik.docker.network=traefik-public
       - traefik.constraint-label=traefik-public
       - traefik.http.services.${STACK_NAME}-frontend.loadbalancer.server.port=3000
-      - traefik.http.routers.${STACK_NAME}-frontend-http.rule=Host(`app.${DOMAIN}`)
+      - traefik.http.routers.${STACK_NAME}-frontend-http.rule=Host(`ngcourse.${DOMAIN}`) || Host(`app.${DOMAIN}`)
       - traefik.http.routers.${STACK_NAME}-frontend-http.entrypoints=http
       - traefik.http.routers.${STACK_NAME}-frontend-http.middlewares=https-redirect
-      - traefik.http.routers.${STACK_NAME}-frontend-https.rule=Host(`app.${DOMAIN}`)
+      - traefik.http.routers.${STACK_NAME}-frontend-https.rule=Host(`ngcourse.${DOMAIN}`) || Host(`app.${DOMAIN}`)
       - traefik.http.routers.${STACK_NAME}-frontend-https.entrypoints=https
       - traefik.http.routers.${STACK_NAME}-frontend-https.tls=true
       - traefik.http.routers.${STACK_NAME}-frontend-https.tls.certresolver=le
