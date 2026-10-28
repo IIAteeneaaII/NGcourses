@@ -17,14 +17,6 @@ interface DestacadosResp {
   count: number;
 }
 
-const FALLBACK_CAROUSEL: string[] = [
-  'Paqueteria Excel',
-  'Modelado 3D',
-  'Capacitacion Interna',
-  'Fusionado de Fibra Optica',
-  'Ponchado de cable ethernet',
-];
-
 export default function LoginContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -47,15 +39,15 @@ export default function LoginContent() {
     let cancelled = false;
     cursosApi
       .destacados(12)
-      .then((resp) => {
+      .then((response) => {
         if (cancelled) return;
-        const titles = (resp as DestacadosResp).data.map((c) => c.titulo).filter(Boolean);
-        setCarouselItems(titles.length > 0 ? titles : FALLBACK_CAROUSEL);
+        const titles = (response as DestacadosResp).data.map((curso) => curso.titulo).filter(Boolean);
+        setCarouselItems(titles);
       })
       .catch((e) => {
         logError('LoginContent/destacados', e);
-        if (!cancelled) setCarouselItems(FALLBACK_CAROUSEL);
       });
+
     return () => {
       cancelled = true;
     };
@@ -93,9 +85,6 @@ export default function LoginContent() {
 
   return (
     <div className={styles.container}>
-      {/* Patrón de puntos decorativos */}
-      <div className={styles.dots} aria-hidden="true" />
-
       <main className={styles.content}>
         {/* Panel izquierdo - Brand */}
         <section className={styles.leftPanel}>
@@ -111,20 +100,29 @@ export default function LoginContent() {
           <p className={styles.titleTagline}>
             Potencia tu carrera, domina lo que sigue.
           </p>
-          <br />
+
+          <video className={styles.brandVideo} autoPlay muted loop playsInline aria-hidden="true" tabIndex={-1}>
+            <source src="/videos/estudiante_login.mp4" type="video/mp4" />
+          </video>
 
           <p className={styles.description}>
             Accede a programas diseñados para profesionales que no se conforman con el promedio.
             Aprende a tu ritmo, certifícate y crece.
           </p>
-          <br />
 
           {carouselItems.length > 0 && (
-            <div className={styles.carouselWrapper}>
-              <div className={styles.carouselTrack}>
-                {[...carouselItems, ...carouselItems].map((curso, i) => (
-                  <span key={i} className={styles.carouselItem}>{curso}</span>
-                ))}
+            <div className={styles.courseCarousel} aria-label="Cursos destacados">
+              <span className={styles.carouselLabel}>Cursos destacados</span>
+              <div className={styles.carouselViewport}>
+                <div className={styles.carouselTrack}>
+                  {[0, 1].map((group) => (
+                    <div className={styles.carouselGroup} key={group}>
+                      {carouselItems.map((curso, index) => (
+                        <span className={styles.carouselItem} key={`${group}-${curso}-${index}`}>{curso}</span>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
@@ -222,7 +220,7 @@ export default function LoginContent() {
                   />
                   <span>Recordarme</span>
                 </label>
-                <a href="/forgot-password" style={{ fontSize: '13px', color: '#00968f', fontWeight: 600, textDecoration: 'none' }}>
+                <a href="/forgot-password" style={{ fontSize: '11px', color: '#21845e', fontWeight: 600, textDecoration: 'none' }}>
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>
@@ -242,8 +240,9 @@ export default function LoginContent() {
         </section>
       </main>
 
-      {/* Barra inferior */}
-      <div className={styles.bottomBar} aria-hidden="true" />
+      <footer className={styles.footer}>
+        © NextGen Course. Todos los derechos reservados.
+      </footer>
     </div>
   );
 }

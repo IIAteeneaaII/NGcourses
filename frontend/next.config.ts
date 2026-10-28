@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  devIndicators: false,
   skipTrailingSlashRedirect: true,
   allowedDevOrigins: ['*.loca.lt', '192.168.202.42'],
   images: {
