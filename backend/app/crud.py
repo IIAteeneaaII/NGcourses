@@ -624,12 +624,13 @@ def curso_completado(*, session: Session, inscripcion: Inscripcion) -> bool:
 
     CP20: se recalcula contra las lecciones vigentes, así que si se agregan
     módulos/lecciones después de finalizar, el curso deja de estar completo
-    hasta que el alumno también los complete.
+    hasta que el alumno también los complete. Las lecciones ocultas
+    (es_visible=False) no cuentan.
     """
     statement = (
         select(Leccion)
         .join(Modulo, Leccion.modulo_id == Modulo.id)
-        .where(Modulo.curso_id == inscripcion.curso_id)
+        .where(Modulo.curso_id == inscripcion.curso_id, Leccion.es_visible == True)  # noqa: E712
     )
     todas_lecciones = list(session.exec(statement).all())
     if not todas_lecciones:

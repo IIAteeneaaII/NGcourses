@@ -152,6 +152,9 @@ class Leccion(SQLModel, table=True):
     orden: int = Field(default=0)
     duracion_seg: int = Field(default=0)
     umbral_completado_pct: int = Field(default=90)
+    # Toggle del editor: una lección oculta no se muestra al alumno ni cuenta
+    # para su progreso/certificado. Admin/instructor dueño la siguen viendo.
+    es_visible: bool = Field(default=True, sa_column_kwargs={"server_default": "true"})
     bunny_video_id: str | None = Field(default=None, max_length=255)
     hls_url: str | None = Field(default=None)
     thumbnail_url: str | None = Field(default=None)
@@ -264,6 +267,7 @@ class LeccionPublic(SQLModel):
     orden: int
     duracion_seg: int
     umbral_completado_pct: int
+    es_visible: bool = True
     bunny_video_id: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None
@@ -280,6 +284,7 @@ class LeccionCreate(SQLModel):
     orden: int = 0
     duracion_seg: int = 0
     umbral_completado_pct: int = 90
+    es_visible: bool = True
     bunny_video_id: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None
@@ -292,6 +297,7 @@ class LeccionUpdate(SQLModel):
     orden: int | None = None
     duracion_seg: int | None = None
     umbral_completado_pct: int | None = None
+    es_visible: bool | None = None
     bunny_video_id: str | None = None
     hls_url: str | None = None
     thumbnail_url: str | None = None

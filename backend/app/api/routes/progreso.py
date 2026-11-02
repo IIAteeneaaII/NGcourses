@@ -107,18 +107,19 @@ def progreso_curso(
     if not inscripcion:
         raise HTTPException(status_code=404, detail="No estás inscrito en este curso")
 
-    # Obtener todas las lecciones del curso
+    # Obtener las lecciones visibles del curso (las ocultas no cuentan)
     stmt = (
         select(Leccion)
         .join(Modulo, Leccion.modulo_id == Modulo.id)
-        .where(Modulo.curso_id == curso_id)
+        .where(Modulo.curso_id == curso_id, Leccion.es_visible == True)  # noqa: E712
     )
     todas_lecciones = list(session.exec(stmt).all())
     total = len(todas_lecciones)
+    visibles_ids = {l.id for l in todas_lecciones}
 
     # Obtener progreso del usuario en esta inscripción
     progreso_list = crud.get_progreso_curso(session=session, inscripcion_id=inscripcion.id)
-    completadas = sum(1 for p in progreso_list if p.completado)
+    completadas = sum(1 for p in progreso_list if p.completado and p.leccion_id in visibles_ids)
 
     pct = round((completadas / total) * 100, 1) if total > 0 else 0.0
 

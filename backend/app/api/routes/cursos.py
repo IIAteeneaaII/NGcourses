@@ -101,6 +101,12 @@ def _require_curso_owner_or_admin(current_user: CurrentUser, instructor_id: uuid
         raise HTTPException(status_code=403, detail="No tienes permiso para modificar este curso")
 
 
+def _es_admin_o_dueno(current_user: CurrentUser, db_curso: Any) -> bool:
+    """True si el usuario edita el curso (admin/superuser o instructor dueño)."""
+    is_admin = current_user.is_superuser or current_user.rol == RolUsuario.ADMINISTRADOR
+    return is_admin or current_user.id == db_curso.instructor_id
+
+
 def _supervisor_tiene_acceso_lectura(
     *, session: SessionDep, current_user: CurrentUser, curso_id: uuid.UUID
 ) -> bool:
@@ -296,6 +302,9 @@ def get_curso(
         modulo_data = ModuloPublic.model_validate(m, from_attributes=True)
         lecciones = []
         for l in lecciones_map.get(m.id, []):
+            # Lección deshabilitada por el editor: solo admin/dueño la ven.
+            if not l.es_visible and not (is_admin or is_owner):
+                continue
             lp = LeccionPublic.model_validate(l, from_attributes=True)
             if not tiene_acceso_contenido:
                 # Preview: se conservan título/orden/duración/tipo, pero NO el
@@ -410,7 +419,8 @@ def update_curso(
             leccion.titulo or "sin título"
             for modulo in db_curso.modulos
             for leccion in modulo.lecciones
-            if leccion.tipo == TipoLeccion.VIDEO and not leccion.bunny_video_id
+            if leccion.es_visible
+            and leccion.tipo == TipoLeccion.VIDEO and not leccion.bunny_video_id
         ]
         if sin_video:
             accion = "publicar" if curso_in.estado == EstadoCurso.PUBLICADO else "enviar a revisión"
@@ -715,6 +725,8 @@ def list_lecciones(
         session=session, current_user=current_user, db_curso=db_curso
     )
     lecciones = crud.get_lecciones(session=session, modulo_id=modulo_id)
+    if not (db_curso and _es_admin_o_dueno(current_user, db_curso)):
+        lecciones = [l for l in lecciones if l.es_visible]
     return [
         _strip_leccion_sin_acceso(
             LeccionPublic.model_validate(l, from_attributes=True),
