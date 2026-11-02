@@ -49,10 +49,10 @@ export default function ConfiguracionPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '720px' }}>
-      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
+      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
         Configuración
       </h1>
-      <p style={{ margin: '0 0 24px', fontSize: '14px', color: 'rgba(11,27,43,.55)' }}>
+      <p style={{ margin: '0 0 24px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
         Activa o desactiva funcionalidades del sistema. Los cambios son inmediatos.
       </p>
 
@@ -70,11 +70,11 @@ export default function ConfiguracionPage() {
               style={{
                 display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
                 gap: '20px', padding: '18px 20px', borderRadius: '14px',
-                border: '1px solid rgba(0,150,143,.18)', background: '#fff',
+                border: '1px solid rgba(0,150,143,.18)', background: 'var(--color-surface)',
               }}
             >
               <div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#0B1B2B', marginBottom: '4px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-heading)', marginBottom: '4px' }}>
                   {f.titulo}
                   <span style={{
                     marginLeft: '10px', fontSize: '11px', fontWeight: 700, padding: '2px 8px',
@@ -86,7 +86,7 @@ export default function ConfiguracionPage() {
                     {on ? 'Activado' : 'Desactivado'}
                   </span>
                 </div>
-                <p style={{ margin: 0, fontSize: '13px', color: 'rgba(11,27,43,.6)', lineHeight: 1.5 }}>
+                <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
                   {f.descripcion}
                 </p>
               </div>
@@ -107,7 +107,7 @@ export default function ConfiguracionPage() {
               >
                 <span style={{
                   position: 'absolute', top: '3px', left: on ? '25px' : '3px',
-                  width: '24px', height: '24px', borderRadius: '50%', background: '#fff',
+                  width: '24px', height: '24px', borderRadius: '50%', background: 'var(--color-surface)',
                   transition: 'left .2s', boxShadow: '0 1px 3px rgba(0,0,0,.2)',
                 }} />
               </button>

@@ -59,7 +59,7 @@
 
 /* Content Card */
 .contentCard {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -70,16 +70,16 @@
   align-items: center;
   gap: 0.625rem;
   padding: 0.625rem 1rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.625rem;
   margin-bottom: 1.5rem;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   color: var(--color-text-secondary);
 }
 
 .searchBar:focus-within {
   border-color: var(--color-secondary-30);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .searchInput {
@@ -153,7 +153,7 @@
 }
 
 .courseItem:hover {
-  background: #e8f4f8;
+  background: var(--color-tint-info, #e8f4f8);
   transform: translateX(4px);
 }
 
@@ -189,18 +189,18 @@
 }
 
 .statusPublished {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusDraft {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .statusReview {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
 
 /* Course Actions */
@@ -215,8 +215,8 @@
   align-items: center;
   justify-content: center;
   padding: 0.5rem 1rem;
-  background: var(--color-text-white);
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -247,8 +247,8 @@
 
 .deleteButton {
   padding: 0.5rem 1rem;
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.875rem;
@@ -257,7 +257,7 @@
   transition: background 0.2s;
 }
 
-.deleteButton:hover { background: #fecaca; }
+.deleteButton:hover { background: var(--color-tint-error, #fecaca); }
 
 /* Responsive */
 @media (max-width: 768px) {

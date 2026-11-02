@@ -84,7 +84,7 @@ export default function LoginContent() {
   };
 
   return (
-    <div className={styles.container}>
+    <div className={styles.container} data-theme="light">
       <main className={styles.content}>
         {/* Panel izquierdo - Brand */}
         <section className={styles.leftPanel}>

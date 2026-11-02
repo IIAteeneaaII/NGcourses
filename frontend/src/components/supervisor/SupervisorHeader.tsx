@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { logout } from '@/lib/auth';
 import styles from './SupervisorHeader.module.css';
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface SupervisorHeaderProps {
   user?: {
@@ -96,6 +97,8 @@ export const SupervisorHeader: React.FC<SupervisorHeaderProps> = ({
               <>
                 <div className={styles.dropdownBackdrop} onClick={() => setShowDropdown(false)} />
                 <div className={styles.dropdown}>
+                  <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
+                  <div className={styles.dropdownDivider} />
                   <button className={styles.dropdownItem} onClick={handleLogout}>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

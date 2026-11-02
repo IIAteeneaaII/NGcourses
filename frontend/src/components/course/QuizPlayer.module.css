@@ -1,5 +1,5 @@
 .container {
-  background: #ffffff;
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   overflow: hidden;
@@ -144,8 +144,8 @@
 .errorMsg {
   margin: 0 1.75rem 0.75rem;
   padding: 0.75rem 1rem;
-  background: #fff5f5;
-  border: 1px solid #fed7d7;
+  background: var(--color-tint-error, #fff5f5);
+  border: 1px solid var(--color-tint-error, #fed7d7);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   color: #e53e3e;
@@ -254,11 +254,11 @@
 
 .optionReadOnly {
   cursor: default;
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .optionReadOnly:hover {
-  background: #ffffff;
+  background: var(--color-surface);
 }
 
 .optionCorrect {

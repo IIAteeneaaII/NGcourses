@@ -27,10 +27,10 @@ export default function PayPalCheckout({ cursoId, monedaCurso, onSuccess }: PayP
     return (
       <div style={{
         padding: '0.75rem 1rem',
-        background: '#fff5f5',
-        border: '1px solid #fed7d7',
+        background: 'var(--color-tint-error, #fff5f5)',
+        border: '1px solid var(--color-tint-error, #fed7d7)',
         borderRadius: '0.5rem',
-        color: '#9b2c2c',
+        color: 'var(--color-tint-error-text, #9b2c2c)',
         fontSize: '0.85rem',
       }}>
         PayPal no esta configurado. Define <code>NEXT_PUBLIC_PAYPAL_CLIENT_ID</code> en
@@ -50,10 +50,10 @@ export default function PayPalCheckout({ cursoId, monedaCurso, onSuccess }: PayP
       {error && (
         <div style={{
           padding: '0.75rem 1rem',
-          background: '#fff5f5',
-          border: '1px solid #fed7d7',
+          background: 'var(--color-tint-error, #fff5f5)',
+          border: '1px solid var(--color-tint-error, #fed7d7)',
           borderRadius: '0.5rem',
-          color: '#9b2c2c',
+          color: 'var(--color-tint-error-text, #9b2c2c)',
           fontSize: '0.85rem',
           marginBottom: '0.75rem',
         }}>

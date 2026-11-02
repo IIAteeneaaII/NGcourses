@@ -44,9 +44,10 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div style={{
+    // Pantalla pública de auth: siempre en tema claro, como el login.
+    <div data-theme="light" style={{
       minHeight: '100vh',
-      background: 'radial-gradient(1100px 700px at 12% 18%, rgba(61,193,204,.30) 0%, rgba(242,242,242,0) 60%), radial-gradient(900px 650px at 86% 22%, rgba(0,150,143,.20) 0%, rgba(242,242,242,0) 58%), linear-gradient(180deg, #ffffff 0%, #F2F2F2 100%)',
+      background: 'radial-gradient(1100px 700px at 12% 18%, rgba(61,193,204,.30) 0%, rgba(242,242,242,0) 60%), radial-gradient(900px 650px at 86% 22%, rgba(0,150,143,.20) 0%, rgba(242,242,242,0) 58%), linear-gradient(180deg, var(--color-surface) 0%, #F2F2F2 100%)',
       display: 'grid',
       placeItems: 'center',
       padding: '28px 16px 70px',
@@ -64,17 +65,17 @@ export default function ForgotPasswordPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo.png" alt="NextGen" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: 900, fontSize: '16px', color: '#0B1B2B', letterSpacing: '-0.2px' }}>
+          <span style={{ fontWeight: 900, fontSize: '16px', color: 'var(--color-text-heading)', letterSpacing: '-0.2px' }}>
             NextGen <span style={{ fontWeight: 400 }}>Course</span>
           </span>
         </div>
 
         {sent ? (
           <div>
-            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
               Revisa tu correo
             </h2>
-            <p style={{ margin: '0 0 24px', color: 'rgba(11,27,43,.65)', fontSize: '15px', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 24px', color: 'var(--color-text-muted)', fontSize: '15px', lineHeight: 1.5 }}>
               Si ese correo está registrado, recibirás un enlace para restablecer tu contraseña en los próximos minutos.
             </p>
             <Link href="/" style={{ color: '#00968f', fontSize: '14px', fontWeight: 600, textDecoration: 'none', display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
@@ -84,19 +85,19 @@ export default function ForgotPasswordPage() {
           </div>
         ) : (
           <>
-            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
               ¿Olvidaste tu contraseña?
             </h2>
-            <p style={{ margin: '0 0 24px', color: 'rgba(11,27,43,.65)', fontSize: '15px' }}>
+            <p style={{ margin: '0 0 24px', color: 'var(--color-text-muted)', fontSize: '15px' }}>
               Ingresa tu correo y te enviaremos un enlace para restablecerla.
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', color: 'rgba(11,27,43,.78)' }}>Correo</label>
+                <label style={{ fontSize: '14px', color: 'var(--color-text-body)' }}>Correo</label>
                 <div style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
-                  borderRadius: '14px', background: 'white',
+                  borderRadius: '14px', background: 'var(--color-surface)',
                   border: '1px solid rgba(0,150,143,.16)',
                   padding: '14px 16px',
                 }}>
@@ -110,7 +111,7 @@ export default function ForgotPasswordPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: 'var(--color-text-heading)' }}
                   />
                 </div>
               </div>

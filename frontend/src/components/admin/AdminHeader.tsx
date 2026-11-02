@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
 import styles from './AdminHeader.module.css';
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface AdminHeaderProps {
   user?: {
@@ -125,6 +126,7 @@ export const AdminHeader: React.FC<AdminHeaderProps> = ({
                   </svg>
                   Mi perfil
                 </button>
+                <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
                 <div className={styles.dropdownDivider} />
                 <button className={styles.dropdownItem} onClick={handleLogout}>
                   <svg

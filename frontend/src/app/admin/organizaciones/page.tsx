@@ -198,17 +198,17 @@ export default function OrganizacionesPage() {
       {successMsg && (
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px',
-          padding: '14px 18px', background: '#ecfdf5',
+          padding: '14px 18px', background: 'var(--color-tint-success, #ecfdf5)',
           border: '1px solid #6ee7b7', borderRadius: '12px', margin: '0 0 20px',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="#059669" width="20" height="20">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>{successMsg}</span>
+            <span style={{ color: 'var(--color-tint-success-text, #065f46)', fontSize: '14px', fontWeight: 600 }}>{successMsg}</span>
           </div>
           <button type="button" onClick={() => setSuccessMsg('')} aria-label="Cerrar"
-            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#065f46', display: 'flex' }}>
+            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--color-tint-success-text, #065f46)', display: 'flex' }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
@@ -381,7 +381,7 @@ export default function OrganizacionesPage() {
                   className={styles.formInput}
                   placeholder="supervisor@empresa.com"
                 />
-                <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
                   Se crea como supervisor de la organización y recibe un correo para activar su cuenta.
                 </span>
               </div>
@@ -394,7 +394,7 @@ export default function OrganizacionesPage() {
                   className={styles.formInput}
                   placeholder="Si es distinto al del supervisor"
                 />
-                <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
                   Déjalo vacío si el contacto es el mismo que el supervisor: se usará su correo.
                 </span>
               </div>

@@ -187,7 +187,7 @@ export default function CursosListPage() {
       {deleteConfirm && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
              onClick={() => { setDeleteConfirm(null); setDeleteError(''); }}>
-          <div style={{ background: '#fff', borderRadius: '0.9375rem', padding: '2rem', maxWidth: '420px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}
+          <div style={{ background: 'var(--color-surface)', borderRadius: '0.9375rem', padding: '2rem', maxWidth: '420px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}
                onClick={(e) => e.stopPropagation()}>
             <h3 style={{ margin: '0 0 0.75rem', color: 'var(--color-text-primary)' }}>Eliminar curso</h3>
             <p style={{ margin: '0 0 1.5rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
@@ -198,7 +198,7 @@ export default function CursosListPage() {
             )}
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
               <button onClick={() => { setDeleteConfirm(null); setDeleteError(''); }}
-                style={{ padding: '0.5rem 1.25rem', border: '1.5px solid #e2e8f0', borderRadius: '0.5rem', background: '#fff', cursor: 'pointer' }}>
+                style={{ padding: '0.5rem 1.25rem', border: '1.5px solid var(--color-border-default)', borderRadius: '0.5rem', background: 'var(--color-surface)', cursor: 'pointer' }}>
                 Cancelar
               </button>
               <button onClick={() => handleDelete(deleteConfirm.id)} disabled={deleting}

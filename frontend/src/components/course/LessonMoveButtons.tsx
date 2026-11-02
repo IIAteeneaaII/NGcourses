@@ -24,7 +24,7 @@ export default function LessonMoveButtons({
     padding: 0,
     lineHeight: 0,
     display: 'inline-flex',
-    color: '#64748b',
+    color: 'var(--color-text-muted)',
   };
   return (
     <div style={{ display: 'inline-flex', flexDirection: 'column', gap: 1, marginRight: 4 }}>

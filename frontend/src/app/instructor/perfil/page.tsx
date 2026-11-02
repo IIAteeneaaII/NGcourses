@@ -241,9 +241,9 @@ export default function PerfilInstructorPage() {
                   className={styles.formInput}
                   value={editForm.email}
                   disabled
-                  style={{ background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}
+                  style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text-muted)', cursor: 'not-allowed' }}
                 />
-                <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                <small style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
                   El correo no se puede cambiar: es el identificador de la cuenta.
                 </small>
               </div>

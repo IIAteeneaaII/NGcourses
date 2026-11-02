@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { logout } from '@/lib/auth';
 import styles from './InstructorHeader.module.css';
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface InstructorHeaderProps {
   user?: {
@@ -124,6 +125,7 @@ export const InstructorHeader: React.FC<InstructorHeaderProps> = ({
                   </svg>
                   Mi perfil
                 </button>
+                <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
                 <div className={styles.dropdownDivider} />
                 <button className={styles.dropdownItem} onClick={handleLogout}>
                   <svg

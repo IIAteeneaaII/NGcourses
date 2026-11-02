@@ -1,6 +1,6 @@
 /* Base Card */
 .card {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border-radius: 0.5rem;
   overflow: hidden;
   transition: all 0.2s ease-in-out;
@@ -8,17 +8,17 @@
 
 /* Variants */
 .default {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border: none;
 }
 
 .outlined {
-  background-color: var(--color-text-white);
-  border: 1px solid #e5e7eb;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-default);
 }
 
 .elevated {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   box-shadow: var(--shadow-md);
 }
 
@@ -60,7 +60,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-surface-subtle);
 }
 
 .headerContent {
@@ -104,7 +104,7 @@
   align-items: center;
   gap: 0.75rem;
   padding-top: 1rem;
-  border-top: 1px solid #f3f4f6;
+  border-top: 1px solid var(--color-surface-subtle);
 }
 
 .align-left {

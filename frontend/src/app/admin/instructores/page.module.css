@@ -78,7 +78,7 @@
   border-radius: 0.625rem;
   font-size: 1rem;
   color: var(--color-text-primary);
-  background: var(--color-text-white);
+  background: var(--color-surface);
   outline: none;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
@@ -110,7 +110,7 @@
 
 /* Instructor Card */
 .instructorCard {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 1.5rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -206,13 +206,13 @@
 }
 
 .statusActive {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusInactive {
-  background-color: #e5e7eb;
-  color: #6b7280;
+  background-color: var(--color-border-default);
+  color: var(--color-text-muted);
 }
 
 /* Edit Button */
@@ -352,7 +352,7 @@
 }
 
 .courseItem:hover {
-  background: #e8f4f8;
+  background: var(--color-tint-info, #e8f4f8);
 }
 
 .courseInfo {
@@ -382,8 +382,8 @@
   align-items: center;
   justify-content: center;
   padding: 0.25rem 0.75rem;
-  background: var(--color-text-white);
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   font-size: 0.8125rem;
   font-weight: 500;

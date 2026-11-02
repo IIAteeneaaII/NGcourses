@@ -231,13 +231,13 @@ export default function SolicitudesEmpresasPage() {
             <p className={styles.modalDesc}>{ACTION_MSG[confirmModal.action]}</p>
             {confirmModal.action === 'aprobada' && (
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-body)', marginBottom: '0.4rem' }}>
                   Curso a licenciar a la organización (opcional)
                 </label>
                 <select
                   value={cursoId}
                   onChange={(e) => setCursoId(e.target.value)}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.875rem', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid var(--color-border-default)', fontSize: '0.875rem', boxSizing: 'border-box' }}
                 >
                   <option value="">— No licenciar ahora —</option>
                   {cursos.map((c) => (
@@ -250,7 +250,7 @@ export default function SolicitudesEmpresasPage() {
               </div>
             )}
             <div style={{ marginBottom: '1rem' }}>
-              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-body)', marginBottom: '0.4rem' }}>
                 Comentario para el supervisor {confirmModal.action === 'rechazada' ? '(motivo)' : '(opcional)'}
               </label>
               <textarea
@@ -258,7 +258,7 @@ export default function SolicitudesEmpresasPage() {
                 onChange={(e) => setComentario(e.target.value)}
                 rows={3}
                 placeholder="Ej: Ya tenemos un curso equivalente en el catálogo."
-                style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid var(--color-border-default)', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
               />
             </div>
             <div className={styles.modalActions}>

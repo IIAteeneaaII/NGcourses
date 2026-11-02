@@ -153,7 +153,7 @@
 }
 
 .modalCard {
-  background: white;
+  background: var(--color-surface);
   border-radius: 1rem;
   padding: 2.5rem 2rem;
   max-width: 460px;
@@ -298,7 +298,7 @@
   min-height: 12rem;
   padding: 2rem;
   border-radius: 0.9375rem;
-  background: #ffffff;
+  background: var(--color-surface);
   color: var(--color-secondary-30);
   font-weight: 700;
   box-shadow: var(--shadow-sm);

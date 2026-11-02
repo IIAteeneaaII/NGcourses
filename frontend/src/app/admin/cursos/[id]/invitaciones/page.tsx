@@ -152,7 +152,7 @@ export default function InvitacionesPage() {
           <div
             style={{
               display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
-              background: '#fef9c3', border: '1px solid #fde047', color: '#854d0e',
+              background: 'var(--color-tint-warning, #fef9c3)', border: '1px solid #fde047', color: 'var(--color-tint-warning-text, #854d0e)',
               borderRadius: '0.5rem', padding: '0.75rem 1rem', marginBottom: '1rem',
               fontSize: '0.875rem', lineHeight: 1.5,
             }}

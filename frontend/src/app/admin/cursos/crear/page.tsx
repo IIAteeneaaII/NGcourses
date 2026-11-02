@@ -674,7 +674,7 @@ export default function CrearCursoPage() {
                         <button
                           type="button"
                           onClick={() => { setShowNewCatInput(false); setNewCategoryName(''); }}
-                          style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid #ccc', borderRadius: '0.5rem', cursor: 'pointer' }}
+                          style={{ padding: '0.5rem 0.75rem', background: 'transparent', border: '1px solid var(--color-border-strong)', borderRadius: '0.5rem', cursor: 'pointer' }}
                           aria-label="Cancelar crear categoría"
                         >
                           ✕
@@ -705,7 +705,7 @@ export default function CrearCursoPage() {
                       className={styles.input}
                       placeholder="Vacio o 0 = curso gratuito"
                     />
-                    <span style={{ fontSize: '0.78rem', color: '#64748b', marginTop: '0.25rem', display: 'block' }}>
+                    <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: '0.25rem', display: 'block' }}>
                       Deja vacio o 0 para que el curso sea gratuito.
                     </span>
                   </div>
@@ -743,7 +743,7 @@ export default function CrearCursoPage() {
                 </div>
 
                 {createError && (
-                  <p style={{ color: 'red', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7' }}>
+                  <p style={{ color: 'red', padding: '0.75rem', background: 'var(--color-tint-error, #fff5f5)', borderRadius: '0.5rem', border: '1px solid var(--color-tint-error, #fed7d7)' }}>
                     {createError}
                   </p>
                 )}
@@ -797,7 +797,7 @@ export default function CrearCursoPage() {
                   )}
                 </div>
                 {coverUploadStatus !== 'success' && (
-                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280', textAlign: 'center' }}>
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--color-text-muted)', textAlign: 'center' }}>
                     Se requiere subir una imagen de portada para continuar al siguiente paso.
                   </p>
                 )}
@@ -816,7 +816,7 @@ export default function CrearCursoPage() {
                 <p className={styles.stepDescription}>Agrega módulos, lecciones y sube los videos directamente. El video es opcional, pero el curso debe tener al menos un módulo y un quiz válido.</p>
 
                 {!hasValidRequiredStructure && (
-                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: 'var(--color-tint-error, #fff5f5)', borderRadius: '0.5rem', border: '1px solid var(--color-tint-error, #fed7d7)', margin: '0 0 1rem' }}>
                     {getCourseStructureError('publicar')}
                   </p>
                 )}
@@ -900,8 +900,8 @@ export default function CrearCursoPage() {
                                 </div>
                                 <div className={styles.lessonInputs}>
                                   <div style={{ marginBottom: '0.75rem', gridColumn: lesson.tipo === 'lectura' ? '1 / -1' : undefined }}>
-                                    <label style={{ display: 'block', fontSize: '0.8rem', color: '#64748b', marginBottom: '0.25rem' }}>
-                                      Resumen de la lección <span style={{ color: '#94a3b8' }}>(lo verá el alumno en la pestaña “Resumen”)</span>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--color-text-muted)', marginBottom: '0.25rem' }}>
+                                      Resumen de la lección <span style={{ color: 'var(--color-text-faint)' }}>(lo verá el alumno en la pestaña “Resumen”)</span>
                                     </label>
                                     <textarea
                                       value={lesson.resumen ?? ''}
@@ -909,7 +909,7 @@ export default function CrearCursoPage() {
                                       onBlur={() => cursosApi.updateLeccion(cursoId, module.id, lesson.id, { resumen: lesson.resumen ?? '' }).catch((e) => logError('admin/cursos/crear/autoSave', e))}
                                       placeholder="Breve resumen de lo que trata esta lección…"
                                       rows={lesson.tipo === 'lectura' ? 10 : 3}
-                                      style={{ width: '100%', padding: '0.6rem', borderRadius: 6, border: '1px solid #e2e8f0', fontFamily: 'inherit', fontSize: '0.9rem', lineHeight: 1.5, resize: 'vertical' }}
+                                      style={{ width: '100%', padding: '0.6rem', borderRadius: 6, border: '1px solid var(--color-border-default)', fontFamily: 'inherit', fontSize: '0.9rem', lineHeight: 1.5, resize: 'vertical' }}
                                     />
                                   </div>
                                   {lesson.tipo === 'video' ? (
@@ -927,7 +927,7 @@ export default function CrearCursoPage() {
                                       onSave={(data) => cursosApi.saveQuizData(cursoId, module.id, lesson.id, data).catch((e) => logError('admin/cursos/crear/autoSave', e))}
                                     />
                                   ) : (
-                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: '#64748b' }}>
+                                    <p style={{ margin: '0 0 0.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
                                       Lección práctica: sin video ni calificación. Adjunta el material abajo en <strong>Recursos</strong>; el alumno lo descarga y marca la lección como completada.
                                     </p>
                                   )}
@@ -1018,7 +1018,7 @@ export default function CrearCursoPage() {
                   </button>
                 </div>
                 {!isStepComplete(3) && (
-                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: '#6b7280' }}>
+                  <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--color-text-muted)' }}>
                     {modules.length === 0
                       ? 'Agrega al menos un módulo con una lección para continuar.'
                       : 'Agrega al menos una lección en algún módulo para continuar.'}
@@ -1102,7 +1102,7 @@ export default function CrearCursoPage() {
                 <p className={styles.stepDescription}>Revisa el resumen y publica tu curso</p>
 
                 {!hasValidRequiredStructure && (
-                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: '#fff5f5', borderRadius: '0.5rem', border: '1px solid #fed7d7', margin: '0 0 1rem' }}>
+                  <p style={{ color: 'var(--color-error, #e53e3e)', padding: '0.75rem', background: 'var(--color-tint-error, #fff5f5)', borderRadius: '0.5rem', border: '1px solid var(--color-tint-error, #fed7d7)', margin: '0 0 1rem' }}>
                     {getCourseStructureError('publicar')}
                   </p>
                 )}

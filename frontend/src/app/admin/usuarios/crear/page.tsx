@@ -56,12 +56,12 @@ export default function CrearUsuarioEmpresaPage() {
 
   const inputStyle: React.CSSProperties = {
     width: '100%', padding: '10px 14px', borderRadius: '10px', fontSize: '14px',
-    border: '1px solid rgba(0,150,143,.2)', outline: 'none', color: '#0B1B2B',
-    background: '#fff', boxSizing: 'border-box',
+    border: '1px solid rgba(0,150,143,.2)', outline: 'none', color: 'var(--color-text-heading)',
+    background: 'var(--color-surface)', boxSizing: 'border-box',
   };
 
   const labelStyle: React.CSSProperties = {
-    fontSize: '13px', fontWeight: 600, color: 'rgba(11,27,43,.7)', marginBottom: '6px', display: 'block',
+    fontSize: '13px', fontWeight: 600, color: 'var(--color-text-body)', marginBottom: '6px', display: 'block',
   };
 
   return (
@@ -77,13 +77,13 @@ export default function CrearUsuarioEmpresaPage() {
           Usuarios
         </button>
         <span style={{ color: 'rgba(11,27,43,.3)' }}>/</span>
-        <span style={{ fontSize: '14px', color: 'rgba(11,27,43,.6)' }}>Alta de empleado</span>
+        <span style={{ fontSize: '14px', color: 'var(--color-text-muted)' }}>Alta de empleado</span>
       </div>
 
-      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
+      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
         Alta de empleado
       </h1>
-      <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'rgba(11,27,43,.55)' }}>
+      <p style={{ margin: '0 0 20px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
         Crea un <strong>empleado (estudiante)</strong> y lo liga a una organización existente. El empleado
         recibirá un correo para activar su cuenta y establecer su contraseña.
         <br />
@@ -94,15 +94,15 @@ export default function CrearUsuarioEmpresaPage() {
       {!success && orgsLoaded && orgs.length === 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: '10px',
-          padding: '12px 16px', background: '#fffbeb',
+          padding: '12px 16px', background: 'var(--color-tint-warning, #fffbeb)',
           border: '1px solid #fcd34d', borderRadius: '12px', marginBottom: '20px',
         }}>
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="#b45309" width="18" height="18">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
-          <span style={{ fontSize: '13px', color: '#92400e' }}>
+          <span style={{ fontSize: '13px', color: 'var(--color-tint-warning-text, #92400e)' }}>
             Aún no hay organizaciones.{' '}
-            <a href="/admin/organizaciones" style={{ color: '#b45309', fontWeight: 700 }}>Crea una empresa y su supervisor →</a>
+            <a href="/admin/organizaciones" style={{ color: 'var(--color-tint-warning-text, #b45309)', fontWeight: 700 }}>Crea una empresa y su supervisor →</a>
           </span>
         </div>
       )}
@@ -111,20 +111,20 @@ export default function CrearUsuarioEmpresaPage() {
         <div>
           <div style={{
             display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '14px 18px', background: '#ecfdf5',
+            padding: '14px 18px', background: 'var(--color-tint-success, #ecfdf5)',
             border: '1px solid #6ee7b7', borderRadius: '12px', marginBottom: '20px',
           }}>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="#059669" width="20" height="20">
               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>
+            <span style={{ color: 'var(--color-tint-success-text, #065f46)', fontSize: '14px', fontWeight: 600 }}>
               Usuario creado. Se envió el correo de activación.
             </span>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
             <button
               onClick={() => { setSuccess(false); setForm({ email: '', full_name: '', organizacion_id: '' }); }}
-              style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,150,143,.3)', background: 'white', color: '#00968f', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
+              style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,150,143,.3)', background: 'var(--color-surface)', color: '#00968f', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
             >
               Crear otro
             </button>
@@ -175,7 +175,7 @@ export default function CrearUsuarioEmpresaPage() {
                 <option key={o.id} value={o.id}>{o.nombre}</option>
               ))}
             </select>
-            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'rgba(11,27,43,.5)' }}>
+            <p style={{ margin: '6px 0 0', fontSize: '12px', color: 'var(--color-text-muted)' }}>
               Un empleado siempre pertenece a una empresa. Si no aparece, créala en{' '}
               <a href="/admin/organizaciones" style={{ color: '#00968f', fontWeight: 600 }}>Organizaciones</a>.
             </p>
@@ -189,7 +189,7 @@ export default function CrearUsuarioEmpresaPage() {
             <button
               type="button"
               onClick={() => router.push('/admin/usuarios')}
-              style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,150,143,.3)', background: 'white', color: '#00968f', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
+              style={{ padding: '10px 20px', borderRadius: '10px', border: '1px solid rgba(0,150,143,.3)', background: 'var(--color-surface)', color: '#00968f', fontWeight: 600, cursor: 'pointer', fontSize: '14px' }}
             >
               Cancelar
             </button>

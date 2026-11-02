@@ -195,8 +195,8 @@ export default function AdminCursoPreviewPage() {
               padding: '0.4rem 1rem',
               borderRadius: '0.4rem',
               border: 'none',
-              background: '#d1fae5',
-              color: '#065f46',
+              background: 'var(--color-tint-success, #d1fae5)',
+              color: 'var(--color-tint-success-text, #065f46)',
               fontWeight: 600,
               fontSize: '0.875rem',
               cursor: 'pointer',
@@ -212,8 +212,8 @@ export default function AdminCursoPreviewPage() {
               padding: '0.4rem 1rem',
               borderRadius: '0.4rem',
               border: 'none',
-              background: '#dbeafe',
-              color: '#1e40af',
+              background: 'var(--color-tint-info, #dbeafe)',
+              color: 'var(--color-tint-info-text, #1e40af)',
               fontWeight: 600,
               fontSize: '0.875rem',
               cursor: 'pointer',
@@ -229,8 +229,8 @@ export default function AdminCursoPreviewPage() {
               padding: '0.4rem 1rem',
               borderRadius: '0.4rem',
               border: 'none',
-              background: '#fee2e2',
-              color: '#991b1b',
+              background: 'var(--color-tint-error, #fee2e2)',
+              color: 'var(--color-tint-error-text, #991b1b)',
               fontWeight: 600,
               fontSize: '0.875rem',
               cursor: 'pointer',
@@ -256,7 +256,7 @@ export default function AdminCursoPreviewPage() {
         >
           <div
             style={{
-              background: '#fff', borderRadius: '0.9375rem', padding: '2rem',
+              background: 'var(--color-surface)', borderRadius: '0.9375rem', padding: '2rem',
               maxWidth: '440px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)',
             }}
             onClick={(e) => e.stopPropagation()}
@@ -264,12 +264,12 @@ export default function AdminCursoPreviewPage() {
             <h3 style={{ margin: '0 0 0.75rem', fontSize: '1.125rem', fontWeight: 700 }}>
               {actionLabel[confirmAction]}: &ldquo;{course.title}&rdquo;
             </h3>
-            <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: '#64748b', lineHeight: 1.5 }}>
+            <p style={{ margin: '0 0 1rem', fontSize: '0.9rem', color: 'var(--color-text-muted)', lineHeight: 1.5 }}>
               {actionMsg[confirmAction]}
             </p>
             {(confirmAction === 'solicitar_cambios' || confirmAction === 'rechazar') && (
               <div style={{ marginBottom: '1.25rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-body)', marginBottom: '0.4rem' }}>
                   {confirmAction === 'solicitar_cambios' ? 'Cambios solicitados *' : 'Motivo del rechazo (opcional)'}
                 </label>
                 <textarea
@@ -277,7 +277,7 @@ export default function AdminCursoPreviewPage() {
                   onChange={(e) => { setNota(e.target.value); setNotaError(''); }}
                   rows={3}
                   placeholder={confirmAction === 'solicitar_cambios' ? 'Ej: Faltan subtítulos en el módulo 2 y la descripción es muy corta.' : 'Ej: El contenido no cumple los lineamientos.'}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid var(--color-border-default)', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
                 />
                 {notaError && <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#dc2626' }}>{notaError}</p>}
               </div>
@@ -286,8 +286,8 @@ export default function AdminCursoPreviewPage() {
               <button
                 onClick={() => { setConfirmAction(null); setNota(''); setNotaError(''); }}
                 style={{
-                  padding: '0.5rem 1.25rem', border: '1.5px solid #e2e8f0',
-                  borderRadius: '0.5rem', background: '#fff', cursor: 'pointer', fontSize: '0.875rem',
+                  padding: '0.5rem 1.25rem', border: '1.5px solid var(--color-border-default)',
+                  borderRadius: '0.5rem', background: 'var(--color-surface)', cursor: 'pointer', fontSize: '0.875rem',
                 }}
               >
                 Cancelar

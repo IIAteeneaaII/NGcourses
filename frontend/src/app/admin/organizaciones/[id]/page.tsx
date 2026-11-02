@@ -503,11 +503,11 @@ export default function OrganizacionDetallePage() {
           <div
             onClick={(e) => e.stopPropagation()}
             style={{
-              background: '#fff', borderRadius: '0.9375rem', padding: '1.75rem',
+              background: 'var(--color-surface)', borderRadius: '0.9375rem', padding: '1.75rem',
               maxWidth: '480px', width: '100%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
             }}
           >
-            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1.0625rem', fontWeight: 700, color: '#b91c1c' }}>
+            <h3 style={{ margin: '0 0 0.75rem', fontSize: '1.0625rem', fontWeight: 700, color: 'var(--color-tint-error-text, #b91c1c)' }}>
               Eliminar &ldquo;{org.nombre}&rdquo;
             </h3>
             <p style={{ margin: '0 0 0.75rem', fontSize: '0.9rem', color: 'var(--color-text-secondary)', lineHeight: 1.55 }}>
@@ -530,14 +530,14 @@ export default function OrganizacionDetallePage() {
               placeholder={org.nombre}
               autoFocus
             />
-            {deleteError && <p style={{ color: '#b91c1c', fontSize: '0.8125rem', marginTop: '0.75rem' }}>{deleteError}</p>}
+            {deleteError && <p style={{ color: 'var(--color-tint-error-text, #b91c1c)', fontSize: '0.8125rem', marginTop: '0.75rem' }}>{deleteError}</p>}
             <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
               <button
                 onClick={() => setShowDeleteModal(false)}
                 disabled={deleting}
                 style={{
-                  padding: '0.5rem 1.1rem', border: '1.5px solid #e2e8f0', borderRadius: '0.5rem',
-                  background: '#fff', color: 'var(--color-text-secondary)', fontWeight: 600,
+                  padding: '0.5rem 1.1rem', border: '1.5px solid var(--color-border-default)', borderRadius: '0.5rem',
+                  background: 'var(--color-surface)', color: 'var(--color-text-secondary)', fontWeight: 600,
                   fontSize: '0.875rem', cursor: 'pointer',
                 }}
               >

@@ -36,7 +36,7 @@ export default function LessonsSidebar({
   };
 
   const TypeIcon = ({ tipo }: { tipo?: Lesson['tipo'] }) => (
-    <span style={{ flexShrink: 0, display: 'inline-flex', marginRight: 6, color: '#94a3b8' }}>
+    <span style={{ flexShrink: 0, display: 'inline-flex', marginRight: 6, color: 'var(--color-text-faint)' }}>
       {tipo === 'quiz' ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
           <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
@@ -55,9 +55,9 @@ export default function LessonsSidebar({
 
   return (
     <div className={styles.container}>
-      <div style={{ padding: '0.9rem 1rem 0.65rem', borderBottom: '1px solid #e2e8f0' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: '#0f172a' }}>Contenido del curso</h3>
-        <span style={{ fontSize: '0.78rem', color: '#64748b' }}>
+      <div style={{ padding: '0.9rem 1rem 0.65rem', borderBottom: '1px solid var(--color-border-default)' }}>
+        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--color-text-heading)' }}>Contenido del curso</h3>
+        <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
           {done}/{total} lecciones completadas
         </span>
       </div>
@@ -83,7 +83,7 @@ export default function LessonsSidebar({
                   <path d="M6 9l6 6 6-6" />
                 </svg>
                 <span className={styles.moduleTitle} style={{ flex: 1, margin: 0 }}>{idx + 1}. {module.name}</span>
-                <span style={{ fontSize: '0.72rem', color: '#94a3b8', flexShrink: 0 }}>{modDone}/{module.lessons.length}</span>
+                <span style={{ fontSize: '0.72rem', color: 'var(--color-text-faint)', flexShrink: 0 }}>{modDone}/{module.lessons.length}</span>
               </button>
 
               {!isCollapsed && (

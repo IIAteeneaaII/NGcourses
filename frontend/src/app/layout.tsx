@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { headers } from "next/headers";
 import ProfileSetupGate from "@/components/auth/ProfileSetupGate";
+import { THEME_INIT_SCRIPT } from "@/lib/theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -27,13 +29,22 @@ export const metadata: Metadata = {
 // Next renderice en cada request e inyecte el nonce en sus <script>.
 export const dynamic = 'force-dynamic';
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Nonce del CSP (lo genera src/proxy.ts) para el script inline del tema.
+  const nonce = (await headers()).get("x-nonce") ?? undefined;
+
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Aplica el tema guardado antes del primer pintado (evita parpadeo).
+            suppressHydrationWarning: el navegador oculta el atributo nonce tras
+            cargar (queda en ""), y React lo reportaría como mismatch. */}
+        <script nonce={nonce} suppressHydrationWarning dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

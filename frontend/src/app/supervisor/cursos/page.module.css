@@ -27,7 +27,7 @@
 
 .cursoCard {
   display: block;
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border: 1px solid transparent;
   border-radius: 0.9375rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -108,7 +108,7 @@
 }
 
 .emptyCard {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 3rem 2rem;
   text-align: center;

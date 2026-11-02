@@ -51,7 +51,7 @@
 }
 
 .mainContent {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -61,7 +61,7 @@
   display: flex;
   gap: 0.5rem;
   margin-bottom: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-default);
   flex-wrap: wrap;
 }
 
@@ -111,7 +111,7 @@
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   transition: all 0.2s;
   width: 100%;
@@ -128,7 +128,7 @@
 .formError {
   font-size: 0.875rem;
   color: #dc2626;
-  background: #fee2e2;
+  background: var(--color-tint-error, #fee2e2);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   margin: 0;
@@ -136,8 +136,8 @@
 
 .formMsg {
   font-size: 0.875rem;
-  color: #065f46;
-  background: #d1fae5;
+  color: var(--color-tint-success-text, #065f46);
+  background: var(--color-tint-success, #d1fae5);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   margin: 0;
@@ -197,9 +197,9 @@
 
 .deleteButton {
   padding: 0.4rem 0.875rem;
-  background: #fee2e2;
-  color: #991b1b;
-  border: 1px solid #fca5a5;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
+  border: 1px solid var(--color-tint-error, #fca5a5);
   border-radius: 0.375rem;
   font-size: 0.8125rem;
   font-weight: 600;
@@ -208,7 +208,7 @@
 }
 
 .deleteButton:hover {
-  background: #fecaca;
+  background: var(--color-tint-error, #fecaca);
 }
 
 .assignRow {
@@ -225,7 +225,7 @@
 .usersTable {
   width: 100%;
   border-collapse: collapse;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.75rem;
   overflow: hidden;
 }
@@ -242,12 +242,12 @@
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--color-border-default);
 }
 
 .usersTable td {
   padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-surface-subtle);
   font-size: 0.9375rem;
   color: var(--color-text-primary);
 }
@@ -298,6 +298,6 @@
   border-radius: 1rem;
   white-space: nowrap;
 }
-.estadoActivo { background: #dcfce7; color: #15803d; }
-.estadoPendiente { background: #fef9c3; color: #854d0e; }
-.estadoSuspendido { background: #fee2e2; color: #b91c1c; }
+.estadoActivo { background: var(--color-tint-success, #dcfce7); color: var(--color-tint-success-text, #15803d); }
+.estadoPendiente { background: var(--color-tint-warning, #fef9c3); color: var(--color-tint-warning-text, #854d0e); }
+.estadoSuspendido { background: var(--color-tint-error, #fee2e2); color: var(--color-tint-error-text, #b91c1c); }

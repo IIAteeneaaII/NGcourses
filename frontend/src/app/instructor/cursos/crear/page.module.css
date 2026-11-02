@@ -11,7 +11,7 @@
   align-items: center;
   margin-bottom: 2rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .headerLeft {
@@ -58,7 +58,7 @@
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--color-secondary-30);
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border: 1px solid var(--color-secondary-30);
   border-radius: 0.5rem;
   cursor: pointer;
@@ -82,7 +82,7 @@
 .sidebar {
   position: sticky;
   top: 5rem;
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: var(--shadow-sm);
@@ -154,7 +154,7 @@
 
 /* Main Content */
 .mainContent {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.75rem;
   box-shadow: var(--shadow-sm);
 }
@@ -211,8 +211,8 @@
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
-  background: var(--color-text-white);
-  border: 1px solid #d1d5db;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
   font-family: inherit;
@@ -251,7 +251,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem 2rem;
-  border: 2px dashed #d1d5db;
+  border: 2px dashed var(--color-border-strong);
   border-radius: 0.75rem;
   background: var(--color-primary-60);
   transition: all 0.2s ease-in-out;
@@ -259,7 +259,7 @@
 
 .uploadPlaceholder:hover {
   border-color: var(--color-secondary-30);
-  background: #f0f9ff;
+  background: var(--color-tint-info, #f0f9ff);
 }
 
 .uploadPlaceholder svg {
@@ -324,7 +324,7 @@
 
 .moduleCard {
   background: var(--color-primary-60);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.75rem;
   overflow: hidden;
 }
@@ -334,8 +334,8 @@
   align-items: center;
   gap: 0.75rem;
   padding: 1rem 1.25rem;
-  background: #f9fafb;
-  border-bottom: 1px solid #e5e7eb;
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .expandButton {
@@ -360,8 +360,8 @@
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-text-primary);
-  background: var(--color-text-white);
-  border: 1px solid #d1d5db;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
 }
@@ -400,8 +400,8 @@
 }
 
 .lessonCard {
-  background: var(--color-text-white);
-  border: 1px solid #e5e7eb;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   padding: 1rem;
 }
@@ -433,7 +433,7 @@
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.375rem;
   transition: all 0.2s ease-in-out;
 }
@@ -441,7 +441,7 @@
 .lessonTitleInput:focus {
   outline: none;
   border-color: var(--color-secondary-30);
-  background: var(--color-text-white);
+  background: var(--color-surface);
 }
 
 /* Toggle Switch */
@@ -466,7 +466,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: var(--color-border-strong);
   transition: 0.3s;
   border-radius: 1.5rem;
 }
@@ -478,7 +478,7 @@
   width: 1.125rem;
   left: 0.1875rem;
   bottom: 0.1875rem;
-  background-color: white;
+  background-color: var(--color-surface);
   transition: 0.3s;
   border-radius: 50%;
 }
@@ -508,7 +508,7 @@
 }
 
 .deleteLessonButton:hover {
-  background: #fee2e2;
+  background: var(--color-tint-error, #fee2e2);
   color: #dc2626;
 }
 
@@ -523,7 +523,7 @@
   font-size: 0.875rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.375rem;
   transition: all 0.2s ease-in-out;
 }
@@ -531,7 +531,7 @@
 .lessonInput:focus {
   outline: none;
   border-color: var(--color-secondary-30);
-  background: var(--color-text-white);
+  background: var(--color-surface);
 }
 
 .lessonDurationInput {
@@ -540,7 +540,7 @@
   font-size: 0.875rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.375rem;
   text-align: center;
   transition: all 0.2s ease-in-out;
@@ -549,7 +549,7 @@
 .lessonDurationInput:focus {
   outline: none;
   border-color: var(--color-secondary-30);
-  background: var(--color-text-white);
+  background: var(--color-surface);
 }
 
 .addLessonButton {
@@ -566,7 +566,7 @@
 }
 
 .addLessonButton:hover {
-  background: #e0f2fe;
+  background: var(--color-tint-info, #e0f2fe);
   border-style: solid;
 }
 
@@ -588,7 +588,7 @@
 }
 
 .addModuleButton:hover {
-  background: #e0f2fe;
+  background: var(--color-tint-info, #e0f2fe);
   border-style: solid;
 }
 
@@ -605,14 +605,14 @@
   gap: 1rem;
   padding: 1.25rem;
   background: var(--color-primary-60);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
 }
 
 .checkboxLabel:hover {
-  background: #f0f9ff;
+  background: var(--color-tint-info, #f0f9ff);
   border-color: var(--color-secondary-30);
 }
 
@@ -657,7 +657,7 @@
   gap: 0.5rem;
   padding: 1.25rem;
   background: var(--color-primary-60);
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
 }
 
@@ -682,7 +682,7 @@
   gap: 1rem;
   margin-top: 2.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border-default);
 }
 
 .backButton,
@@ -760,7 +760,7 @@
 }
 
 .modal {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.75rem;
   width: 100%;
   max-width: 800px;
@@ -777,7 +777,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .modalTitle {
@@ -839,8 +839,8 @@
   gap: 1rem;
   padding: 1rem 0;
   margin-bottom: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-  border-bottom: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border-default);
+  border-bottom: 1px solid var(--color-border-default);
   font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
@@ -1001,11 +1001,11 @@
 /* ── Recursos por lección ─────────────────────────────── */
 .toggleRecursosBtn {
   background: none;
-  border: 1px dashed #cbd5e1;
+  border: 1px dashed var(--color-border-strong);
   border-radius: 0.375rem;
   padding: 0.35rem 0.75rem;
   font-size: 0.8125rem;
-  color: #64748b;
+  color: var(--color-text-muted);
   cursor: pointer;
   width: 100%;
   text-align: left;
@@ -1018,9 +1018,9 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   border-radius: 0.375rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-default);
 }
 
 .recursoItem {
@@ -1030,12 +1030,12 @@
   font-size: 0.8125rem;
 }
 .recursoType {
-  background: #e2e8f0;
+  background: var(--color-border-default);
   padding: 0.15rem 0.4rem;
   border-radius: 0.25rem;
   font-size: 0.6875rem;
   font-weight: 700;
-  color: #475569;
+  color: var(--color-text-body);
 }
 .recursoTitle {
   flex: 1;
@@ -1069,10 +1069,10 @@
 }
 .recursoInput {
   padding: 0.4rem 0.6rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.375rem;
   font-size: 0.8125rem;
-  background: #fff;
+  background: var(--color-surface);
 }
 .addRecursoBtn {
   background: #16a34a;
@@ -1091,7 +1091,7 @@
   grid-column: 1 / -1;
   margin: 0.15rem 0 0;
   font-size: 0.75rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .recursoFileLabel {
@@ -1101,9 +1101,9 @@
   border: 1px dashed #94a3b8;
   border-radius: 0.375rem;
   font-size: 0.8125rem;
-  color: #475569;
+  color: var(--color-text-body);
   cursor: pointer;
-  background: #f8fafc;
+  background: var(--color-surface-muted);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1129,7 +1129,7 @@
   width: 5rem;
   height: 5rem;
   border-radius: 50%;
-  background: #dcfce7;
+  background: var(--color-tint-success, #dcfce7);
   color: #16a34a;
   flex-shrink: 0;
 }

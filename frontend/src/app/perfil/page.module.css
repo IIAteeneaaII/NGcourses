@@ -10,7 +10,7 @@
 }
 
 .modal {
-  background: white;
+  background: var(--color-surface);
   border-radius: 1rem;
   padding: 2rem;
   width: 100%;
@@ -68,7 +68,7 @@
 
 .formInput {
   padding: 0.625rem 0.875rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
@@ -102,7 +102,7 @@
 
 .cancelBtn {
   padding: 0.625rem 1.25rem;
-  background: #f1f5f9;
+  background: var(--color-surface-subtle);
   color: var(--color-text-primary);
   border: none;
   border-radius: 0.5rem;
@@ -112,7 +112,7 @@
 }
 
 .cancelBtn:hover {
-  background: #e2e8f0;
+  background: var(--color-border-default);
 }
 
 .saveBtn {
@@ -138,7 +138,7 @@
 
 .modalDivider {
   border: none;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border-default);
   margin: 1.5rem 0;
 }
 

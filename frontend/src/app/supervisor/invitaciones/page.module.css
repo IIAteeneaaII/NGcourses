@@ -20,7 +20,7 @@
 }
 
 .card {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -62,12 +62,12 @@
 .textarea {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.625rem;
   font-size: 0.9375rem;
   font-family: inherit;
   color: var(--color-text-primary);
-  background: #fff;
+  background: var(--color-surface);
   box-sizing: border-box;
   transition: border-color 0.2s;
 }
@@ -127,15 +127,15 @@
   flex: 1;
 }
 
-.resultEnviada { background: #dcfce7; color: #15803d; }
-.resultYaInscrito { background: #fef9c3; color: #854d0e; }
-.resultError { background: #fee2e2; color: #b91c1c; }
+.resultEnviada { background: var(--color-tint-success, #dcfce7); color: var(--color-tint-success-text, #15803d); }
+.resultYaInscrito { background: var(--color-tint-warning, #fef9c3); color: var(--color-tint-warning-text, #854d0e); }
+.resultError { background: var(--color-tint-error, #fee2e2); color: var(--color-tint-error-text, #b91c1c); }
 
 /* ── Tabla ─────────────────────────────────────────────────────────── */
 .tableContainer {
   overflow-x: auto;
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
 }
 
 .table {
@@ -155,12 +155,12 @@
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--color-border-default);
 }
 
 .table td {
   padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-surface-subtle);
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   vertical-align: middle;
@@ -186,18 +186,18 @@
 }
 
 .pendiente {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .usada {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .expirada {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 /* ── Acciones ──────────────────────────────────────────────────────── */
@@ -221,15 +221,15 @@
 }
 
 .reenviarBtn {
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1d4ed8);
 }
-.reenviarBtn:hover:not(:disabled) { background: #bfdbfe; }
+.reenviarBtn:hover:not(:disabled) { background: var(--color-tint-info, #bfdbfe); }
 .reenviarBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 .revocarBtn {
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #b91c1c);
 }
-.revocarBtn:hover:not(:disabled) { background: #fecaca; }
+.revocarBtn:hover:not(:disabled) { background: var(--color-tint-error, #fecaca); }
 .revocarBtn:disabled { opacity: 0.4; cursor: not-allowed; }

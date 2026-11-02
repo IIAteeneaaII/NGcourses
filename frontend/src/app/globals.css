@@ -1,6 +1,11 @@
 @import "tailwindcss";
 
-:root {
+/* [data-theme="light"] permite forzar el tema claro en un subárbol (p. ej. el
+   login) aunque <html> esté en oscuro. */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+
   /* Regla 60-30-10 — Identidad NextGen IA */
 
   /* 60% - Color Dominante (fondos, áreas grandes) */
@@ -45,6 +50,29 @@
   --color-table-header: var(--color-primary-60);
   --color-table-row-hover: #F9FAFB;
 
+  /* Superficies y neutros temables (claro por defecto; [data-theme="dark"] los
+     redefine). Usar estos tokens en vez de grises/blancos fijos para que el
+     modo oscuro funcione. --color-text-white es SOLO para texto sobre color. */
+  --color-surface: #FFFFFF;           /* Cards, modales, dropdowns */
+  --color-surface-muted: #F8FAFC;     /* Paneles secundarios dentro de cards */
+  --color-surface-subtle: #F3F4F6;    /* Hover, chips, fondos de inputs */
+  --color-border-strong: #D1D5DB;     /* Bordes de inputs y separadores marcados */
+  --color-text-heading: #1A202C;      /* Títulos */
+  --color-text-body: #374151;         /* Texto de párrafo */
+  --color-text-muted: #64748B;        /* Texto de apoyo */
+  --color-text-faint: #94A3B8;        /* Placeholders, metadatos */
+
+  /* Tintes de estado: sin valor en claro → cada uso cae a su hex de fallback. */
+  --color-tint-error: initial;
+  --color-tint-error-text: initial;
+  --color-tint-success: initial;
+  --color-tint-success-text: initial;
+  --color-tint-success-hover: initial;
+  --color-tint-info: initial;
+  --color-tint-info-text: initial;
+  --color-tint-warning: initial;
+  --color-tint-warning-text: initial;
+
   /* Status Colors - Extended */
   --color-status-draft: var(--color-text-light);
   --color-status-published: var(--color-success);
@@ -52,6 +80,54 @@
   --color-status-active: var(--color-success);
   --color-status-inactive: var(--color-text-light);
   --color-status-suspended: var(--color-error);
+}
+
+/* ── Modo oscuro ─────────────────────────────────────────────────────────────
+   Se activa con data-theme="dark" en <html> (ver src/lib/theme.ts). Solo se
+   redefinen neutros/superficies; la identidad (turquesa, verde, estados) se
+   mantiene. */
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --color-primary-60: #0F141A;
+  --color-primary-60-alt: #171D25;
+
+  --color-secondary-30-lighter: #0F3D3B;
+  --color-accent-10-light: #12301F;
+  --color-success-light: #12301F;
+
+  --color-text-primary: #E6EAF0;
+  --color-text-secondary: #A7B0BC;
+  --color-text-light: #7A8594;
+
+  --color-border: #2E5C7A;
+  --color-border-default: #2C3542;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.45);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+  --color-table-row-hover: #1D242E;
+
+  --color-surface: #171D25;
+  --color-surface-muted: #1D242E;
+  --color-surface-subtle: #232B36;
+  --color-border-strong: #3A4553;
+  --color-text-heading: #F1F4F8;
+  --color-text-body: #CDD3DB;
+  --color-text-muted: #9AA4B2;
+  --color-text-faint: #6F7A88;
+
+  /* Tintes de estado (alertas/badges). En claro valen `initial` y cada uso cae
+     a su hex original de fallback, p. ej. var(--color-tint-error, #fee2e2). */
+  --color-tint-error: #3A1D20;
+  --color-tint-error-text: #FCA5A5;
+  --color-tint-success: #12301F;
+  --color-tint-success-text: #86EFAC;
+  --color-tint-success-hover: #184029;
+  --color-tint-info: #132A40;
+  --color-tint-info-text: #93C5FD;
+  --color-tint-warning: #3A2E12;
+  --color-tint-warning-text: #FCD34D;
 }
 
 @theme inline {

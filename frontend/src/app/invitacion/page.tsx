@@ -86,7 +86,7 @@ function InvitacionContent() {
 
   if (estado.type === 'loading') {
     return (
-      <div className={styles.page}>
+      <div className={styles.page} data-theme="light">
         <div className={styles.card}>
           <div className={styles.spinnerWrap}>
             <span className={styles.spinner} />
@@ -105,7 +105,7 @@ function InvitacionContent() {
     const necesitaActivar = data.requiere_activacion;
 
     return (
-      <div className={styles.page}>
+      <div className={styles.page} data-theme="light">
         <div className={styles.card}>
           <div className={styles.cardHeader}>
             <p className={styles.brand}>NGcourses</p>
@@ -156,7 +156,7 @@ function InvitacionContent() {
   const err = errorMap[estado.type as keyof typeof errorMap];
 
   return (
-    <div className={styles.page}>
+    <div className={styles.page} data-theme="light">
       <div className={styles.card}>
         <div className={styles.cardHeader}>
           <p className={styles.brand}>NGcourses</p>

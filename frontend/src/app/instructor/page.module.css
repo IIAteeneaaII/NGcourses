@@ -32,7 +32,7 @@
 }
 
 .statCard {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 2.25rem 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -92,7 +92,7 @@
 }
 
 .optionCard {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 2.5rem 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -191,7 +191,7 @@
 
 /* History / Activity Section */
 .historySection {
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -203,7 +203,7 @@
   align-items: center;
   margin-bottom: 1.25rem;
   padding-bottom: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-surface-subtle);
 }
 
 .historyTitle {
@@ -236,13 +236,13 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.9375rem;
-  background-color: #f8f9fa;
+  background-color: var(--color-surface-muted);
   border-radius: 0.625rem;
   transition: background-color 0.2s ease;
 }
 
 .historyItem:hover {
-  background-color: #f1f3f5;
+  background-color: var(--color-surface-subtle);
 }
 
 .historyItemContent {

@@ -33,38 +33,38 @@
 
 /* Color Variants */
 .default {
-  background-color: #f3f4f6;
+  background-color: var(--color-surface-subtle);
   color: var(--color-text-secondary);
 }
 
 .success {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .warning {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .error {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 .info {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
 
 .primary {
-  background-color: #e0f2fe;
+  background-color: var(--color-tint-info, #e0f2fe);
   color: var(--color-secondary-30);
 }
 
 .secondary {
-  background-color: #fef2e8;
-  color: #c2410c;
+  background-color: var(--color-tint-warning, #fef2e8);
+  color: var(--color-tint-warning-text, #c2410c);
 }
 
 /* Dot Indicator */

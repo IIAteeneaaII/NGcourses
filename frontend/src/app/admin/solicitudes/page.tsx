@@ -186,7 +186,7 @@ export default function SolicitudesPage() {
             <p className={styles.modalDesc}>{actionMsg[confirmModal.action]}</p>
             {(confirmModal.action === 'solicitar_cambios' || confirmModal.action === 'rechazar') && (
               <div style={{ marginBottom: '1rem' }}>
-                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: '#334155', marginBottom: '0.4rem' }}>
+                <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--color-text-body)', marginBottom: '0.4rem' }}>
                   {confirmModal.action === 'solicitar_cambios' ? 'Cambios solicitados *' : 'Motivo del rechazo (opcional)'}
                 </label>
                 <textarea
@@ -194,7 +194,7 @@ export default function SolicitudesPage() {
                   onChange={(e) => { setNota(e.target.value); setNotaError(''); }}
                   rows={3}
                   placeholder={confirmModal.action === 'solicitar_cambios' ? 'Ej: Faltan subtítulos en el módulo 2.' : 'Ej: El contenido no cumple los lineamientos.'}
-                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid #e2e8f0', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
+                  style={{ width: '100%', padding: '0.6rem', borderRadius: '0.5rem', border: '1.5px solid var(--color-border-default)', fontSize: '0.875rem', resize: 'vertical', boxSizing: 'border-box' }}
                 />
                 {notaError && <p style={{ margin: '0.35rem 0 0', fontSize: '0.8rem', color: '#dc2626' }}>{notaError}</p>}
               </div>

@@ -9,6 +9,7 @@ import FilterDropdown from './FilterDropdown';
 import type { CourseCard as CourseCardType, User } from '@/types/course';
 import { logout } from '@/lib/auth';
 import styles from './CoursesContent.module.css';
+import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface CoursesContentProps {
   courses: CourseCardType[];
@@ -102,6 +103,7 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
                   </svg>
                   Mis Cursos
                 </Link>
+                <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
                 <button className={styles.dropdownItem} onClick={handleLogout}>
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={styles.dropdownIcon}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />

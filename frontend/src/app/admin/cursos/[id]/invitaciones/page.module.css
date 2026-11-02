@@ -39,7 +39,7 @@
 
 /* ── Tarjeta ───────────────────────────────────────────────────────── */
 .card {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
   padding: 1.5rem;
@@ -76,7 +76,7 @@
   width: 100%;
   min-height: 7rem;
   padding: 0.75rem 1rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.625rem;
   font-size: 0.9375rem;
   font-family: inherit;
@@ -130,9 +130,9 @@
   flex: 1;
 }
 
-.resultEnviada { background: #dcfce7; color: #15803d; }
-.resultYaInscrito { background: #fef9c3; color: #854d0e; }
-.resultError { background: #fee2e2; color: #b91c1c; }
+.resultEnviada { background: var(--color-tint-success, #dcfce7); color: var(--color-tint-success-text, #15803d); }
+.resultYaInscrito { background: var(--color-tint-warning, #fef9c3); color: var(--color-tint-warning-text, #854d0e); }
+.resultError { background: var(--color-tint-error, #fee2e2); color: var(--color-tint-error-text, #b91c1c); }
 
 /* ── Tabla de historial ────────────────────────────────────────────── */
 .tableWrapper {
@@ -152,19 +152,19 @@
   font-weight: 600;
   color: var(--color-text-secondary);
   background: var(--color-primary-60);
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--color-border-default);
 }
 .table th:first-child { border-radius: 0.5rem 0 0 0.5rem; }
 .table th:last-child { border-radius: 0 0.5rem 0.5rem 0; }
 
 .table td {
   padding: 0.875rem 1rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid var(--color-surface-subtle);
   color: var(--color-text-primary);
   vertical-align: middle;
 }
 .table tr:last-child td { border-bottom: none; }
-.table tr:hover td { background: #f8fafc; }
+.table tr:hover td { background: var(--color-surface-muted); }
 
 /* ── Badges de estado ──────────────────────────────────────────────── */
 .badge {
@@ -176,9 +176,9 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-.badgePendiente { background: #dbeafe; color: #1d4ed8; }
-.badgeUsada { background: #dcfce7; color: #15803d; }
-.badgeExpirada { background: #f1f5f9; color: #64748b; }
+.badgePendiente { background: var(--color-tint-info, #dbeafe); color: var(--color-tint-info-text, #1d4ed8); }
+.badgeUsada { background: var(--color-tint-success, #dcfce7); color: var(--color-tint-success-text, #15803d); }
+.badgeExpirada { background: var(--color-surface-subtle); color: var(--color-text-muted); }
 
 /* ── Celda de acciones ─────────────────────────────────────────────── */
 .actionCell {
@@ -191,8 +191,8 @@
 /* ── Botón reenviar ────────────────────────────────────────────────── */
 .reenviarBtn {
   padding: 0.35rem 0.875rem;
-  background: #dbeafe;
-  color: #1d4ed8;
+  background: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1d4ed8);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.8125rem;
@@ -201,14 +201,14 @@
   transition: background 0.2s;
   white-space: nowrap;
 }
-.reenviarBtn:hover:not(:disabled) { background: #bfdbfe; }
+.reenviarBtn:hover:not(:disabled) { background: var(--color-tint-info, #bfdbfe); }
 .reenviarBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Botón revocar ─────────────────────────────────────────────────── */
 .revocarBtn {
   padding: 0.35rem 0.875rem;
-  background: #fee2e2;
-  color: #b91c1c;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #b91c1c);
   border: none;
   border-radius: 0.5rem;
   font-size: 0.8125rem;
@@ -217,7 +217,7 @@
   transition: background 0.2s;
   white-space: nowrap;
 }
-.revocarBtn:hover:not(:disabled) { background: #fecaca; }
+.revocarBtn:hover:not(:disabled) { background: var(--color-tint-error, #fecaca); }
 .revocarBtn:disabled { opacity: 0.4; cursor: not-allowed; }
 
 /* ── Estado vacío / cargando ───────────────────────────────────────── */

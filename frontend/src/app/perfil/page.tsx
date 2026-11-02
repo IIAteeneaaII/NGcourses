@@ -253,7 +253,7 @@ export default function PerfilPage() {
                   onChange={(e) => setEditForm((f) => ({ ...f, full_name: e.target.value }))}
                   placeholder="Tu nombre y apellido"
                 />
-                <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                <small style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
                   Se usa tal cual en tu certificado. Asegúrate de que sea tu nombre real.
                 </small>
               </div>
@@ -264,9 +264,9 @@ export default function PerfilPage() {
                   className={styles.formInput}
                   value={editForm.email}
                   disabled
-                  style={{ background: '#f3f4f6', color: '#6b7280', cursor: 'not-allowed' }}
+                  style={{ background: 'var(--color-surface-subtle)', color: 'var(--color-text-muted)', cursor: 'not-allowed' }}
                 />
-                <small style={{ color: '#6b7280', fontSize: '0.75rem' }}>
+                <small style={{ color: 'var(--color-text-muted)', fontSize: '0.75rem' }}>
                   El correo no se puede cambiar: es el identificador de tu cuenta.
                 </small>
               </div>

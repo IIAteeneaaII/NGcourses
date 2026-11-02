@@ -1,5 +1,5 @@
 .card {
-  background-color: #ffffff;
+  background-color: var(--color-surface);
   border-radius: 0.9375rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   padding: 1.5rem;
@@ -30,9 +30,9 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.875rem 1rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.625rem;
-  background-color: #fafbfc;
+  background-color: var(--color-surface-muted);
   gap: 1rem;
   flex-wrap: wrap;
 }
@@ -97,15 +97,15 @@
 
 .status_pendiente {
   background-color: rgba(245, 158, 11, 0.15);
-  color: #b45309;
+  color: var(--color-tint-warning-text, #b45309);
 }
 
 .status_fallido {
   background-color: rgba(220, 38, 38, 0.12);
-  color: #b91c1c;
+  color: var(--color-tint-error-text, #b91c1c);
 }
 
 .status_cortesia {
   background-color: rgba(100, 116, 139, 0.15);
-  color: #475569;
+  color: var(--color-text-body);
 }

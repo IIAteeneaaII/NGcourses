@@ -59,7 +59,7 @@
 
 /* Content Card */
 .contentCard {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -99,7 +99,7 @@
 .searchInput {
   flex: 1;
   padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
@@ -118,7 +118,7 @@
 
 .filterSelect {
   padding: 0.75rem 1rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
@@ -150,7 +150,7 @@
 }
 
 .courseItem:hover {
-  background: #e8f4f8;
+  background: var(--color-tint-info, #e8f4f8);
   transform: translateX(4px);
 }
 
@@ -203,7 +203,7 @@
 .progressBar {
   flex: 1;
   height: 0.5rem;
-  background-color: #e5e7eb;
+  background-color: var(--color-border-default);
   border-radius: 0.25rem;
   overflow: hidden;
   max-width: 200px;
@@ -227,23 +227,23 @@
 }
 
 .statusPublished {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusDraft {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .statusReview {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
 
 .statusReject {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 /* Course Actions */

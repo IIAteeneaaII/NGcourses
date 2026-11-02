@@ -244,7 +244,7 @@ export default function QuizPlayer({ leccionId, inscripcionId, quizData, ultimoI
       </div>
 
       {previewMode && (
-        <p style={{ fontSize: '0.85rem', color: '#1e40af', background: '#dbeafe', padding: '0.6rem 0.85rem', borderRadius: '0.5rem', margin: '0 0 0.5rem' }}>
+        <p style={{ fontSize: '0.85rem', color: 'var(--color-tint-info-text, #1e40af)', background: 'var(--color-tint-info, #dbeafe)', padding: '0.6rem 0.85rem', borderRadius: '0.5rem', margin: '0 0 0.5rem' }}>
           Modo vista previa: las respuestas se califican localmente y no se guardan.
         </p>
       )}

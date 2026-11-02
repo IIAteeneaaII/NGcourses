@@ -54,7 +54,7 @@
 
 /* Main Content */
 .mainContent {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
@@ -79,7 +79,7 @@
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   transition: all 0.2s ease-in-out;
 }
@@ -95,9 +95,9 @@
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1.25rem;
-  background: var(--color-text-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   font-size: 0.875rem;
   font-weight: 500;
@@ -115,8 +115,8 @@
   padding: 0.75rem 1rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
-  background: var(--color-text-white);
-  border: 1px solid #d1d5db;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease-in-out;
@@ -133,7 +133,7 @@
 .tableContainer {
   overflow-x: auto;
   border-radius: 0.75rem;
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--color-border-default);
 }
 
 .usersTable {
@@ -153,12 +153,12 @@
   color: var(--color-text-primary);
   text-transform: uppercase;
   letter-spacing: 0.025em;
-  border-bottom: 2px solid #e5e7eb;
+  border-bottom: 2px solid var(--color-border-default);
 }
 
 .usersTable td {
   padding: 1rem;
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid var(--color-surface-subtle);
   font-size: 0.9375rem;
   color: var(--color-text-primary);
 }
@@ -220,7 +220,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #cbd5e1;
+  background-color: var(--color-border-strong);
   transition: 0.3s;
   border-radius: 1.5rem;
 }
@@ -232,7 +232,7 @@
   width: 1.125rem;
   left: 0.1875rem;
   bottom: 0.1875rem;
-  background-color: white;
+  background-color: var(--color-surface);
   transition: 0.3s;
   border-radius: 50%;
 }
@@ -255,13 +255,13 @@
 }
 
 .statusText.active {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusText.inactive {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 /* Empty State */
@@ -280,7 +280,7 @@
   gap: 1rem;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid var(--color-border-default);
 }
 
 .pageButton {
@@ -289,9 +289,9 @@
   justify-content: center;
   width: 2.5rem;
   height: 2.5rem;
-  background: var(--color-text-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -357,7 +357,7 @@
 }
 
 .modal {
-  background: var(--color-text-white);
+  background: var(--color-surface);
   border-radius: 1rem;
   padding: 2rem;
   width: 100%;
@@ -421,7 +421,7 @@
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   background: var(--color-primary-60);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   transition: all 0.2s;
   width: 100%;
@@ -437,7 +437,7 @@
 .formError {
   font-size: 0.875rem;
   color: #dc2626;
-  background: #fee2e2;
+  background: var(--color-tint-error, #fee2e2);
   padding: 0.5rem 0.75rem;
   border-radius: 0.375rem;
   margin: 0;
@@ -452,9 +452,9 @@
 .cancelButton {
   flex: 1;
   padding: 0.75rem;
-  background: var(--color-text-white);
+  background: var(--color-surface);
   color: var(--color-text-secondary);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--color-border-strong);
   border-radius: 0.5rem;
   font-size: 1rem;
   font-weight: 500;

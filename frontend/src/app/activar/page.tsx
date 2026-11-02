@@ -102,9 +102,10 @@ function ActivarForm() {
   };
 
   return (
-    <div style={{
+    // Pantalla pública de auth: siempre en tema claro, como el login.
+    <div data-theme="light" style={{
       minHeight: '100vh',
-      background: 'radial-gradient(1100px 700px at 12% 18%, rgba(61,193,204,.30) 0%, rgba(242,242,242,0) 60%), radial-gradient(900px 650px at 86% 22%, rgba(0,150,143,.20) 0%, rgba(242,242,242,0) 58%), linear-gradient(180deg, #ffffff 0%, #F2F2F2 100%)',
+      background: 'radial-gradient(1100px 700px at 12% 18%, rgba(61,193,204,.30) 0%, rgba(242,242,242,0) 60%), radial-gradient(900px 650px at 86% 22%, rgba(0,150,143,.20) 0%, rgba(242,242,242,0) 58%), linear-gradient(180deg, var(--color-surface) 0%, #F2F2F2 100%)',
       display: 'grid',
       placeItems: 'center',
       padding: '28px 16px 70px',
@@ -121,26 +122,26 @@ function ActivarForm() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/images/logo.png" alt="NextGen" style={{ width: '36px', height: '36px', objectFit: 'contain' }} />
-          <span style={{ fontWeight: 900, fontSize: '16px', color: '#0B1B2B' }}>
+          <span style={{ fontWeight: 900, fontSize: '16px', color: 'var(--color-text-heading)' }}>
             NextGen <span style={{ fontWeight: 400 }}>Course</span>
           </span>
         </div>
 
         {tokenExpirado ? (
           <div>
-            <h2 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: '#0B1B2B' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: '20px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
               Enlace expirado
             </h2>
-            <p style={{ margin: '0 0 20px', color: 'rgba(11,27,43,.65)', fontSize: '14px' }}>
+            <p style={{ margin: '0 0 20px', color: 'var(--color-text-muted)', fontSize: '14px' }}>
               Tu enlace de activación ha expirado. Ingresa tu correo corporativo y te enviaremos uno nuevo.
             </p>
             {reenvioMsg ? (
-              <div style={{ padding: '12px 16px', background: '#ecfdf5', border: '1px solid #6ee7b7', borderRadius: '12px' }}>
-                <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>{reenvioMsg}</span>
+              <div style={{ padding: '12px 16px', background: 'var(--color-tint-success, #ecfdf5)', border: '1px solid #6ee7b7', borderRadius: '12px' }}>
+                <span style={{ color: 'var(--color-tint-success-text, #065f46)', fontSize: '14px', fontWeight: 600 }}>{reenvioMsg}</span>
               </div>
             ) : (
               <form onSubmit={handleSolicitarReenvio} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '14px', background: 'white', border: '1px solid rgba(0,150,143,.16)', padding: '13px 16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', borderRadius: '14px', background: 'var(--color-surface)', border: '1px solid rgba(0,150,143,.16)', padding: '13px 16px' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B1B2B" strokeWidth="1.8" style={{ opacity: 0.6, flexShrink: 0 }}>
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M22 6l-10 7L2 6" strokeLinecap="round" strokeLinejoin="round"/>
@@ -151,7 +152,7 @@ function ActivarForm() {
                     placeholder="empleado@empresa.com"
                     value={emailReenvio}
                     onChange={(e) => setEmailReenvio(e.target.value)}
-                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: 'var(--color-text-heading)' }}
                   />
                 </div>
                 <button
@@ -168,13 +169,13 @@ function ActivarForm() {
           <div>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '12px 16px', background: '#ecfdf5',
+              padding: '12px 16px', background: 'var(--color-tint-success, #ecfdf5)',
               border: '1px solid #6ee7b7', borderRadius: '12px', marginBottom: '20px',
             }}>
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="#059669" width="20" height="20">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
-              <span style={{ color: '#065f46', fontSize: '14px', fontWeight: 600 }}>
+              <span style={{ color: 'var(--color-tint-success-text, #065f46)', fontSize: '14px', fontWeight: 600 }}>
                 ¡Cuenta activada correctamente!
               </span>
             </div>
@@ -184,17 +185,17 @@ function ActivarForm() {
           </div>
         ) : (
           <>
-            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: '#0B1B2B' }}>
+            <h2 style={{ margin: '0 0 8px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
               Activa tu cuenta
             </h2>
-            <p style={{ margin: '0 0 24px', color: 'rgba(11,27,43,.65)', fontSize: '15px' }}>
+            <p style={{ margin: '0 0 24px', color: 'var(--color-text-muted)', fontSize: '15px' }}>
               Elige una contraseña para acceder a la plataforma.
             </p>
 
             <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', color: 'rgba(11,27,43,.78)' }}>Nueva contraseña</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'white', border: `1px solid ${password && !isPasswordValid ? 'rgba(239,68,68,.45)' : 'rgba(0,150,143,.16)'}`, padding: '14px 16px' }}>
+                <label style={{ fontSize: '14px', color: 'var(--color-text-body)' }}>Nueva contraseña</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'var(--color-surface)', border: `1px solid ${password && !isPasswordValid ? 'rgba(239,68,68,.45)' : 'rgba(0,150,143,.16)'}`, padding: '14px 16px' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7, flexShrink: 0 }}>
                     <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="#0B1B2B" strokeWidth="1.8" strokeLinecap="round"/>
                     <path d="M6 11h12v9H6v-9Z" stroke="#0B1B2B" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -211,10 +212,10 @@ function ActivarForm() {
                     minLength={8}
                     autoComplete="new-password"
                     aria-invalid={password.length > 0 && !isPasswordValid}
-                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: 'var(--color-text-heading)' }}
                   />
                   <button type="button" onClick={() => setShowPassword(!showPassword)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, padding: 0, display: 'flex', color: '#0B1B2B' }}>
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', opacity: 0.6, padding: 0, display: 'flex', color: 'var(--color-text-heading)' }}>
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                       <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
                       <circle cx="12" cy="12" r="3" stroke="currentColor" strokeWidth="1.8"/>
@@ -257,8 +258,8 @@ function ActivarForm() {
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <label style={{ fontSize: '14px', color: 'rgba(11,27,43,.78)' }}>Confirmar contraseña</label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'white', border: `1px solid ${confirm && confirm !== password ? 'rgba(239,68,68,.5)' : 'rgba(0,150,143,.16)'}`, padding: '14px 16px' }}>
+                <label style={{ fontSize: '14px', color: 'var(--color-text-body)' }}>Confirmar contraseña</label>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '14px', background: 'var(--color-surface)', border: `1px solid ${confirm && confirm !== password ? 'rgba(239,68,68,.5)' : 'rgba(0,150,143,.16)'}`, padding: '14px 16px' }}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" style={{ opacity: 0.7, flexShrink: 0 }}>
                     <path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="#0B1B2B" strokeWidth="1.8" strokeLinecap="round"/>
                     <path d="M6 11h12v9H6v-9Z" stroke="#0B1B2B" strokeWidth="1.8" strokeLinejoin="round"/>
@@ -275,7 +276,7 @@ function ActivarForm() {
                     minLength={8}
                     autoComplete="new-password"
                     aria-invalid={confirm.length > 0 && confirm !== password}
-                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: '#0B1B2B' }}
+                    style={{ border: 0, outline: 0, width: '100%', fontSize: '15px', background: 'transparent', color: 'var(--color-text-heading)' }}
                   />
                 </div>
                 {confirm.length > 0 && confirm !== password && (

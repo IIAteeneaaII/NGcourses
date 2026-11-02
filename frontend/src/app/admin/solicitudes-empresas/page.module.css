@@ -36,7 +36,7 @@
 
 /* History / list Section */
 .historySection {
-  background: linear-gradient(to bottom, var(--color-text-white) 0%, #F8FCFE 100%);
+  background: linear-gradient(to bottom, var(--color-surface) 0%, #F8FCFE 100%);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -60,7 +60,7 @@
 }
 
 .historyTable thead {
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--color-border-strong);
 }
 
 .historyTable th {
@@ -73,14 +73,14 @@
 
 .historyTable td {
   padding: 1rem 0.75rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-default);
   font-size: 0.9375rem;
   color: var(--color-text-primary);
   vertical-align: top;
 }
 
 .historyTable tbody tr:hover {
-  background-color: #f8f8f8;
+  background-color: var(--color-table-row-hover);
 }
 
 /* Status Badges */
@@ -94,23 +94,23 @@
 }
 
 .statusPending {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .statusReview {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
 
 .statusApproved {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusRejected {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 .emptyState {
@@ -155,22 +155,22 @@
 }
 
 .btnPublish {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
-.btnPublish:hover:not(:disabled) { background: #a7f3d0; }
+.btnPublish:hover:not(:disabled) { background: var(--color-tint-success, #a7f3d0); }
 
 .btnChanges {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
-.btnChanges:hover:not(:disabled) { background: #bfdbfe; }
+.btnChanges:hover:not(:disabled) { background: var(--color-tint-info, #bfdbfe); }
 
 .btnReject {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
-.btnReject:hover:not(:disabled) { background: #fecaca; }
+.btnReject:hover:not(:disabled) { background: var(--color-tint-error, #fecaca); }
 
 .btnPublish:disabled, .btnChanges:disabled, .btnReject:disabled {
   opacity: 0.5;
@@ -189,7 +189,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 2rem;
   max-width: 440px;
@@ -219,14 +219,14 @@
 
 .cancelBtn {
   padding: 0.5rem 1.25rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
 }
-.cancelBtn:hover { background: #f8fafc; }
+.cancelBtn:hover { background: var(--color-surface-muted); }
 
 @media (max-width: 768px) {
   .historySection {

@@ -44,7 +44,7 @@
 
 /* Form Section */
 .formSection {
-  background: linear-gradient(to bottom, var(--color-primary-60) 0%, var(--color-text-white) 100%);
+  background: linear-gradient(to bottom, var(--color-primary-60) 0%, var(--color-surface) 100%);
   border-radius: 1.25rem;
   padding: 2.5rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -79,7 +79,7 @@
   border: 1px solid #999;
   border-radius: 0.5rem;
   font-size: 0.9375rem;
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   font-family: inherit;
   transition: all 0.2s ease;
 }
@@ -109,7 +109,7 @@
   padding: 0.75rem;
   border: 1px solid #999;
   border-radius: 0.5rem;
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   cursor: pointer;
   transition: all 0.3s ease;
   font-size: 0.9375rem;
@@ -180,7 +180,7 @@
 .successMessage {
   margin-top: 2rem;
   padding: 2rem;
-  background-color: var(--color-text-white);
+  background-color: var(--color-surface);
   border-radius: 0.625rem;
   text-align: center;
   border: 1px solid var(--color-success);
@@ -212,7 +212,7 @@
 
 /* History Section */
 .historySection {
-  background: linear-gradient(to bottom, var(--color-text-white) 0%, #F8FCFE 100%);
+  background: linear-gradient(to bottom, var(--color-surface) 0%, #F8FCFE 100%);
   border-radius: 1.25rem;
   padding: 2rem;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
@@ -236,7 +236,7 @@
 }
 
 .historyTable thead {
-  border-bottom: 2px solid #ddd;
+  border-bottom: 2px solid var(--color-border-strong);
 }
 
 .historyTable th {
@@ -249,13 +249,13 @@
 
 .historyTable td {
   padding: 1rem 0.75rem;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--color-border-default);
   font-size: 0.9375rem;
   color: var(--color-text-primary);
 }
 
 .historyTable tbody tr:hover {
-  background-color: #f8f8f8;
+  background-color: var(--color-table-row-hover);
 }
 
 /* Status Badges */
@@ -268,23 +268,23 @@
 }
 
 .statusPending {
-  background-color: #fef3c7;
-  color: #92400e;
+  background-color: var(--color-tint-warning, #fef3c7);
+  color: var(--color-tint-warning-text, #92400e);
 }
 
 .statusReview {
-  background-color: #dbeafe;
-  color: #1e40af;
+  background-color: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
 
 .statusApproved {
-  background-color: #d1fae5;
-  color: #065f46;
+  background-color: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
 
 .statusRejected {
-  background-color: #fee2e2;
-  color: #991b1b;
+  background-color: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
 
 .emptyState {
@@ -318,22 +318,22 @@
 .btnView:hover:not(:disabled) { background: #c8e6f5; }
 
 .btnPublish {
-  background: #d1fae5;
-  color: #065f46;
+  background: var(--color-tint-success, #d1fae5);
+  color: var(--color-tint-success-text, #065f46);
 }
-.btnPublish:hover:not(:disabled) { background: #a7f3d0; }
+.btnPublish:hover:not(:disabled) { background: var(--color-tint-success, #a7f3d0); }
 
 .btnChanges {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-tint-info, #dbeafe);
+  color: var(--color-tint-info-text, #1e40af);
 }
-.btnChanges:hover:not(:disabled) { background: #bfdbfe; }
+.btnChanges:hover:not(:disabled) { background: var(--color-tint-info, #bfdbfe); }
 
 .btnReject {
-  background: #fee2e2;
-  color: #991b1b;
+  background: var(--color-tint-error, #fee2e2);
+  color: var(--color-tint-error-text, #991b1b);
 }
-.btnReject:hover:not(:disabled) { background: #fecaca; }
+.btnReject:hover:not(:disabled) { background: var(--color-tint-error, #fecaca); }
 
 .btnPublish:disabled, .btnChanges:disabled, .btnReject:disabled {
   opacity: 0.5;
@@ -352,7 +352,7 @@
 }
 
 .modal {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 0.9375rem;
   padding: 2rem;
   max-width: 440px;
@@ -382,14 +382,14 @@
 
 .cancelBtn {
   padding: 0.5rem 1.25rem;
-  border: 1.5px solid #e2e8f0;
+  border: 1.5px solid var(--color-border-default);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--color-surface);
   color: var(--color-text-secondary);
   font-size: 0.875rem;
   cursor: pointer;
 }
-.cancelBtn:hover { background: #f8fafc; }
+.cancelBtn:hover { background: var(--color-surface-muted); }
 
 /* Responsive */
 @media (max-width: 1024px) {
