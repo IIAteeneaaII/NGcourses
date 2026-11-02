@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import CoursesContent from '@/components/courses/CoursesContent';
 import type { CourseCard, User } from '@/types/course';
-import { cursosApi } from '@/lib/api/client';
+import { cursosApi, categoriasApi } from '@/lib/api/client';
 import { getCurrentUser } from '@/lib/auth';
 
 const API_URL = '';
@@ -15,6 +15,8 @@ interface ApiCurso {
   calificacion_prom: number;
   descripcion: string | null;
   portada_url: string | null;
+  categoria_id?: string | null;
+  nivel?: string | null;
   marca?: 'ram' | 'nextgen';
   bloqueado_por_licencia?: boolean;
   es_de_mi_org?: boolean;
@@ -22,6 +24,17 @@ interface ApiCurso {
   moneda?: string;
   destacado?: boolean;
 }
+
+interface ApiCategoria {
+  id: string;
+  nombre: string;
+}
+
+const NIVEL_LABEL: Record<string, string> = {
+  principiante: 'Principiante',
+  intermedio: 'Intermedio',
+  avanzado: 'Avanzado',
+};
 
 interface ApiResponse {
   data: ApiCurso[];
@@ -39,9 +52,10 @@ export default function CursosPage() {
   useEffect(() => {
     async function fetchData() {
       try {
-        const [apiUser, resp] = await Promise.allSettled([
+        const [apiUser, resp, cats] = await Promise.allSettled([
           getCurrentUser(),
           cursosApi.list({ limit: 100 }) as Promise<ApiResponse>,
+          categoriasApi.list() as Promise<ApiCategoria[]>,
         ]);
 
         if (apiUser.status === 'fulfilled') {
@@ -56,12 +70,17 @@ export default function CursosPage() {
           if (u.organizacion?.nombre) setOrgName(u.organizacion.nombre);
         }
 
+        const categoriaNombre = new Map<string, string>(
+          cats.status === 'fulfilled' ? cats.value.map((cat) => [cat.id, cat.nombre]) : []
+        );
+
         if (resp.status === 'fulfilled') {
           const cards: CourseCard[] = resp.value.data.map((c) => ({
             id: c.id,
             title: c.titulo,
             instructor: '',
-            level: 'Intermedio',
+            level: (c.nivel && NIVEL_LABEL[c.nivel]) || 'No especificado',
+            category: (c.categoria_id && categoriaNombre.get(c.categoria_id)) || undefined,
             rating: c.calificacion_prom || 0,
             image: c.portada_url ? `${API_URL}${c.portada_url}` : '/placeholder-course.jpg',
             marca: c.marca,

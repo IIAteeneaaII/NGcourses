@@ -226,6 +226,8 @@ def list_cursos(
             # sin importar la marca (un curso NEXTGEN licenciado a la org también
             # cuenta). Así el front agrupa la sección de la org correctamente.
             item.es_de_mi_org = c.id in accesibles
+            # El nivel vive en metadata; el catálogo lo necesita para el filtro por nivel.
+            item.nivel = (c.metadata_ or {}).get("nivel")
             items.append(item)
         return CursosPublic(data=items, count=count)
 

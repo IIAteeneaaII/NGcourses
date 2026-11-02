@@ -264,39 +264,8 @@
   flex: 0 0 auto;
 }
 
-.filterSelectWrapper {
-  position: relative;
-  flex: 0 0 auto;
-}
 
-.filterSelect {
-  min-width: 6.5rem;
-  min-height: 3.25rem;
-  padding: 0.625rem 2.05rem 0.625rem 1.05rem;
-  background-color: var(--color-primary-60-alt);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-  appearance: none;
-  -webkit-appearance: none;
-  background-image: linear-gradient(45deg, transparent 50%, var(--color-text-secondary) 50%),
-    linear-gradient(135deg, var(--color-text-secondary) 50%, transparent 50%);
-  background-position: calc(100% - 1.05rem) 50%, calc(100% - 0.75rem) 50%;
-  background-size: 0.35rem 0.35rem, 0.35rem 0.35rem;
-  background-repeat: no-repeat;
-}
 
-.filterSelect:hover,
-.filterSelect:focus {
-  outline: none;
-  border-color: var(--color-secondary-30);
-  color: var(--color-secondary-30);
-  box-shadow: 0 0 0 3px rgba(0, 150, 143, 0.08);
-}
 
 .clearFiltersButton {
   min-height: 3.25rem;
@@ -312,7 +281,13 @@
   box-shadow: 0 3px 8px rgba(0, 150, 143, 0.08);
 }
 
-.clearFiltersButton:hover {
+.clearFiltersButton:disabled {
+  opacity: 0.45;
+  cursor: default;
+  box-shadow: none;
+}
+
+.clearFiltersButton:hover:not(:disabled) {
   background-color: rgba(0, 150, 143, 0.1);
   border-color: var(--color-secondary-30);
   transform: translateY(-1px);
@@ -356,11 +331,6 @@
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
-  }
-
-  .filterSelectWrapper,
-  .filterSelect {
-    width: 100%;
   }
 
   .coursesButton,

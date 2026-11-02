@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CourseCard from '@/components/course/CourseCard';
+import FilterDropdown from './FilterDropdown';
 import type { CourseCard as CourseCardType, User } from '@/types/course';
 import { logout } from '@/lib/auth';
 import styles from './CoursesContent.module.css';
@@ -15,6 +16,8 @@ interface CoursesContentProps {
   orgName?: string | null;
 }
 
+const LEVEL_ORDER = ['Principiante', 'Intermedio', 'Avanzado'];
+
 export default function CoursesContent({ courses, user, orgName }: CoursesContentProps) {
   const router = useRouter();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -22,8 +25,10 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
   const [levelFilter, setLevelFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
-  const levels = Array.from(new Set(courses.map((c) => c.level).filter(Boolean))) as string[];
-  const categories = Array.from(new Set(courses.map((c) => c.category).filter(Boolean))) as string[];
+  const categories = Array.from(new Set(courses.map((c) => c.category).filter(Boolean)))
+    .sort((a, b) => (a as string).localeCompare(b as string, 'es')) as string[];
+  const levels = LEVEL_ORDER.filter((lvl) => courses.some((c) => c.level === lvl));
+  const hasActiveFilters = Boolean(searchQuery.trim() || levelFilter || categoryFilter);
 
   const filteredCourses = courses.filter((course) => {
     const q = searchQuery.trim().toLowerCase();
@@ -128,38 +133,28 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
             </div>
 
             <div className={styles.filtersContainer}>
-              <div className={styles.filterSelectWrapper}>
-                <select
-                  className={styles.filterSelect}
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  aria-label="Filtrar por categoría"
-                >
-                  <option value="">Categoría</option>
-                  {categories.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.filterSelectWrapper}>
-                <select
-                  className={styles.filterSelect}
-                  value={levelFilter}
-                  onChange={(e) => setLevelFilter(e.target.value)}
-                  aria-label="Filtrar por nivel"
-                >
-                  <option value="">Nivel</option>
-                  {levels.map((lvl) => (
-                    <option key={lvl} value={lvl}>{lvl}</option>
-                  ))}
-                </select>
-              </div>
+              <FilterDropdown
+                placeholder="Categoría"
+                allLabel="Todas las categorías"
+                options={categories.map((cat) => ({ value: cat, label: cat }))}
+                value={categoryFilter}
+                onChange={setCategoryFilter}
+                ariaLabel="Filtrar por categoría"
+              />
+              <FilterDropdown
+                placeholder="Nivel"
+                allLabel="Todos los niveles"
+                options={levels.map((lvl) => ({ value: lvl, label: lvl }))}
+                value={levelFilter}
+                onChange={setLevelFilter}
+                ariaLabel="Filtrar por nivel"
+              />
             </div>
 
             <button
               type="button"
               className={styles.clearFiltersButton}
+              disabled={!hasActiveFilters}
               onClick={() => { setLevelFilter(''); setCategoryFilter(''); setSearchQuery(''); }}
             >
               Limpiar
