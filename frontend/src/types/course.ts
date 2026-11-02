@@ -50,6 +50,17 @@ export interface BunnyVideoConfig {
   thumbnailTime?: number;
 }
 
+export interface SyllabusLesson {
+  title: string;
+  tipo?: string;
+  durationSec?: number;
+}
+
+export interface SyllabusModule {
+  title: string;
+  lessons: SyllabusLesson[];
+}
+
 export interface CourseInfo {
   id: string;
   title: string;
@@ -62,7 +73,7 @@ export interface CourseInfo {
   description: string;
   learningOutcomes: string[];
   requirements: string;
-  syllabus: string[];
+  syllabus: SyllabusModule[];
   image: string;
   bloqueadoPorLicencia?: boolean;
   esDeMiOrg?: boolean;

@@ -6,10 +6,19 @@ import CourseInfoContent from '@/components/course/CourseInfoContent';
 import { cursosApi, inscripcionesApi, type ApiError } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import type { CourseInfo } from '@/types/course';
+import { toSyllabus } from '@/lib/syllabus';
+
+interface ApiLeccion {
+  titulo?: string;
+  tipo?: string;
+  orden?: number;
+  duracion_seg?: number;
+}
 
 interface ApiModulo {
   titulo?: string;
-  lecciones: unknown[];
+  orden?: number;
+  lecciones: ApiLeccion[];
 }
 
 const API_URL = '';
@@ -117,7 +126,7 @@ export default function CursoInfoPage() {
           description: cursoRaw.descripcion || '',
           learningOutcomes: cursoRaw.lo_que_aprenderas ?? [],
           requirements: cursoRaw.requisitos || '',
-          syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
+          syllabus: toSyllabus(cursoRaw.modulos),
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
           bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
           precio: cursoRaw.precio != null ? Number(cursoRaw.precio) : null,

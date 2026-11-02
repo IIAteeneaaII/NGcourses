@@ -30,10 +30,26 @@ function formatPrice(precio: number | null | undefined, moneda?: string): { labe
   return { label: `$${entero} ${moneda || 'MXN'}`, isFree: false };
 }
 
+function formatDuration(totalSec: number): string {
+  const min = Math.floor(totalSec / 60);
+  const sec = Math.round(totalSec % 60);
+  return `${min}:${sec.toString().padStart(2, '0')}`;
+}
+
 export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia, viewOnlyMode = false, viewCourseHref, viewCourseLabel = 'Ver curso', showUserMenu }: CourseInfoContentProps) {
   const [imgSrc, setImgSrc] = useState(course.image);
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
+  const [openModules, setOpenModules] = useState<Set<number>>(new Set());
+
+  const toggleModule = (index: number) => {
+    setOpenModules((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
 
   return (
     <div className={styles.container}>
@@ -137,11 +153,43 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
             <div className={styles.section}>
               <h3 className={styles.sectionTitle}>Temario</h3>
               <ul className={styles.temarioList}>
-                {course.syllabus.map((item, index) => (
-                  <li key={index} className={styles.temarioItem}>
-                    {item}
-                  </li>
-                ))}
+                {course.syllabus.map((modulo, index) => {
+                  const isOpen = openModules.has(index);
+                  const hasLessons = modulo.lessons.length > 0;
+                  return (
+                    <li key={index} className={styles.temarioItem}>
+                      <button
+                        type="button"
+                        className={styles.temarioToggle}
+                        onClick={() => toggleModule(index)}
+                        aria-expanded={isOpen}
+                        disabled={!hasLessons}
+                      >
+                        <span className={`${styles.temarioChevron} ${isOpen ? styles.temarioChevronOpen : ''}`} aria-hidden="true">›</span>
+                        <span className={styles.temarioModuleTitle}>{modulo.title}</span>
+                        {hasLessons && (
+                          <span className={styles.temarioCount}>
+                            {modulo.lessons.length} {modulo.lessons.length === 1 ? 'lección' : 'lecciones'}
+                          </span>
+                        )}
+                      </button>
+                      {isOpen && (
+                        <ul className={styles.temarioLessons}>
+                          {modulo.lessons.map((leccion, i) => (
+                            <li key={i} className={styles.temarioLesson}>
+                              <span>{leccion.title}</span>
+                              {leccion.tipo === 'quiz' ? (
+                                <span className={styles.temarioLessonMeta}>Quiz</span>
+                              ) : leccion.durationSec ? (
+                                <span className={styles.temarioLessonMeta}>{formatDuration(leccion.durationSec)}</span>
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           </div>

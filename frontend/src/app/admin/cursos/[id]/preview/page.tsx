@@ -5,10 +5,19 @@ import { useParams, useRouter, notFound } from 'next/navigation';
 import CourseInfoContent from '@/components/course/CourseInfoContent';
 import { cursosApi } from '@/lib/api/client';
 import type { CourseInfo } from '@/types/course';
+import { toSyllabus } from '@/lib/syllabus';
+
+interface ApiLeccion {
+  titulo?: string;
+  tipo?: string;
+  orden?: number;
+  duracion_seg?: number;
+}
 
 interface ApiModulo {
   titulo?: string;
-  lecciones: unknown[];
+  orden?: number;
+  lecciones: ApiLeccion[];
 }
 
 interface ApiCurso {
@@ -72,7 +81,7 @@ export default function AdminCursoPreviewPage() {
           description: cursoRaw.descripcion || '',
           learningOutcomes: cursoRaw.lo_que_aprenderas ?? [],
           requirements: cursoRaw.requisitos || '',
-          syllabus: cursoRaw.modulos?.map((m: ApiModulo) => m.titulo || '') ?? [],
+          syllabus: toSyllabus(cursoRaw.modulos),
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
         });
       })
