@@ -86,51 +86,61 @@ export default function LoginContent() {
   return (
     <div className={styles.container} data-theme="light">
       <main className={styles.content}>
-        {/* Panel izquierdo - Brand */}
+        {/* Panel izquierdo - Marca */}
         <section className={styles.leftPanel}>
+          <video className={styles.brandVideo} autoPlay muted loop playsInline aria-hidden="true" tabIndex={-1}>
+            <source src="/videos/estudiante_login.mp4" type="video/mp4" />
+          </video>
+
           <div className={styles.brandContainer}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/icono_invertido.png" alt="NextGen" className={styles.brandIcon}/>
+            <img src="/images/icono_invertido.png" alt="" className={styles.brandIcon}/>
             <h1 className={styles.mainTitle}>
               <span className={styles.titleBold}>NextGen</span>{' '}
               <span className={styles.titleLight}>Course</span>
             </h1>
           </div>
 
-          <p className={styles.titleTagline}>
-            Potencia tu carrera, domina lo que sigue.
-          </p>
+          <div className={styles.brandCopy}>
+            <p className={styles.titleTagline}>
+              Potencia tu carrera, domina lo que sigue.
+            </p>
+            <p className={styles.description}>
+              Accede a programas diseñados para profesionales que no se conforman con el promedio.
+              Aprende a tu ritmo, certifícate y crece.
+            </p>
 
-          <video className={styles.brandVideo} autoPlay muted loop playsInline aria-hidden="true" tabIndex={-1}>
-            <source src="/videos/estudiante_login.mp4" type="video/mp4" />
-          </video>
-
-          <p className={styles.description}>
-            Accede a programas diseñados para profesionales que no se conforman con el promedio.
-            Aprende a tu ritmo, certifícate y crece.
-          </p>
-
-          {carouselItems.length > 0 && (
-            <div className={styles.courseCarousel} aria-label="Cursos destacados">
-              <span className={styles.carouselLabel}>Cursos destacados</span>
-              <div className={styles.carouselViewport}>
-                <div className={styles.carouselTrack}>
-                  {[0, 1].map((group) => (
-                    <div className={styles.carouselGroup} key={group}>
-                      {carouselItems.map((curso, index) => (
-                        <span className={styles.carouselItem} key={`${group}-${curso}-${index}`}>{curso}</span>
-                      ))}
-                    </div>
-                  ))}
+            {carouselItems.length > 0 && (
+              <div className={styles.courseCarousel} aria-label="Cursos destacados">
+                <span className={styles.carouselLabel}>Cursos destacados</span>
+                <div className={styles.carouselViewport}>
+                  <div className={styles.carouselTrack}>
+                    {[0, 1].map((group) => (
+                      <div className={styles.carouselGroup} key={group}>
+                        {carouselItems.map((curso, index) => (
+                          <span className={styles.carouselItem} key={`${group}-${curso}-${index}`}>{curso}</span>
+                        ))}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </section>
 
         {/* Panel derecho - Login Card */}
         <section className={styles.rightPanel}>
           <div className={styles.loginCard}>
+            {/* Marca visible solo cuando el panel izquierdo se oculta (móvil) */}
+            <div className={styles.mobileBrand}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/images/logo.png" alt="" className={styles.mobileBrandIcon} />
+              <span className={styles.mobileBrandName}>
+                <span className={styles.titleBold}>NextGen</span> Course
+              </span>
+            </div>
+            <span className={styles.welcome}>Bienvenido de vuelta</span>
             <h2 className={styles.loginTitle}>Tu siguiente nivel te espera</h2>
             <p className={styles.loginSubtitle}>El conocimiento que transforma carreras a tu ritmo.</p>
 
@@ -220,7 +230,7 @@ export default function LoginContent() {
                   />
                   <span>Recordarme</span>
                 </label>
-                <a href="/forgot-password" style={{ fontSize: '11px', color: '#21845e', fontWeight: 600, textDecoration: 'none' }}>
+                <a href="/forgot-password" className={styles.forgotLink}>
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>
@@ -232,17 +242,24 @@ export default function LoginContent() {
               )}
 
               <button type="submit" className={styles.submitButton} disabled={loading}>
-                {loading ? 'Ingresando...' : 'Iniciar sesión'}
+                {loading ? 'Ingresando...' : (
+                  <>
+                    Iniciar sesión
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className={styles.submitArrow}>
+                      <path d="M5 12h14M13 6l6 6-6 6" />
+                    </svg>
+                  </>
+                )}
               </button>
             </form>
 
           </div>
+
+          <footer className={styles.footer}>
+            © NextGen Course. Todos los derechos reservados.
+          </footer>
         </section>
       </main>
-
-      <footer className={styles.footer}>
-        © NextGen Course. Todos los derechos reservados.
-      </footer>
     </div>
   );
 }

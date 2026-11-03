@@ -237,7 +237,14 @@ def list_cursos(
             items.append(item)
         return CursosPublic(data=items, count=count)
 
-    return CursosPublic(data=cursos, count=count)
+    # Admin/instructor: también se expone el nivel (vive en metadata) para el
+    # listado del panel y el filtro por nivel del catálogo.
+    items = []
+    for c in cursos:
+        item = CursoPublic.model_validate(c, from_attributes=True)
+        item.nivel = (c.metadata_ or {}).get("nivel")
+        items.append(item)
+    return CursosPublic(data=items, count=count)
 
 
 @router.get("/{curso_id}", response_model=CursoDetalle)

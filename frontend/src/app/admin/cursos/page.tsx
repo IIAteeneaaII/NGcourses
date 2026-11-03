@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { cursosApi } from '@/lib/api/client';
+import { cursosApi, categoriasApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
 
@@ -15,6 +14,9 @@ interface ApiCurso {
   estado: string;
   creado_en: string;
   portada_url: string | null;
+  categoria_id?: string | null;
+  nivel?: string | null;
+  marca?: 'ram' | 'nextgen';
 }
 
 interface ApiCursosResp {
@@ -22,15 +24,94 @@ interface ApiCursosResp {
   count: number;
 }
 
+interface ApiCategoria {
+  id: string;
+  nombre: string;
+}
+
+const STATUS_LABEL: Record<string, string> = {
+  publicado: 'Publicado',
+  revision: 'En revisión',
+  borrador: 'Borrador',
+  rechazado: 'Rechazado',
+  archivado: 'Archivado',
+};
+
+// Orden de las pestañas de filtro; solo se muestran las que tienen cursos.
+const STATUS_ORDER = ['publicado', 'revision', 'borrador', 'rechazado', 'archivado'];
+
+const NIVEL_LABEL: Record<string, string> = {
+  principiante: 'Principiante',
+  intermedio: 'Intermedio',
+  avanzado: 'Avanzado',
+};
+
+const MARCA_LABEL: Record<string, string> = {
+  ram: 'RAM',
+  nextgen: 'NextGen',
+};
+
+const dateFormat = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short', year: 'numeric' });
+
+function formatDate(iso: string | undefined): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? '' : dateFormat.format(d);
+}
+
+function initials(titulo: string): string {
+  return titulo
+    .split(/\s+/)
+    .filter((w) => w.length > 2)
+    .slice(0, 2)
+    .map((w) => w[0])
+    .join('')
+    .toUpperCase() || titulo.slice(0, 2).toUpperCase();
+}
+
 export default function CursosListPage() {
-  const router = useRouter();
   const [cursos, setCursos] = useState<ApiCurso[]>([]);
-  const [count, setCount] = useState(0);
+  const [categorias, setCategorias] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [deleteConfirm, setDeleteConfirm] = useState<ApiCurso | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState('');
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('todos');
+
+  useEffect(() => {
+    Promise.allSettled([
+      cursosApi.list({ limit: 200 }) as Promise<ApiCursosResp>,
+      categoriasApi.list() as Promise<ApiCategoria[]>,
+    ]).then(([resp, cats]) => {
+      if (resp.status === 'fulfilled') {
+        // Más reciente primero
+        const sorted = [...resp.value.data].sort((a, b) =>
+          new Date(b.creado_en).getTime() - new Date(a.creado_en).getTime()
+        );
+        setCursos(sorted);
+      } else {
+        logError('admin/cursos/page/load', resp.reason);
+      }
+      if (cats.status === 'fulfilled' && Array.isArray(cats.value)) {
+        setCategorias(Object.fromEntries(cats.value.map((c) => [c.id, c.nombre])));
+      }
+    }).finally(() => setLoading(false));
+  }, []);
+
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const c of cursos) counts[c.estado] = (counts[c.estado] ?? 0) + 1;
+    return counts;
+  }, [cursos]);
+
+  const visibles = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return cursos.filter((c) =>
+      (statusFilter === 'todos' || c.estado === statusFilter) &&
+      (!q || c.titulo.toLowerCase().includes(q))
+    );
+  }, [cursos, search, statusFilter]);
 
   const handleDelete = async (id: string) => {
     setDeleting(true);
@@ -38,12 +119,9 @@ export default function CursosListPage() {
     try {
       await cursosApi.delete(id);
       setCursos((prev) => prev.filter((c) => c.id !== id));
-      setCount((n) => n - 1);
       setDeleteConfirm(null);
     } catch (err: unknown) {
-      console.error('[DELETE CURSO] error object:', err);
-      console.error('[DELETE CURSO] detail:', (err as { detail?: string })?.detail);
-      console.error('[DELETE CURSO] status:', (err as { status?: number })?.status);
+      logError('admin/cursos/page/delete', err);
       const apiErr = err as { detail?: string };
       setDeleteError(apiErr?.detail || 'Error al eliminar el curso.');
     } finally {
@@ -51,159 +129,188 @@ export default function CursosListPage() {
     }
   };
 
-  useEffect(() => {
-    cursosApi.list({ limit: 200 }).then((resp) => {
-      const r = resp as ApiCursosResp;
-      // Ordenar por más reciente primero
-      const sorted = [...r.data].sort((a, b) =>
-        new Date(b.creado_en).getTime() - new Date(a.creado_en).getTime()
-      );
-      setCursos(sorted);
-      setCount(r.count);
-    }).catch((e) => logError('admin/cursos/page/load', e)).finally(() => setLoading(false));
-  }, []);
-
-  const getStatusLabel = (status: string) => {
-    const labels: Record<string, string> = {
-      publicado: 'Publicado',
-      borrador: 'Borrador',
-      revision: 'En revision',
-      archivado: 'Archivado',
-    };
-    return labels[status] || status;
+  const closeDelete = () => {
+    setDeleteConfirm(null);
+    setDeleteError('');
   };
 
-  const getStatusClass = (status: string) => {
-    const classes: Record<string, string> = {
-      publicado: styles.statusPublished,
-      borrador: styles.statusDraft,
-      revision: styles.statusReview,
-    };
-    return classes[status] || '';
-  };
+  const publicados = statusCounts.publicado ?? 0;
+  const tabs = ['todos', ...STATUS_ORDER.filter((s) => statusCounts[s])];
 
   return (
-    <div className={styles.pageContainer}>
-      <div className={styles.headerBar}>
-        <button className={styles.backButton} onClick={() => router.push('/admin')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5 10v10h14V10" />
-            <path d="M9 20v-6h6v6" />
-          </svg>
-          Volver a opciones
-        </button>
-        <Link href="/admin/cursos/crear" className={styles.createButton}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <div className={styles.page}>
+      <header className={styles.header}>
+        <div>
+          <h1 className={styles.title}>Cursos</h1>
+          <p className={styles.subtitle}>
+            {loading
+              ? 'Cargando…'
+              : `${cursos.length} ${cursos.length === 1 ? 'curso' : 'cursos'} · ${publicados} ${publicados === 1 ? 'publicado' : 'publicados'}`}
+          </p>
+        </div>
+        <Link href="/admin/cursos/crear" className={styles.primaryButton}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" aria-hidden="true">
             <path d="M12 5v14M5 12h14" />
           </svg>
-          Crear curso
+          Nuevo curso
         </Link>
-      </div>
+      </header>
 
-      <div className={styles.contentCard}>
-        <div className={styles.cardHeader}>
-          <h1 className={styles.pageTitle}>Cursos creados</h1>
-          <span className={styles.courseCount}>{count} cursos</span>
+      <div className={styles.toolbar}>
+        <div className={styles.tabs} role="tablist" aria-label="Filtrar por estado">
+          {tabs.map((s) => (
+            <button
+              key={s}
+              type="button"
+              role="tab"
+              aria-selected={statusFilter === s}
+              className={`${styles.tab} ${statusFilter === s ? styles.tabActive : ''}`}
+              onClick={() => setStatusFilter(s)}
+            >
+              {s === 'todos' ? 'Todos' : STATUS_LABEL[s] ?? s}
+              <span className={styles.tabCount}>{s === 'todos' ? cursos.length : statusCounts[s]}</span>
+            </button>
+          ))}
         </div>
 
-        <div className={styles.searchBar}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
+        <label className={styles.search}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
           </svg>
           <input
-            type="text"
-            placeholder="Buscar por nombre de curso..."
+            type="search"
+            placeholder="Buscar curso"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className={styles.searchInput}
+            aria-label="Buscar curso por nombre"
           />
-          {search && (
-            <button className={styles.clearSearch} onClick={() => setSearch('')}>✕</button>
-          )}
-        </div>
+        </label>
+      </div>
 
+      <div className={styles.tableWrap}>
         {loading ? (
-          <div style={{ padding: '2rem', textAlign: 'center' }}>Cargando...</div>
-        ) : (
-          <div className={styles.courseList}>
-            {cursos
-              .filter((c) => c.titulo.toLowerCase().includes(search.toLowerCase()))
-              .map((course) => (
-              <div key={course.id} className={styles.courseItem}>
-                {course.portada_url && (
-                  <img
-                    src={`${API_URL}${course.portada_url}`}
-                    alt={course.titulo}
-                    className={styles.courseThumbnail}
-                  />
-                )}
-                <div className={styles.courseInfo}>
-                  <h3 className={styles.courseTitle}>{course.titulo}</h3>
-                  <span className={`${styles.statusBadge} ${getStatusClass(course.estado)}`}>
-                    {getStatusLabel(course.estado)}
-                  </span>
-                </div>
-                <div className={styles.courseActions}>
-                  <span className={styles.assignedBadge}>
-                    {course.creado_en?.slice(0, 10) ?? ''}
-                  </span>
-                  {course.estado === 'publicado' ? (
-                    <Link href={`/admin/cursos/${course.id}/invitaciones`} className={styles.editButton} title="Gestionar invitaciones">
-                      Invitaciones
-                    </Link>
-                  ) : (
-                    <span
-                      className={styles.editButton}
-                      style={{ opacity: 0.45, cursor: 'not-allowed' }}
-                      aria-disabled="true"
-                      title="Publica el curso para poder invitar"
-                    >
-                      Invitaciones
-                    </span>
-                  )}
-                  <Link href={`/admin/cursos/${course.id}/editar`} className={styles.editButton}>
-                    Editar
-                  </Link>
-                  <button
-                    className={styles.deleteButton}
-                    onClick={() => { setDeleteError(''); setDeleteConfirm(course); }}
-                    title="Eliminar curso"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            ))}
+          <div className={styles.emptyState}>Cargando cursos…</div>
+        ) : visibles.length === 0 ? (
+          <div className={styles.emptyState}>
+            {cursos.length === 0 ? (
+              <>
+                <p className={styles.emptyTitle}>Todavía no hay cursos</p>
+                <p className={styles.emptyText}>Crea el primero y aparecerá aquí.</p>
+                <Link href="/admin/cursos/crear" className={styles.primaryButton}>Nuevo curso</Link>
+              </>
+            ) : (
+              <>
+                <p className={styles.emptyTitle}>Sin resultados</p>
+                <p className={styles.emptyText}>Ningún curso coincide con la búsqueda o el filtro.</p>
+              </>
+            )}
           </div>
-        )}
-        {!loading && cursos.filter((c) => c.titulo.toLowerCase().includes(search.toLowerCase())).length === 0 && (
-          <p style={{ textAlign: 'center', color: 'var(--color-text-secondary)', padding: '1.5rem 0' }}>
-            No se encontraron cursos con ese nombre.
-          </p>
+        ) : (
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th scope="col">Curso</th>
+                <th scope="col">Estado</th>
+                <th scope="col">Creado</th>
+                <th scope="col"><span className={styles.srOnly}>Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibles.map((course) => {
+                const meta = [
+                  course.categoria_id ? categorias[course.categoria_id] : null,
+                  course.nivel ? NIVEL_LABEL[course.nivel] ?? course.nivel : null,
+                  course.marca ? MARCA_LABEL[course.marca] : null,
+                ].filter(Boolean).join(' · ');
+                const publicado = course.estado === 'publicado';
+                return (
+                  <tr key={course.id}>
+                    <td>
+                      <div className={styles.courseCell}>
+                        {course.portada_url ? (
+                          <img src={`${API_URL}${course.portada_url}`} alt="" className={styles.thumb} />
+                        ) : (
+                          <span className={styles.thumbFallback} aria-hidden="true">{initials(course.titulo)}</span>
+                        )}
+                        <div className={styles.courseText}>
+                          <Link href={`/admin/cursos/${course.id}/editar`} className={styles.courseTitle}>
+                            {course.titulo}
+                          </Link>
+                          {meta && <span className={styles.courseMeta}>{meta}</span>}
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`${styles.status} ${styles[`status_${course.estado}`] ?? ''}`}>
+                        {STATUS_LABEL[course.estado] ?? course.estado}
+                      </span>
+                    </td>
+                    <td className={styles.dateCell}>{formatDate(course.creado_en)}</td>
+                    <td>
+                      <div className={styles.actions}>
+                        {publicado ? (
+                          <Link href={`/admin/cursos/${course.id}/invitaciones`} className={styles.ghostButton}>
+                            Invitaciones
+                          </Link>
+                        ) : (
+                          <span
+                            className={`${styles.ghostButton} ${styles.disabled}`}
+                            aria-disabled="true"
+                            title="Publica el curso para poder invitar"
+                          >
+                            Invitaciones
+                          </span>
+                        )}
+                        <Link href={`/admin/cursos/${course.id}/editar`} className={styles.secondaryButton}>
+                          Editar
+                        </Link>
+                        <button
+                          type="button"
+                          className={styles.iconButton}
+                          onClick={() => { setDeleteError(''); setDeleteConfirm(course); }}
+                          aria-label={`Eliminar ${course.titulo}`}
+                          title="Eliminar curso"
+                        >
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                            <path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" />
+                          </svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         )}
       </div>
 
       {deleteConfirm && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}
-             onClick={() => { setDeleteConfirm(null); setDeleteError(''); }}>
-          <div style={{ background: 'var(--color-surface)', borderRadius: '0.9375rem', padding: '2rem', maxWidth: '420px', width: '90%', boxShadow: '0 10px 40px rgba(0,0,0,0.2)' }}
-               onClick={(e) => e.stopPropagation()}>
-            <h3 style={{ margin: '0 0 0.75rem', color: 'var(--color-text-primary)' }}>Eliminar curso</h3>
-            <p style={{ margin: '0 0 1.5rem', color: 'var(--color-text-secondary)', lineHeight: 1.5 }}>
-              ¿Estás seguro de eliminar <strong>&ldquo;{deleteConfirm.titulo}&rdquo;</strong>? Esta acción no se puede deshacer.
+        <div className={styles.backdrop} onClick={closeDelete}>
+          <div
+            className={styles.dialog}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-title"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h2 id="delete-title" className={styles.dialogTitle}>Eliminar curso</h2>
+            <p className={styles.dialogText}>
+              Se eliminará <strong>{deleteConfirm.titulo}</strong>. Esta acción no se puede deshacer.
             </p>
-            {deleteError && (
-              <p style={{ color: '#dc2626', fontSize: '0.875rem', margin: '0 0 1rem' }}>{deleteError}</p>
-            )}
-            <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'flex-end' }}>
-              <button onClick={() => { setDeleteConfirm(null); setDeleteError(''); }}
-                style={{ padding: '0.5rem 1.25rem', border: '1.5px solid var(--color-border-default)', borderRadius: '0.5rem', background: 'var(--color-surface)', cursor: 'pointer' }}>
+            {deleteError && <p className={styles.dialogError}>{deleteError}</p>}
+            <div className={styles.dialogActions}>
+              <button type="button" className={styles.secondaryButton} onClick={closeDelete}>
                 Cancelar
               </button>
-              <button onClick={() => handleDelete(deleteConfirm.id)} disabled={deleting}
-                style={{ padding: '0.5rem 1.25rem', border: 'none', borderRadius: '0.5rem', background: '#dc2626', color: '#fff', fontWeight: 600, cursor: 'pointer', opacity: deleting ? 0.6 : 1 }}>
-                {deleting ? 'Eliminando...' : 'Eliminar'}
+              <button
+                type="button"
+                className={styles.dangerButton}
+                onClick={() => handleDelete(deleteConfirm.id)}
+                disabled={deleting}
+              >
+                {deleting ? 'Eliminando…' : 'Eliminar'}
               </button>
             </div>
           </div>
