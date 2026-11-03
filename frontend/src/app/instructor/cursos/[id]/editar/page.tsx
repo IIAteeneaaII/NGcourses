@@ -807,7 +807,7 @@ export default function EditarCursoInstructorPage() {
                           value={module.title}
                           onChange={(e) => updateModuleLocal(module.id, { title: e.target.value })}
                           className={styles.moduleTitleInput}
-                          placeholder="Titulo del modulo"
+                          placeholder="Título del módulo"
                         />
                         <span className={styles.lessonCount}>{module.lessons.length} lecciones</span>
                         <button className={styles.deleteModuleButton} onClick={() => deleteModule(module.id)} title="Eliminar modulo">
@@ -824,7 +824,7 @@ export default function EditarCursoInstructorPage() {
                               value={module.description}
                               onChange={(e) => updateModuleLocal(module.id, { description: e.target.value })}
                               className={styles.moduleDescriptionInput}
-                              placeholder="Descripcion del modulo (opcional)"
+                              placeholder="Descripción del módulo (opcional)"
                               rows={2}
                             />
                           </div>
@@ -839,7 +839,7 @@ export default function EditarCursoInstructorPage() {
                                     value={lesson.title}
                                     onChange={(e) => updateLessonLocal(module.id, lesson.id, { title: e.target.value })}
                                     className={styles.lessonTitleInput}
-                                    placeholder="Titulo de la leccion"
+                                    placeholder="Título de la lección"
                                   />
                                   <label className={styles.toggleLabel}>
                                     <input
@@ -856,7 +856,7 @@ export default function EditarCursoInstructorPage() {
                                     disableUp={lessonIndex === 0}
                                     disableDown={lessonIndex === module.lessons.length - 1}
                                   />
-                                  <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar leccion">
+                                  <button className={styles.deleteLessonButton} onClick={() => deleteLesson(module.id, lesson.id)} title="Eliminar lección">
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <path d="M18 6L6 18M6 6l12 12" />
                                     </svg>

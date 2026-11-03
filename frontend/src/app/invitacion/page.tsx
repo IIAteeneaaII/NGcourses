@@ -28,7 +28,7 @@ type Estado =
 
 function IconSuccess() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 6L9 17l-5-5" />
     </svg>
   );
@@ -36,7 +36,7 @@ function IconSuccess() {
 
 function IconLock() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect x="3" y="11" width="18" height="11" rx="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
@@ -45,7 +45,7 @@ function IconLock() {
 
 function IconClock() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 6v6l4 2" />
     </svg>
@@ -54,7 +54,7 @@ function IconClock() {
 
 function IconX() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 6L6 18M6 6l12 12" />
     </svg>
   );
@@ -90,7 +90,7 @@ function InvitacionContent() {
         <div className={styles.card}>
           <div className={styles.spinnerWrap}>
             <span className={styles.spinner} />
-            <span className={styles.spinnerText}>Verificando invitación...</span>
+            <span className={styles.spinnerText}>Verificando invitación…</span>
           </div>
         </div>
       </div>
@@ -108,7 +108,11 @@ function InvitacionContent() {
       <div className={styles.page} data-theme="light">
         <div className={styles.card}>
           <div className={styles.cardHeader}>
-            <p className={styles.brand}>NGcourses</p>
+            <p className={styles.brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="" />
+            <span>NextGen <span className={styles.brandLight}>Course</span></span>
+          </p>
             <div className={`${styles.iconWrap} ${styles.iconWrapSuccess}`}>
               <IconSuccess />
             </div>
@@ -136,7 +140,7 @@ function InvitacionContent() {
                 className={styles.primaryBtn}
                 onClick={() => router.push('/')}
               >
-                Ir al inicio de sesión →
+                Ir a iniciar sesión
               </button>
             </div>
           </div>
@@ -159,7 +163,11 @@ function InvitacionContent() {
     <div className={styles.page} data-theme="light">
       <div className={styles.card}>
         <div className={styles.cardHeader}>
-          <p className={styles.brand}>NGcourses</p>
+          <p className={styles.brand}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/logo.png" alt="" />
+            <span>NextGen <span className={styles.brandLight}>Course</span></span>
+          </p>
           <div className={`${styles.iconWrap} ${err.wrap}`}>
             {err.icon}
           </div>
@@ -172,7 +180,7 @@ function InvitacionContent() {
               className={styles.primaryBtn}
               onClick={() => router.push('/')}
             >
-              Ir al inicio de sesión →
+              Ir a iniciar sesión
             </button>
           </div>
         </div>

@@ -38,7 +38,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="es-MX" suppressHydrationWarning>
       <head>
         {/* Aplica el tema guardado antes del primer pintado (evita parpadeo).
             suppressHydrationWarning: el navegador oculta el atributo nonce tras

@@ -151,7 +151,7 @@
 
 .submitButton {
   padding: 0.75rem 1.5rem;
-  background: var(--color-secondary-30);
+  background: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.5rem;
@@ -301,3 +301,77 @@
 .estadoActivo { background: var(--color-tint-success, #dcfce7); color: var(--color-tint-success-text, #15803d); }
 .estadoPendiente { background: var(--color-tint-warning, #fef9c3); color: var(--color-tint-warning-text, #854d0e); }
 .estadoSuspendido { background: var(--color-tint-error, #fee2e2); color: var(--color-tint-error-text, #b91c1c); }
+
+.dangerZone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+}
+
+.dangerTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.dangerText {
+  margin: 0.25rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+/* Celular: cada fila de la tabla se vuelve una tarjeta para que no se
+   corten columnas (antes las acciones quedaban fuera de la pantalla). */
+@media (max-width: 640px) {
+  .usersTable thead {
+    display: none;
+  }
+
+  .usersTable,
+  .usersTable tbody,
+  .usersTable tr,
+  .usersTable td {
+    display: block;
+    width: 100%;
+  }
+
+  .usersTable tr {
+    padding: 0.875rem 0;
+    border-bottom: 1px solid var(--color-border-default);
+  }
+
+  .usersTable tr:last-child {
+    border-bottom: none;
+  }
+
+  .usersTable td {
+    padding: 0.125rem 0 !important;
+    border: none !important;
+    white-space: normal;
+  }
+
+  .usersTable tr:hover td {
+    background: transparent;
+  }
+
+  .usersTable td + td {
+    margin-top: 0.375rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .usersTable { min-width: 0; }
+  .tableContainer { overflow-x: visible; }
+}
+
+/* Acción principal: color único de la plataforma */
+.submitButton:hover:not(:disabled) {
+  background: var(--color-accent-10-hover);
+}

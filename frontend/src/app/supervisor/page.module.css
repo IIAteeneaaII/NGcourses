@@ -85,3 +85,38 @@
   color: var(--color-text-secondary);
   margin: 0;
 }
+
+/* Tarjetas de acceso: que se note que son clicables */
+.optionCard {
+  position: relative;
+  padding-right: 2.75rem;
+  border: 1px solid var(--color-border-default);
+  box-shadow: none;
+}
+
+.optionCard::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 1.25rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-top: 2px solid var(--color-text-faint);
+  border-right: 2px solid var(--color-text-faint);
+  transform: translateY(-50%) rotate(45deg);
+  transition: right 0.15s, border-color 0.15s;
+}
+
+.optionCard:hover {
+  border-color: var(--color-accent-10);
+  box-shadow: none;
+}
+
+.optionCard:hover::after {
+  right: 1rem;
+  border-color: var(--color-accent-10);
+}
+
+.optionCard:hover .optionTitle {
+  color: var(--color-accent-10);
+}

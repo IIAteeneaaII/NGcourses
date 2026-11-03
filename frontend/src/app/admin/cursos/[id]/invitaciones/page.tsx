@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -12,6 +11,7 @@ import type {
   InvitacionEnvioResult,
 } from '@/types/admin';
 
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 function formatDate(iso: string) {
@@ -137,13 +137,11 @@ export default function InvitacionesPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.pageHeader}>
-        <Link href="/admin/cursos" className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-          Volver a cursos
-        </Link>
-        <h1 className={styles.pageTitle}>Gestionar Invitaciones</h1>
-      </div>
+      <PageHeader
+        title="Invitaciones"
+        subtitle="Invita alumnos por correo a este curso y revisa el estado de cada invitación"
+        back={{ href: '/admin/cursos', label: 'Cursos' }}
+      />
 
       {/* Sección A — Enviar invitaciones */}
       <div className={styles.card}>

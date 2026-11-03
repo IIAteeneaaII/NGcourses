@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { featureFlagsApi } from '@/lib/api/client';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { logError } from '@/lib/logger';
+import PageHeader from '@/components/admin/PageHeader';
 
 interface FlagDef {
   nombre: string;
@@ -48,19 +49,14 @@ export default function ConfiguracionPage() {
   };
 
   return (
-    <div style={{ padding: '32px', maxWidth: '720px' }}>
-      <h1 style={{ margin: '0 0 4px', fontSize: '22px', fontWeight: 700, color: 'var(--color-text-heading)' }}>
-        Configuración
-      </h1>
-      <p style={{ margin: '0 0 24px', fontSize: '14px', color: 'var(--color-text-muted)' }}>
-        Activa o desactiva funcionalidades del sistema. Los cambios son inmediatos.
-      </p>
+    <div style={{ width: '100%', maxWidth: '72rem', margin: '0 auto' }}>
+      <PageHeader title="Configuración" subtitle="Activa o desactiva funciones del sistema. Los cambios aplican de inmediato." />
 
       {error && (
         <p style={{ margin: '0 0 16px', fontSize: '13px', color: 'var(--color-error)' }}>{error}</p>
       )}
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', maxWidth: '48rem' }}>
         {FLAGS.map((f) => {
           const on = !!flags[f.nombre];
           const isSaving = saving === f.nombre;
@@ -70,7 +66,7 @@ export default function ConfiguracionPage() {
               style={{
                 display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between',
                 gap: '20px', padding: '18px 20px', borderRadius: '14px',
-                border: '1px solid rgba(0,150,143,.18)', background: 'var(--color-surface)',
+                border: '1px solid var(--color-border-default)', background: 'var(--color-surface)',
               }}
             >
               <div>

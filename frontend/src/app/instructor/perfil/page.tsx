@@ -174,7 +174,7 @@ export default function PerfilInstructorPage() {
 
         <div className={styles.profileSections}>
           <div className={styles.profileSection}>
-            <h3 className={styles.sectionTitle}>Estadisticas</h3>
+            <h3 className={styles.sectionTitle}>Estadísticas</h3>
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
                 <div className={styles.statNumber}>{cursos.length}</div>
@@ -184,14 +184,14 @@ export default function PerfilInstructorPage() {
           </div>
 
           <div className={styles.profileSection}>
-            <h3 className={styles.sectionTitle}>Informacion Personal</h3>
+            <h3 className={styles.sectionTitle}>Información personal</h3>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Nombre Completo</span>
                 <div className={styles.infoValue}>{nombre}</div>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Correo Electronico</span>
+                <span className={styles.infoLabel}>Correo electrónico</span>
                 <div className={styles.infoValue}>{user?.email ?? ''}</div>
               </div>
               <div className={styles.infoItem}>
@@ -199,7 +199,7 @@ export default function PerfilInstructorPage() {
                 <div className={styles.infoValue}>{user?.rol ?? 'instructor'}</div>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Telefono</span>
+                <span className={styles.infoLabel}>Teléfono</span>
                 <div className={styles.infoValue}>{user?.telefono || '—'}</div>
               </div>
             </div>

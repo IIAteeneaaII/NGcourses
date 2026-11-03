@@ -1,9 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { authApi, cursosApi, usersApi } from '@/lib/api/client';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
+
+const ROL_LABEL: Record<string, string> = {
+  administrador: 'Administrador',
+  supervisor: 'Supervisor',
+  instructor: 'Instructor',
+  estudiante: 'Estudiante',
+};
 
 interface ApiUser {
   id: string;
@@ -24,7 +31,6 @@ interface ApiUsersResp {
 }
 
 export default function PerfilAdminPage() {
-  const router = useRouter();
   const [user, setUser] = useState<ApiUser | null>(null);
   const [stats, setStats] = useState({ coursesCreated: 0, activeStudents: 0 });
   const [loading, setLoading] = useState(true);
@@ -136,14 +142,7 @@ export default function PerfilAdminPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <button className={styles.backButton} onClick={() => router.push('/admin')}>
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-          <path d="M3 10.5 12 3l9 7.5" />
-          <path d="M5 10v10h14V10" />
-          <path d="M9 20v-6h6v6" />
-        </svg>
-        Volver a opciones
-      </button>
+      <PageHeader title="Mi perfil" subtitle="Tus datos de acceso y foto de perfil" />
 
       <div className={styles.profileContainer}>
         <div className={styles.profileHeader}>
@@ -177,7 +176,7 @@ export default function PerfilAdminPage() {
 
         <div className={styles.profileSections}>
           <div className={styles.profileSection}>
-            <h3 className={styles.sectionTitle}>Estadisticas</h3>
+            <h3 className={styles.sectionTitle}>Estadísticas</h3>
             <div className={styles.statsGrid}>
               <div className={styles.statCard}>
                 <div className={styles.statNumber}>{stats.coursesCreated}</div>
@@ -191,22 +190,22 @@ export default function PerfilAdminPage() {
           </div>
 
           <div className={styles.profileSection}>
-            <h3 className={styles.sectionTitle}>Informacion Personal</h3>
+            <h3 className={styles.sectionTitle}>Información personal</h3>
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Nombre Completo</span>
+                <span className={styles.infoLabel}>Nombre completo</span>
                 <div className={styles.infoValue}>{nombre}</div>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Correo Electronico</span>
+                <span className={styles.infoLabel}>Correo electrónico</span>
                 <div className={styles.infoValue}>{user?.email ?? ''}</div>
               </div>
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>Rol</span>
-                <div className={styles.infoValue}>{user?.rol ?? 'administrador'}</div>
+                <div className={styles.infoValue}>{ROL_LABEL[user?.rol ?? 'administrador'] ?? user?.rol}</div>
               </div>
               <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>Telefono</span>
+                <span className={styles.infoLabel}>Teléfono</span>
                 <div className={styles.infoValue}>{user?.telefono || '—'}</div>
               </div>
             </div>

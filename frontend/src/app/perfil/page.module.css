@@ -117,7 +117,7 @@
 
 .saveBtn {
   padding: 0.625rem 1.5rem;
-  background: var(--color-secondary-30);
+  background: var(--color-accent-10);
   color: white;
   border: none;
   border-radius: 0.5rem;
@@ -174,4 +174,9 @@
     width: 100%;
     text-align: center;
   }
+}
+
+/* Acción principal: color único de la plataforma */
+.saveBtn:hover:not(:disabled) {
+  background: var(--color-accent-10-hover);
 }

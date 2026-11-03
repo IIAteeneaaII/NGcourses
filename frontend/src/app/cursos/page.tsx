@@ -23,6 +23,7 @@ interface ApiCurso {
   precio?: number | string | null;
   moneda?: string;
   destacado?: boolean;
+  estado?: string;
 }
 
 interface ApiCategoria {
@@ -75,7 +76,10 @@ export default function CursosPage() {
         );
 
         if (resp.status === 'fulfilled') {
-          const cards: CourseCard[] = resp.value.data.map((c) => ({
+          // El catálogo solo muestra cursos publicados (el admin ve borradores en su panel).
+          const cards: CourseCard[] = resp.value.data
+            .filter((c) => !c.estado || c.estado === 'publicado')
+            .map((c) => ({
             id: c.id,
             title: c.titulo,
             instructor: '',

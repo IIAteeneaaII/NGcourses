@@ -69,14 +69,14 @@ export default function MisCompras() {
 
   return (
     <div className={styles.card}>
-      <h3 className={styles.title}>Mis Compras</h3>
+      <h3 className={styles.title}>Mis compras</h3>
 
       {loading && <p className={styles.empty}>Cargando historial...</p>}
       {error && !loading && (
         <p className={styles.empty}>No se pudo cargar el historial. Intenta mas tarde.</p>
       )}
       {!loading && !error && pagos.length === 0 && (
-        <p className={styles.empty}>Aun no tienes compras. Explora el catalogo para inscribirte.</p>
+        <p className={styles.empty}>Aún no tienes compras. Explora el catálogo para inscribirte.</p>
       )}
 
       {!loading && !error && pagos.length > 0 && (

@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import CourseCover from '@/components/shared/CourseCover';
 import type { CourseCard as CourseCardType } from '@/types/course';
 import styles from './CourseCard.module.css';
 
@@ -18,7 +17,6 @@ function formatPrice(precio: number | null | undefined, moneda?: string): string
 }
 
 export default function CourseCard({ course }: CourseCardProps) {
-  const [imgSrc, setImgSrc] = useState(course.image);
   const priceLabel = formatPrice(course.precio, course.moneda);
   const isFree = priceLabel === 'Gratis';
   const getTagClass = (tag: string) => {
@@ -49,15 +47,7 @@ export default function CourseCard({ course }: CourseCardProps) {
   return (
     <Link href={`/curso/${course.id}`} className={styles.card}>
       <div className={styles.imageContainer}>
-        <Image
-          src={imgSrc}
-          alt={course.title}
-          fill
-          unoptimized
-          className={styles.image}
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          onError={() => setImgSrc('/placeholder-course.jpg')}
-        />
+        <CourseCover src={course.image} title={course.title} caption={course.level} />
         {course.bloqueadoPorLicencia && (
           <span className={styles.lockedBadge}>
             Requiere licencia

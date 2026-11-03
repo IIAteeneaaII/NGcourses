@@ -1,320 +1,234 @@
-/* Dashboard Container */
 .dashboard {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+  width: 100%;
+  max-width: 72rem;
+  margin: 0 auto;
 }
 
-/* Header */
-.header {
-  margin-bottom: 1rem;
-}
+/* ── Accesos rápidos ──────────────────────────────────────────────────── */
 
-.title {
-  margin: 0;
-  font-size: 2.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-}
-
-.subtitle {
-  margin: 0.75rem 0 0 0;
-  font-size: 1rem;
-  color: var(--color-text-secondary);
-  line-height: 1.6;
-}
-
-/* Options Grid */
-.optionsGrid {
+.shortcuts {
   display: grid;
-  /* Una columna por tarjeta visible (--card-count lo fija la página): así
-     todas caben en una sola fila en escritorio, sean 3 o 4, encogiéndose para
-     ajustarse al panel. En tablet/móvil las media queries de abajo reflujan. */
-  grid-template-columns: repeat(var(--card-count, 4), 1fr);
-  gap: 1.5rem;
-  margin-bottom: 2rem;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
 }
 
-.optionCard {
-  background-color: var(--color-surface);
-  border-radius: 0.9375rem;
-  padding: 1.875rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  text-align: center;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+.shortcut {
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
+  gap: 0.875rem;
+  padding: 1rem 1.125rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 
-.optionCard:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+.shortcut:hover {
+  border-color: var(--color-accent-10);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
 }
 
-.optionIcon {
-  width: 5.625rem;
-  height: 5.625rem;
-  margin: 0 auto 1.25rem;
-  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
-  border-radius: 1.25rem;
-  display: flex;
+.shortcut:hover .shortcutArrow {
+  color: var(--color-accent-10);
+  transform: translateX(2px);
+}
+
+.shortcut:focus-visible {
+  outline: 2px solid var(--color-secondary-30-light);
+  outline-offset: 2px;
+}
+
+.shortcutIcon {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 20px rgba(0, 71, 119, 0.3);
-}
-
-.optionIcon::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  right: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%);
-  transform: rotate(45deg);
-}
-
-.optionIcon svg {
-  width: 3.75rem;
-  height: 3.75rem;
-  color: var(--color-text-white);
-  position: relative;
-  z-index: 1;
-}
-
-.optionIcon.light {
-  background: linear-gradient(135deg, #4FC3E0, #87CEEB);
-  box-shadow: 0 8px 20px rgba(79, 195, 224, 0.3);
-}
-
-.optionIcon.instructors {
-  background: linear-gradient(135deg, #10b981, #34d399);
-  box-shadow: 0 8px 20px rgba(28, 112, 84, 0.3);
-}
-
-.optionIcon.users {
-  background: linear-gradient(135deg, var(--color-accent-10), #1B8D56);
-  box-shadow: 0 8px 20px rgba(0, 136, 41, 0.3);
-}
-
-.optionTitle {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin-bottom: 0.625rem;
-  color: var(--color-text-primary);
-}
-
-.optionDescription {
-  font-size: 0.875rem;
-  color: var(--color-text-secondary);
-  margin-bottom: 1.25rem;
-  line-height: 1.5;
-}
-
-.optionButton {
-  width: 100%;
-  padding: 0.9375rem 2.5rem;
-  background-color: var(--color-secondary-30);
-  color: var(--color-text-white);
-  border: none;
+  flex-shrink: 0;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 0.625rem;
-  font-size: 1.125rem;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-  margin-top: auto;
-}
-
-.optionButton:hover {
-  background-color: var(--color-secondary-30-light);
-}
-
-/* History Section */
-.historySection {
-  background-color: var(--color-surface);
-  border-radius: 0.9375rem;
-  padding: 1.5625rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.historyHeader {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.25rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--color-surface-subtle);
-}
-
-.historyTitle {
-  font-size: 1.25rem;
-  font-weight: 700;
-  color: var(--color-text-primary);
-  margin: 0;
-}
-
-.viewAllLink {
+  background: var(--color-secondary-30-lighter);
   color: var(--color-secondary-30);
-  text-decoration: none;
-  font-size: 1rem;
-  font-weight: 700;
-  transition: color 0.2s ease;
 }
 
-.viewAllLink:hover {
+[data-theme='dark'] .shortcutIcon {
+  background: rgba(61, 193, 204, 0.12);
   color: var(--color-secondary-30-light);
 }
 
-.historyList {
+.shortcutBody {
   display: flex;
   flex-direction: column;
-  gap: 0.9375rem;
-}
-
-.historyItem {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.9375rem;
-  background-color: var(--color-surface-muted);
-  border-radius: 0.625rem;
-  transition: background-color 0.2s ease;
-}
-
-.historyItem:hover {
-  background-color: var(--color-surface-subtle);
-}
-
-.historyItemContent {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  gap: 0.25rem;
   flex: 1;
   min-width: 0;
 }
 
-.historyIcon {
-  width: 2.5rem;
-  height: 2.5rem;
-  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
-  color: var(--color-text-white);
-  border-radius: 0.5rem;
-  display: flex;
+.shortcutTitle {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 0.875rem;
-  font-weight: 700;
-  box-shadow: 0 4px 10px rgba(0, 71, 119, 0.2);
-  flex-shrink: 0;
-}
-
-.historyIcon.red {
-  background: linear-gradient(135deg, #E74C3C, #C0392B);
-  box-shadow: 0 4px 10px rgba(231, 76, 60, 0.3);
-}
-
-.historyIcon.black {
-  background: linear-gradient(135deg, #2C3E50, #34495E);
-  box-shadow: 0 4px 10px rgba(44, 62, 80, 0.3);
-}
-
-.historyItemTitle {
+  gap: 0.5rem;
   font-size: 0.9375rem;
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text-heading);
 }
 
-.viewDetailsButton {
-  padding: 0.5rem 1.25rem;
-  background-color: var(--color-tint-success, #A8E6A3);
-  border: none;
-  border-radius: 0.5rem;
+.shortcutText {
   font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--color-tint-success-text, #2d6b2a);
-  cursor: pointer;
-  transition: background-color 0.2s ease;
+  line-height: 1.45;
+  color: var(--color-text-muted);
+}
+
+.shortcutArrow {
   flex-shrink: 0;
+  margin-top: 0.75rem;
+  color: var(--color-text-faint);
+  transition: transform 0.15s, color 0.15s;
 }
 
-.viewDetailsButton:hover {
-  background-color: var(--color-tint-success-hover, #92d98e);
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  background: var(--color-warning);
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 700;
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
-  .optionsGrid {
-    grid-template-columns: repeat(2, 1fr);
-  }
+/* ── Cursos recientes ─────────────────────────────────────────────────── */
 
-  .title {
-    font-size: 2rem;
-  }
+.recent {
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  background: var(--color-surface);
+  overflow: hidden;
 }
 
-@media (max-width: 768px) {
-  .optionsGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .title {
-    font-size: 1.75rem;
-  }
-
-  .optionIcon {
-    width: 5rem;
-    height: 5rem;
-  }
-
-  .optionIcon svg {
-    width: 3rem;
-    height: 3rem;
-  }
-
-  .optionTitle {
-    font-size: 1.25rem;
-  }
-
-  .historyItem {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.75rem;
-  }
-
-  .historyItemContent {
-    width: 100%;
-  }
-
-  .viewDetailsButton {
-    width: 100%;
-  }
+.recentHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 1.125rem;
+  border-bottom: 1px solid var(--color-border-default);
 }
 
-@media (max-width: 480px) {
-  .dashboard {
-    gap: 1.5rem;
+.recentTitle {
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.viewAllLink {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-accent-10);
+  text-decoration: none;
+}
+
+.viewAllLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.empty {
+  margin: 0;
+  padding: 2rem 1.125rem;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.recentList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recentList li + li {
+  border-top: 1px solid var(--color-border-default);
+}
+
+.recentItem {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto 4.5rem;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1.125rem;
+  color: inherit;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+.recentItem:hover {
+  background: var(--color-table-row-hover);
+}
+
+.recentInitials {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.5rem;
+  background: var(--color-secondary-30-lighter);
+  color: var(--color-secondary-30);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+[data-theme='dark'] .recentInitials {
+  background: rgba(61, 193, 204, 0.12);
+  color: var(--color-secondary-30-light);
+}
+
+.recentName {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--color-text-heading);
+}
+
+.recentDate {
+  text-align: right;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  white-space: nowrap;
+  color: var(--color-text-body);
+}
+
+.status::before {
+  content: '';
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--color-text-faint);
+}
+
+.status_publicado::before { background: var(--color-success); }
+.status_revision::before { background: var(--color-warning); }
+.status_rechazado::before { background: var(--color-error); }
+
+@media (max-width: 640px) {
+  .recentItem {
+    grid-template-columns: auto minmax(0, 1fr) auto;
   }
 
-  .title {
-    font-size: 1.5rem;
-  }
-
-  .optionCard {
-    padding: 1.5rem;
-  }
-
-  .historySection {
-    padding: 1.25rem;
-  }
-
-  .historyHeader {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
+  .recentDate {
+    display: none;
   }
 }

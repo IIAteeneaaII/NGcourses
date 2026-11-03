@@ -63,7 +63,7 @@ export default function SupervisorUsuariosPage() {
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Email</th>
+                <th>Correo</th>
                 <th>Estado</th>
                 <th>Progreso</th>
                 <th>Acciones</th>
@@ -75,7 +75,7 @@ export default function SupervisorUsuariosPage() {
               ) : users.length > 0 ? (
                 users.map((u) => (
                   <tr key={u.id}>
-                    <td>{u.full_name || '—'}</td>
+                    <td className={styles.nameCell}>{u.full_name || '—'}</td>
                     <td>{u.email}</td>
                     <td>
                       <span className={`${styles.statusText} ${u.estado === 'activo' ? styles.active : styles.inactive}`}>
@@ -86,7 +86,7 @@ export default function SupervisorUsuariosPage() {
                             : 'Suspendido'}
                       </span>
                     </td>
-                    <td>{Math.round(u.progreso_promedio)}%</td>
+                    <td><span className={styles.mobileLabel}>Progreso: </span>{Math.round(u.progreso_promedio)}%</td>
                     <td>
                       {u.rol_org === 'admin_org' ? (
                         <span className={styles.statusText}>Supervisor</span>

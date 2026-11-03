@@ -256,7 +256,7 @@
 
 .editButton {
   padding: 0.5rem 1rem;
-  background: var(--color-secondary-30);
+  background: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.5rem;
@@ -368,4 +368,9 @@
   .pageTitle {
     font-size: 1.5rem;
   }
+}
+
+/* Acción principal: color único de la plataforma */
+.editButton:hover:not(:disabled) {
+  background: var(--color-accent-10-hover);
 }

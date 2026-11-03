@@ -259,6 +259,17 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
               />
             ) : (
               <>
+                {currentLesson.tipo === 'lectura' && (
+                  <article className={styles.readingCard}>
+                    <span className={styles.readingTag}>Lectura</span>
+                    <h2 className={styles.readingTitle}>{currentLesson.name}</h2>
+                    {currentLesson.resumen && currentLesson.resumen.trim() ? (
+                      <div className={styles.readingBody}>{currentLesson.resumen}</div>
+                    ) : (
+                      <p className={styles.readingEmpty}>Esta lectura aún no tiene contenido. Revisa los recursos de la lección.</p>
+                    )}
+                  </article>
+                )}
                 {currentLesson.tipo !== 'lectura' && (
                   <VideoPlayer
                     key={currentLesson.id}

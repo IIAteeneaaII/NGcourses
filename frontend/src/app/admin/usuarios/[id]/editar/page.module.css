@@ -125,7 +125,7 @@
   padding: 0.6rem 1.5rem;
   border: none;
   border-radius: 0.5rem;
-  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
+  background: var(--color-accent-10);
   color: var(--color-text-white);
   font-size: 0.9rem;
   font-weight: 600;
@@ -155,4 +155,9 @@
     width: 100%;
     text-align: center;
   }
+}
+
+/* Acción principal: color único de la plataforma */
+.saveBtn:hover:not(:disabled) {
+  background: var(--color-accent-10-hover);
 }

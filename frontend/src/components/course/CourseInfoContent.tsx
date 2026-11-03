@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import CourseCover from '@/components/shared/CourseCover';
 import type { CourseInfo } from '@/types/course';
 import PayPalCheckout from './PayPalCheckout';
 import StudentUserMenu from '@/components/shared/StudentUserMenu';
@@ -36,11 +36,19 @@ function formatDuration(totalSec: number): string {
   return `${min}:${sec.toString().padStart(2, '0')}`;
 }
 
+/** Duración total legible ("1 h 30 min", "45 min") a partir de segundos. */
+function formatTotal(totalSec: number): string {
+  const totalMin = Math.round(totalSec / 60);
+  if (totalMin < 60) return `${totalMin} min`;
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  return m ? `${h} h ${m} min` : `${h} h`;
+}
+
 export default function CourseInfoContent({ course, isEnrolled, onInscribirse, onPaymentSuccess, enrollLoading, backHref = '/cursos', bloqueadoPorLicencia, viewOnlyMode = false, viewCourseHref, viewCourseLabel = 'Ver curso', showUserMenu }: CourseInfoContentProps) {
-  const [imgSrc, setImgSrc] = useState(course.image);
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
-  const [openModules, setOpenModules] = useState<Set<number>>(new Set());
+  const [openModules, setOpenModules] = useState<Set<number>>(new Set([0]));
 
   const toggleModule = (index: number) => {
     setOpenModules((prev) => {
@@ -50,6 +58,57 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
       return next;
     });
   };
+
+  // La duración del curso viene en horas redondeadas ("0h" en cursos cortos);
+  // si es posible, se calcula sumando la duración de las lecciones.
+  const lessonsSec = course.syllabus.reduce(
+    (acc, m) => acc + m.lessons.reduce((a, l) => a + (l.durationSec ?? 0), 0),
+    0,
+  );
+  const durationLabel = lessonsSec > 0 ? formatTotal(lessonsSec) : course.duration && course.duration !== '0h' ? course.duration : null;
+  const outcomes = course.learningOutcomes.filter((o) => o && o.trim());
+  const requirements = course.requirements?.trim();
+  const hasReviews = !!course.reviewsCount && course.reviewsCount > 0;
+
+  const meta = [
+    course.level && course.level !== 'No especificado' ? course.level : null,
+    `${course.lessonsCount} ${course.lessonsCount === 1 ? 'lección' : 'lecciones'}`,
+    durationLabel,
+    hasReviews ? `★ ${course.rating.toFixed(1)} (${course.reviewsCount})` : null,
+  ].filter(Boolean) as string[];
+
+  const action = viewOnlyMode ? (
+    <Link href={viewCourseHref ?? `/curso/${course.id}/videos?from=supervisor`} className={styles.startButton}>
+      {viewCourseLabel}
+    </Link>
+  ) : isEnrolled ? (
+    <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
+      Continuar curso
+    </Link>
+  ) : requierePago ? (
+    // Precio > 0: PayPal tiene prioridad sobre el bloqueo de licencia, ya que
+    // RF10 permite que cualquier alumno compre el curso individualmente.
+    <PayPalCheckout
+      cursoId={course.id}
+      monedaCurso={course.moneda}
+      onSuccess={() => {
+        if (onPaymentSuccess) onPaymentSuccess();
+      }}
+    />
+  ) : bloqueadoPorLicencia ? (
+    <div className={styles.lockedBlock} role="status" aria-live="polite">
+      <h3 className={styles.lockedTitle}>Curso no disponible</h3>
+      <p className={styles.lockedMessage}>
+        Tu organización no ha adquirido este curso. Contacta a tu administrador para más información.
+      </p>
+    </div>
+  ) : (
+    onInscribirse && (
+      <button className={styles.startButton} onClick={onInscribirse} disabled={enrollLoading}>
+        {enrollLoading ? 'Inscribiendo…' : 'Inscribirme gratis'}
+      </button>
+    )
+  );
 
   return (
     <div className={styles.container}>
@@ -68,90 +127,63 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
       </header>
 
       <main className={styles.main}>
-        <div className={styles.backButtonContainer}>
-          <Link href={backHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-            Volver
-          </Link>
-        </div>
+        <Link href={backHref} className={styles.backLink}>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+          Volver a cursos
+        </Link>
 
-        <div className={styles.courseCard}>
-          <h1 className={styles.courseTitle}>{course.title}</h1>
-
-          <div className={styles.courseHeader}>
-            <Image
-              src={imgSrc}
-              alt={course.title}
-              width={280}
-              height={180}
-              unoptimized
-              className={styles.courseImage}
-              onError={() => setImgSrc('/placeholder-course.jpg')}
-            />
-
-            <div className={styles.courseInfo}>
-              <h2 className={styles.courseInfoTitle}>Información del curso</h2>
-
-              <div className={styles.courseInfoItem}>
-                <span className={styles.courseInfoLabel}>Instructor:</span>
-                <span className={styles.courseInfoValue}>{course.instructor || '—'}</span>
-              </div>
-
-              <div className={styles.courseInfoItem}>
-                <span className={styles.courseInfoLabel}>Calificación:</span>
-                <span className={styles.courseInfoValue}>
-                  {course.reviewsCount && course.reviewsCount > 0
-                    ? `${course.rating.toFixed(1)} / 5 (${course.reviewsCount} reseña${course.reviewsCount !== 1 ? 's' : ''})`
-                    : 'Sin reseñas'}
-                </span>
-              </div>
-
-              <div className={styles.courseInfoItem}>
-                <span className={styles.courseInfoLabel}>Nivel:</span>
-                <span className={styles.courseInfoValue}>{course.level}</span>
-              </div>
-
-              <div className={styles.courseInfoItem}>
-                <span className={styles.courseInfoLabel}>Duración:</span>
-                <span className={styles.courseInfoValue}>{course.duration}</span>
-              </div>
-
-              <div className={styles.courseInfoItem}>
-                <span className={styles.courseInfoLabel}>Lecciones:</span>
-                <span className={styles.courseInfoValue}>{course.lessonsCount}</span>
-              </div>
-
-              <div className={styles.priceBlock}>
-                <span className={styles.priceLabel}>Precio</span>
-                <span className={`${styles.priceValue} ${price.isFree ? styles.priceFree : ''}`}>
-                  {price.label}
-                </span>
-              </div>
-            </div>
+        <section className={styles.hero}>
+          <div className={styles.heroText}>
+            <h1 className={styles.courseTitle}>{course.title}</h1>
+            {course.description && <p className={styles.heroDescription}>{course.description}</p>}
+            <ul className={styles.metaList}>
+              {meta.map((m) => (
+                <li key={m} className={styles.metaItem}>{m}</li>
+              ))}
+            </ul>
+            {course.instructor && (
+              <p className={styles.instructor}>
+                Impartido por <strong>{course.instructor}</strong>
+              </p>
+            )}
           </div>
 
-          <div className={styles.sectionsGrid}>
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Descripción</h3>
-              <p className={styles.sectionText}>{course.description}</p>
+          <aside className={styles.heroAside}>
+            <div className={styles.cover}>
+              <CourseCover src={course.image} title={course.title} caption={course.level} />
             </div>
+            <div className={styles.purchase}>
+              <span className={`${styles.priceValue} ${price.isFree ? styles.priceFree : ''}`}>{price.label}</span>
+              <div className={styles.actionsContainer}>{action}</div>
+            </div>
+          </aside>
+        </section>
 
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Lo que aprenderás</h3>
-              <ul className={styles.sectionList}>
-                {course.learningOutcomes.map((outcome, index) => (
-                  <li key={index}>{outcome}</li>
+        <div className={styles.body}>
+          {outcomes.length > 0 && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Lo que aprenderás</h2>
+              <ul className={styles.outcomes}>
+                {outcomes.map((outcome, index) => (
+                  <li key={index}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                    <span>{outcome}</span>
+                  </li>
                 ))}
               </ul>
-            </div>
+            </section>
+          )}
 
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Requisitos</h3>
-              <p className={styles.sectionText}>{course.requirements}</p>
+          <section className={styles.section}>
+            <div className={styles.sectionHead}>
+              <h2 className={styles.sectionTitle}>Temario</h2>
+              <span className={styles.sectionMeta}>
+                {course.syllabus.length} {course.syllabus.length === 1 ? 'módulo' : 'módulos'} · {course.lessonsCount} {course.lessonsCount === 1 ? 'lección' : 'lecciones'}
+              </span>
             </div>
-
-            <div className={styles.section}>
-              <h3 className={styles.sectionTitle}>Temario</h3>
+            {course.syllabus.length === 0 ? (
+              <p className={styles.sectionText}>El temario se publicará pronto.</p>
+            ) : (
               <ul className={styles.temarioList}>
                 {course.syllabus.map((modulo, index) => {
                   const isOpen = openModules.has(index);
@@ -165,7 +197,9 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
                         aria-expanded={isOpen}
                         disabled={!hasLessons}
                       >
-                        <span className={`${styles.temarioChevron} ${isOpen ? styles.temarioChevronOpen : ''}`} aria-hidden="true">›</span>
+                        <span className={`${styles.temarioChevron} ${isOpen ? styles.temarioChevronOpen : ''}`} aria-hidden="true">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5}><path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        </span>
                         <span className={styles.temarioModuleTitle}>{modulo.title}</span>
                         {hasLessons && (
                           <span className={styles.temarioCount}>
@@ -191,47 +225,15 @@ export default function CourseInfoContent({ course, isEnrolled, onInscribirse, o
                   );
                 })}
               </ul>
-            </div>
-          </div>
-
-          <div className={styles.actionsContainer}>
-            {viewOnlyMode ? (
-              <Link href={viewCourseHref ?? `/curso/${course.id}/videos?from=supervisor`} className={styles.startButton}>
-                {viewCourseLabel}
-              </Link>
-            ) : isEnrolled ? (
-              <Link href={`/curso/${course.id}/videos`} className={styles.startButton}>
-                Continuar curso
-              </Link>
-            ) : requierePago ? (
-              // Precio > 0: PayPal tiene prioridad sobre el bloqueo de licencia, ya que
-              // RF10 permite que cualquier alumno compre el curso individualmente.
-              <PayPalCheckout
-                cursoId={course.id}
-                monedaCurso={course.moneda}
-                onSuccess={() => {
-                  if (onPaymentSuccess) onPaymentSuccess();
-                }}
-              />
-            ) : bloqueadoPorLicencia ? (
-              <div className={styles.lockedBlock} role="status" aria-live="polite">
-                <h3 className={styles.lockedTitle}>Curso no disponible</h3>
-                <p className={styles.lockedMessage}>
-                  Tu organización no ha adquirido este curso. Contacta a tu administrador para más información.
-                </p>
-              </div>
-            ) : (
-              onInscribirse && (
-                <button
-                  className={styles.startButton}
-                  onClick={onInscribirse}
-                  disabled={enrollLoading}
-                >
-                  {enrollLoading ? 'Inscribiendo...' : 'Inscribirme gratis'}
-                </button>
-              )
             )}
-          </div>
+          </section>
+
+          {requirements && (
+            <section className={styles.section}>
+              <h2 className={styles.sectionTitle}>Requisitos</h2>
+              <p className={styles.sectionText}>{requirements}</p>
+            </section>
+          )}
         </div>
       </main>
     </div>
