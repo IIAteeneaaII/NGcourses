@@ -100,7 +100,7 @@ export default function EstadisticasCursoPage() {
           <p className={styles.statValue}>{completados}</p>
         </div>
         <div className={styles.statCard}>
-          <p className={styles.statLabel}>Calificacion Prom</p>
+          <p className={styles.statLabel}>Calificación prom.</p>
           <p className={styles.statValue} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
             {curso.calificacion_prom?.toFixed(1) ?? '0.0'}
             <svg width="20" height="20" viewBox="0 0 24 24" fill="#f5a623" aria-hidden="true" style={{ flexShrink: 0 }}>
@@ -118,7 +118,7 @@ export default function EstadisticasCursoPage() {
               <th>Inscripcion</th>
               <th>Estado</th>
               <th>Inscrito el</th>
-              <th>Ultimo acceso</th>
+              <th>Último acceso</th>
             </tr>
           </thead>
           <tbody>

@@ -80,7 +80,7 @@
 
 .editProfileButton {
   padding: 0.625rem 1.5rem;
-  background-color: var(--color-secondary-30);
+  background-color: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.625rem;
@@ -256,7 +256,7 @@
 /* Edit Profile Button */
 .editProfileBtn {
   padding: 0.625rem 1.5rem;
-  background-color: var(--color-secondary-30);
+  background-color: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.625rem;
@@ -384,7 +384,7 @@
 
 .saveBtn {
   padding: 0.625rem 1.5rem;
-  background: var(--color-secondary-30);
+  background: var(--color-accent-10);
   color: var(--color-text-white);
   border: none;
   border-radius: 0.5rem;
@@ -477,4 +477,11 @@
   .courseIcon {
     margin-bottom: 0.5rem;
   }
+}
+
+/* Acción principal: color único de la plataforma */
+.editProfileBtn:hover:not(:disabled),
+.editProfileButton:hover:not(:disabled),
+.saveBtn:hover:not(:disabled) {
+  background: var(--color-accent-10-hover);
 }

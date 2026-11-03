@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { organizacionesApi, cursosApi, usersApi } from '@/lib/api/client';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { logError } from '@/lib/logger';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 interface Organizacion {
@@ -277,32 +278,11 @@ export default function OrganizacionDetallePage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.userHeader}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.pageTitle}>{org.nombre}</h1>
-          <p className={styles.pageSubtitle}>Detalle y gestión de la organización</p>
-        </div>
-        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-          <button className={styles.backButton} onClick={() => router.push('/admin/organizaciones')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7" />
-            </svg>
-            Volver
-          </button>
-          <button
-            onClick={() => { setDeleteError(''); setDeleteConfirmText(''); setShowDeleteModal(true); }}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '0.4rem',
-              padding: '0.5rem 1.1rem', background: '#b91c1c', color: '#fff',
-              border: 'none', borderRadius: '0.5rem', fontSize: '0.875rem',
-              fontWeight: 600, cursor: 'pointer',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /></svg>
-            Eliminar organización
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title={org.nombre}
+        subtitle="Datos, miembros y licencias de la organización"
+        back={{ href: '/admin/organizaciones', label: 'Organizaciones' }}
+      />
 
       <section className={styles.mainContent}>
         <div className={styles.tabsRow}>
@@ -355,7 +335,22 @@ export default function OrganizacionDetallePage() {
             {datosMsg && <p className={styles.formMsg}>{datosMsg}</p>}
             <div>
               <button type="submit" className={styles.submitButton} disabled={savingDatos}>
-                {savingDatos ? 'Guardando...' : 'Guardar cambios'}
+                {savingDatos ? 'Guardando…' : 'Guardar cambios'}
+              </button>
+            </div>
+
+            {/* Acción destructiva al final, separada del resto */}
+            <div className={styles.dangerZone}>
+              <div>
+                <p className={styles.dangerTitle}>Eliminar organización</p>
+                <p className={styles.dangerText}>Se quitan sus miembros y licencias. Esta acción no se puede deshacer.</p>
+              </div>
+              <button
+                type="button"
+                className="ng-btn ng-btn-danger-outline"
+                onClick={() => { setDeleteError(''); setDeleteConfirmText(''); setShowDeleteModal(true); }}
+              >
+                Eliminar organización
               </button>
             </div>
           </form>

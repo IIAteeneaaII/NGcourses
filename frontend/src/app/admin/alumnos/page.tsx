@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import Link from 'next/link';
+import PageHeader from '@/components/admin/PageHeader';
 import { usersApi, cursosApi, inscripcionesApi, quizApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './page.module.css';
@@ -425,18 +425,10 @@ export default function AlumnosAdminPage() {
 
   return (
     <div className={styles.pageContainer}>
-      {/* Header */}
-      <div className={styles.pageHeader}>
-        <h1 className={styles.pageTitle}>Alumnos</h1>
-        <Link href="/admin" className={styles.backButton}>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5 10v10h14V10" />
-            <path d="M9 20v-6h6v6" />
-          </svg>
-          Inicio
-        </Link>
-      </div>
+      <PageHeader
+        title="Alumnos"
+        subtitle={loadingBase ? 'Cargando…' : `${alumnos.length} ${alumnos.length === 1 ? 'alumno registrado' : 'alumnos registrados'}`}
+      />
 
       {/* Tabs */}
       <div className={styles.tabs}>
@@ -444,7 +436,7 @@ export default function AlumnosAdminPage() {
           className={`${styles.tab} ${activeTab === 'lista' ? styles.tabActive : ''}`}
           onClick={() => { setActiveTab('lista'); setPanel(null); }}
         >
-          Lista de Alumnos
+          Lista de alumnos
         </button>
         <button
           className={`${styles.tab} ${activeTab === 'estadisticas' ? styles.tabActive : ''}`}
@@ -456,7 +448,7 @@ export default function AlumnosAdminPage() {
           className={`${styles.tab} ${activeTab === 'quiz' ? styles.tabActive : ''}`}
           onClick={() => { setActiveTab('quiz'); setPanel(null); }}
         >
-          Resultados Quiz
+          Resultados de quizzes
         </button>
       </div>
 
@@ -470,7 +462,7 @@ export default function AlumnosAdminPage() {
             <div className={styles.card}>
               <div className={styles.cardHeader}>
                 <h2 className={styles.cardTitle}>Todos los alumnos</h2>
-                <span className={styles.countBadge}>{filtrados.length} alumnos</span>
+                <span className={styles.countBadge}>{filtrados.length} {filtrados.length === 1 ? 'alumno' : 'alumnos'}</span>
               </div>
 
               {/* Búsqueda */}
@@ -480,7 +472,7 @@ export default function AlumnosAdminPage() {
                 </svg>
                 <input
                   type="text"
-                  placeholder="Buscar por nombre o email..."
+                  placeholder="Buscar por nombre o correo"
                   value={search}
                   onChange={(e) => handleSearch(e.target.value)}
                   className={styles.searchInput}

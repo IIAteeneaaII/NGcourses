@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { cursosApi } from '@/lib/api/client';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 interface ApiCurso {
@@ -90,36 +91,16 @@ export default function SolicitudesPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.headerBar}>
-        <button className={styles.backButton} onClick={() => router.push('/admin')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5 10v10h14V10" />
-            <path d="M9 20v-6h6v6" />
-          </svg>
-          Volver al inicio
-        </button>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-secondary-30)' }}>
-          Solicitudes de revisión
-        </h1>
-      </div>
+      <PageHeader
+        title="Revisión de cursos"
+        subtitle={loading ? 'Cargando…' : `${courses.length} ${courses.length === 1 ? 'curso pendiente' : 'cursos pendientes'} de aprobación`}
+      />
 
-      <div className={styles.historySection} style={{ maxWidth: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className={styles.historyTitle} style={{ margin: 0 }}>
-            Cursos pendientes de aprobación
-          </h2>
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-            {courses.length} curso{courses.length !== 1 ? 's' : ''} pendiente{courses.length !== 1 ? 's' : ''}
-          </span>
-        </div>
-
+      <div className={styles.historySection}>
         {loading ? (
           <p className={styles.emptyState}>Cargando...</p>
         ) : courses.length === 0 ? (
-          <p className={styles.emptyState} style={{ padding: '3rem', textAlign: 'center' }}>
-            No hay cursos pendientes de revisión.
-          </p>
+          <p className={styles.emptyState}>No hay cursos pendientes de revisión.</p>
         ) : (
           <div className={styles.tableWrapper}>
             <table className={styles.historyTable}>
@@ -133,34 +114,34 @@ export default function SolicitudesPage() {
               <tbody>
                 {courses.map((curso) => (
                   <tr key={curso.id}>
-                    <td style={{ fontWeight: 600 }}>{curso.titulo}</td>
-                    <td style={{ color: 'var(--color-text-secondary)', maxWidth: '280px' }}>
+                    <td className={styles.courseName}>{curso.titulo}</td>
+                    <td className={styles.courseDesc}>
                       {curso.descripcion || '—'}
                     </td>
                     <td>
                       <div className={styles.actionButtons}>
                         <button
-                          className={styles.btnView}
+                          className="ng-btn ng-btn-ghost ng-btn-sm"
                           onClick={() => router.push(`/admin/cursos/${curso.id}/preview`)}
                         >
                           Ver curso
                         </button>
                         <button
-                          className={styles.btnPublish}
+                          className="ng-btn ng-btn-primary ng-btn-sm"
                           disabled={!!actionLoading}
                           onClick={() => openConfirm(curso, 'publicar')}
                         >
                           Publicar
                         </button>
                         <button
-                          className={styles.btnChanges}
+                          className="ng-btn ng-btn-secondary ng-btn-sm"
                           disabled={!!actionLoading}
                           onClick={() => openConfirm(curso, 'solicitar_cambios')}
                         >
                           Solicitar cambios
                         </button>
                         <button
-                          className={styles.btnReject}
+                          className="ng-btn ng-btn-danger-outline ng-btn-sm"
                           disabled={!!actionLoading}
                           onClick={() => openConfirm(curso, 'rechazar')}
                         >

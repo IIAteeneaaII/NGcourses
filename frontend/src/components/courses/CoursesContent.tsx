@@ -162,7 +162,6 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
               Limpiar
             </button>
 
-            <button className={styles.coursesButton}>Cursos</button>
           </div>
         </section>
 
@@ -190,7 +189,7 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
             <>
               {orgCourses.length > 0 && (
                 <>
-                  <h2 className={styles.sectionTitle}>{orgName ? `Cursos ${orgName}` : 'Cursos de tu organización'}</h2>
+                  <h2 className={styles.sectionTitle}>{orgName ? `Cursos ${orgName}` : 'Cursos RAM Electronics'}</h2>
                   <div className={styles.coursesGrid}>
                     {orgCourses.map((course) => <CourseCard key={course.id} course={course} />)}
                   </div>

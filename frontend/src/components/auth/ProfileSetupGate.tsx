@@ -14,12 +14,20 @@ interface UserMe {
   is_superuser?: boolean;
 }
 
+// Pantallas públicas: no hay sesión que consultar. Pedir /users/me aquí solo
+// genera 401 en consola y gasta el límite de renovaciones de sesión.
+const PUBLIC_PATHS = ['/', '/forgot-password', '/reset-password', '/activar', '/invitacion'];
+
 export default function ProfileSetupGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [user, setUser] = useState<UserMe | null>(null);
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
+    if (PUBLIC_PATHS.includes(pathname)) {
+      setChecked(true);
+      return;
+    }
     // La cookie HttpOnly la envía el browser automáticamente — no necesitamos leer localStorage
     authApi.me()
       .then((u) => {
@@ -32,6 +40,8 @@ export default function ProfileSetupGate({ children }: { children: React.ReactNo
       })
       .catch(() => {})
       .finally(() => setChecked(true));
+    // Solo al montar: el login redirige con recarga completa.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleComplete = (fullName: string) => {

@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usersApi } from '@/lib/api/client';
 import { getCurrentUser } from '@/lib/auth';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 interface CreateUserForm {
@@ -161,34 +162,26 @@ export default function UsuariosPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.userHeader}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.pageTitle}>Editar usuarios</h1>
-          <p className={styles.pageSubtitle}>Gestion y edicion de usuarios del sistema</p>
-        </div>
-        <div className={styles.headerActions}>
-          <button className={styles.backButton} onClick={() => router.push('/admin')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5 10v10h14V10" />
-              <path d="M9 20v-6h6v6" />
-            </svg>
-            Inicio
-          </button>
-          <button className={styles.createButton} style={{ background: 'var(--color-surface)', color: '#00968f', border: '1px solid rgba(0,150,143,.3)' }} onClick={() => router.push('/admin/usuarios/crear')}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-            </svg>
-            Alta de empleado
-          </button>
-          <button className={styles.createButton} onClick={() => { setShowCreateModal(true); setCreateError(''); }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            Nuevo usuario
-          </button>
-        </div>
-      </div>
+      <PageHeader
+        title="Usuarios"
+        subtitle="Cuentas de la plataforma: roles, estado y accesos"
+        actions={
+          <>
+            <button className="ng-btn ng-btn-secondary" onClick={() => router.push('/admin/usuarios/crear')}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              Alta de empleado
+            </button>
+            <button className="ng-btn ng-btn-primary" onClick={() => { setShowCreateModal(true); setCreateError(''); }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" aria-hidden="true">
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+              Nuevo usuario
+            </button>
+          </>
+        }
+      />
 
       <section className={styles.mainContent}>
         {reenviarMsg && (
@@ -247,7 +240,7 @@ export default function UsuariosPage() {
             <thead>
               <tr>
                 <th>Nombre</th>
-                <th>Email</th>
+                <th>Correo</th>
                 <th>Rol</th>
                 <th>Acciones</th>
               </tr>
@@ -258,7 +251,7 @@ export default function UsuariosPage() {
               ) : users.length > 0 ? (
                 users.map((user) => (
                   <tr key={user.id}>
-                    <td>{user.full_name || '—'}</td>
+                    <td>{user.full_name || <span style={{ color: 'var(--color-text-faint)' }}>Sin nombre</span>}</td>
                     <td>{user.email}</td>
                     <td>{ROLES[user.rol] || user.rol}</td>
                     <td className={styles.actionsCell}>
@@ -378,7 +371,7 @@ export default function UsuariosPage() {
                 />
               </div>
               <div className={styles.formGroup}>
-                <label className={styles.formLabel}>Contrasena * (min. 8 caracteres)</label>
+                <label className={styles.formLabel}>Contraseña * (mín. 8 caracteres)</label>
                 <input
                   type="password"
                   required

@@ -79,7 +79,7 @@ export default function InstructorCursosPage() {
             <option value="todos">Todos</option>
             <option value="publicado">Publicado</option>
             <option value="borrador">Borrador</option>
-            <option value="revision">En revision</option>
+            <option value="revision">En revisión</option>
             <option value="rechazado">Rechazado</option>
           </select>
         </div>
@@ -103,7 +103,7 @@ export default function InstructorCursosPage() {
                 </div>
                 <div className={styles.courseActions}>
                   <Link href={`/instructor/cursos/${course.id}/editar`} className={styles.editButton}>Editar</Link>
-                  <Link href={`/instructor/cursos/${course.id}/estadisticas`} className={styles.statsButton}>Estadisticas</Link>
+                  <Link href={`/instructor/cursos/${course.id}/estadisticas`} className={styles.statsButton}>Estadísticas</Link>
                 </div>
               </div>
             ))}

@@ -209,7 +209,7 @@ export default function AlumnosInstructorPage() {
                     <th>Curso</th>
                     <th>Estado</th>
                     <th>Inscrito el</th>
-                    <th>Ultimo acceso</th>
+                    <th>Último acceso</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -28,7 +28,7 @@ export default function SupervisorDashboardPage() {
   return (
     <div className={styles.dashboard}>
       <div className={styles.header}>
-        <h1 className={styles.title}>Panel Supervisor</h1>
+        <h1 className={styles.title}>Panel del supervisor</h1>
         <p className={styles.subtitle}>
           Gestiona los usuarios y los cursos asignados a tu organización.
         </p>

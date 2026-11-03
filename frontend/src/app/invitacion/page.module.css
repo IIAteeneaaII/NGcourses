@@ -1,93 +1,112 @@
+/* Mismo lenguaje visual que activar cuenta y recuperar contraseña */
 .page {
   min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: linear-gradient(145deg, #e8f0fe 0%, var(--color-tint-info, #f0f7ff) 50%, #fef3e8 100%);
-  padding: 2rem 1rem;
+  display: grid;
+  place-items: center;
+  padding: 28px 16px 70px;
+  background:
+    radial-gradient(1100px 700px at 12% 18%, rgba(61, 193, 204, 0.3) 0%, rgba(242, 242, 242, 0) 60%),
+    radial-gradient(900px 650px at 86% 22%, rgba(0, 150, 143, 0.2) 0%, rgba(242, 242, 242, 0) 58%),
+    linear-gradient(180deg, var(--color-surface) 0%, #f2f2f2 100%);
 }
 
-/* ── Tarjeta principal ─────────────────────────────────────────────── */
+.page::after {
+  content: '';
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 46px;
+  background: linear-gradient(90deg, #b2e8e6 0%, #3dc1cc 45%, #00968f 75%, #006b66 100%);
+  opacity: 0.95;
+}
+
 .card {
-  background: var(--color-surface);
-  border-radius: 1.5rem;
-  box-shadow: 0 20px 60px rgba(0, 71, 119, 0.12), 0 4px 16px rgba(0, 0, 0, 0.06);
-  width: 100%;
-  max-width: 460px;
-  overflow: hidden;
+  width: min(440px, 92%);
+  padding: 36px;
+  border: 1px solid rgba(0, 150, 143, 0.12);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 18px 55px rgba(11, 27, 43, 0.12);
+  backdrop-filter: blur(10px);
 }
 
-/* ── Cabecera de color ─────────────────────────────────────────────── */
 .cardHeader {
-  background: linear-gradient(135deg, var(--color-secondary-30, #004777) 0%, #0066aa 100%);
-  padding: 2rem 2rem 1.75rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 20px;
 }
 
 .brand {
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.65);
-  margin: 0 0 1.25rem;
-}
-
-/* ── Ícono SVG ─────────────────────────────────────────────────────── */
-.iconWrap {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 50%;
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto;
+  gap: 10px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  color: var(--color-text-heading);
 }
 
-.iconWrapSuccess { background: rgba(255, 255, 255, 0.18); }
-.iconWrapWarning { background: rgba(249, 180, 45, 0.22); }
-.iconWrapError   { background: rgba(239, 68, 68, 0.18); }
+.brand img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+}
+
+.brandLight {
+  font-weight: 400;
+}
+
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+}
 
 .iconWrap svg {
-  width: 2rem;
-  height: 2rem;
+  width: 24px;
+  height: 24px;
 }
 
-/* ── Cuerpo ────────────────────────────────────────────────────────── */
+.iconWrapSuccess { background: #dcfce7; color: #15803d; }
+.iconWrapWarning { background: #fef3c7; color: #b45309; }
+.iconWrapError   { background: #fee2e2; color: #b91c1c; }
+
 .cardBody {
-  padding: 1.75rem 2rem 2rem;
-  text-align: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .title {
-  font-size: 1.4rem;
+  margin: 0 0 8px;
+  font-size: 22px;
   font-weight: 700;
-  color: var(--color-text-primary, #1a202c);
-  margin: 0 0 0.5rem;
-  line-height: 1.25;
+  color: var(--color-text-heading);
 }
 
 .subtitle {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary, #64748b);
-  margin: 0 0 1.25rem;
-  line-height: 1.55;
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-muted);
 }
 
-/* ── Nombre del curso ──────────────────────────────────────────────── */
 .coursePill {
-  display: inline-block;
-  background: var(--color-tint-info, #f0f7ff);
-  border: 1.5px solid var(--color-tint-info, #bfdbfe);
-  border-radius: 2rem;
-  padding: 0.5rem 1.25rem;
-  font-size: 1rem;
-  font-weight: 700;
-  color: var(--color-secondary-30, #004777);
-  margin-bottom: 1.5rem;
+  align-self: flex-start;
+  margin-bottom: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: #e6f6f5;
+  color: #00756f;
+  font-size: 15px;
+  font-weight: 600;
 }
 
-/* ── Caja de contraseña ────────────────────────────────────────────── */
 .passwordBox {
   background: var(--color-tint-warning, #fffbeb);
   border: 1.5px solid #fcd34d;
@@ -169,68 +188,67 @@
 
 /* ── Botón principal ───────────────────────────────────────────────── */
 .primaryBtn {
-  display: block;
   width: 100%;
-  padding: 0.875rem 1.5rem;
-  background: linear-gradient(135deg, var(--color-accent-10, #f97316) 0%, #ea6c0a 100%);
+  padding: 14px 16px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--color-accent-10);
   color: #fff;
-  border: none;
-  border-radius: 0.875rem;
-  font-size: 1rem;
-  font-weight: 700;
-  text-decoration: none;
-  text-align: center;
+  font-size: 1.0625rem;
+  font-weight: 800;
   cursor: pointer;
-  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
-  transition: opacity 0.2s, transform 0.15s;
-}
-.primaryBtn:hover {
-  opacity: 0.93;
-  transform: translateY(-1px);
+  transition: background-color 0.15s;
 }
 
-/* ── Login prompt (cuenta existente) ──────────────────────────────── */
+.primaryBtn:hover {
+  background: var(--color-accent-10-hover);
+}
+
+.primaryBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .loginPrompt {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.875rem;
-  margin-top: 0.5rem;
+  gap: 16px;
+  margin-top: 8px;
 }
 
 .loginPromptText {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary);
-  text-align: center;
   margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--color-text-body);
 }
 
-/* ── Spinner ───────────────────────────────────────────────────────── */
 .spinnerWrap {
-  padding: 3rem 2rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 12px;
+  padding: 24px 0;
 }
 
 .spinner {
-  width: 2.5rem;
-  height: 2.5rem;
-  border: 3px solid var(--color-border-default);
-  border-top-color: var(--color-secondary-30, #004777);
+  width: 32px;
+  height: 32px;
+  border: 3px solid #d7efed;
+  border-top-color: var(--color-accent-10);
   border-radius: 50%;
-  animation: spin 0.75s linear infinite;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
 .spinnerText {
-  font-size: 0.9375rem;
-  color: var(--color-text-secondary, #64748b);
+  font-size: 14px;
+  color: var(--color-text-muted);
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Card ancho para onboarding ────────────────────────────────────────── */
 .cardWide {
   max-width: 540px;
 }

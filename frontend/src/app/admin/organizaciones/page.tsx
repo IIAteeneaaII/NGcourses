@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { organizacionesApi } from '@/lib/api/client';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
 import { logError } from '@/lib/logger';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 interface Organizacion {
@@ -172,28 +173,18 @@ export default function OrganizacionesPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.userHeader}>
-        <div className={styles.headerInfo}>
-          <h1 className={styles.pageTitle}>Organizaciones</h1>
-          <p className={styles.pageSubtitle}>Gestión de organizaciones clientes y sus licencias</p>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <button className={styles.backButton} onClick={() => router.push('/admin')}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 10.5 12 3l9 7.5" />
-              <path d="M5 10v10h14V10" />
-              <path d="M9 20v-6h6v6" />
-            </svg>
-            Inicio
-          </button>
-          <button className={styles.createButton} onClick={() => { setShowCreateModal(true); setCreateError(''); }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <PageHeader
+        title="Organizaciones"
+        subtitle="Empresas cliente, sus supervisores y licencias"
+        actions={
+          <button className="ng-btn ng-btn-primary" onClick={() => { setShowCreateModal(true); setCreateError(''); }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" aria-hidden="true">
               <path d="M12 5v14M5 12h14" />
             </svg>
             Nueva organización
           </button>
-        </div>
-      </div>
+        }
+      />
 
       {successMsg && (
         <div style={{

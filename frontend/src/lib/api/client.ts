@@ -69,6 +69,9 @@ class ApiClient {
         }
         // Refresh fallido: limpiar cookies de rol y redirigir al login
         // Solo redirigir si no estamos ya en la raíz (evita loop infinito)
+        // y si de verdad había una sesión (cookie de rol): un visitante que
+        // nunca inició sesión no tiene una sesión que "expire".
+        const habiaSesion = document.cookie.split('; ').some((c) => c.startsWith('user_rol='));
         ['user_rol', 'user_superuser'].forEach(k => {
           document.cookie = `${k}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
         });
@@ -78,8 +81,12 @@ class ApiClient {
         const publicPrefixes = ['/invitacion', '/activar', '/reset-password', '/forgot-password'];
         const path = window.location.pathname;
         const isPublic = path === '/' || publicPrefixes.some((p) => path.startsWith(p));
-        if (!isPublic) {
-          window.location.href = '/?error=session_expired';
+        // Sin sesión previa solo se redirige desde rutas privadas: así una URL
+        // inexistente muestra la página 404 en vez de saltar al login.
+        const privatePrefixes = ['/admin', '/supervisor', '/instructor', '/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
+        const isPrivate = privatePrefixes.some((p) => path.startsWith(p));
+        if (!isPublic && (habiaSesion || isPrivate)) {
+          window.location.href = habiaSesion ? '/?error=session_expired' : '/';
         }
         return undefined as T;
       }

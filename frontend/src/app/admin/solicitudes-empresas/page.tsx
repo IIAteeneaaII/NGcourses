@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { solicitudesAdminApi, cursosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 
 interface CursoOption {
@@ -64,7 +64,6 @@ const ACTION_MSG: Record<ActionType, string> = {
 };
 
 export default function SolicitudesEmpresasPage() {
-  const router = useRouter();
   const [items, setItems] = useState<ApiSolicitud[]>([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -127,36 +126,16 @@ export default function SolicitudesEmpresasPage() {
 
   return (
     <div className={styles.pageContainer}>
-      <div className={styles.headerBar}>
-        <button className={styles.backButton} onClick={() => router.push('/admin')}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M3 10.5 12 3l9 7.5" />
-            <path d="M5 10v10h14V10" />
-            <path d="M9 20v-6h6v6" />
-          </svg>
-          Volver al inicio
-        </button>
-        <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 700, color: 'var(--color-secondary-30)' }}>
-          Solicitudes de empresas
-        </h1>
-      </div>
+      <PageHeader
+        title="Solicitudes de empresas"
+        subtitle={loading ? 'Cargando…' : `Cursos que piden los supervisores · ${pendientes} ${pendientes === 1 ? 'pendiente' : 'pendientes'} de ${items.length}`}
+      />
 
-      <div className={styles.historySection} style={{ maxWidth: '100%' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-          <h2 className={styles.historyTitle} style={{ margin: 0 }}>
-            Solicitudes de curso de supervisores
-          </h2>
-          <span style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)' }}>
-            {pendientes} pendiente{pendientes !== 1 ? 's' : ''} de {items.length}
-          </span>
-        </div>
-
+      <div className={styles.historySection}>
         {loading ? (
           <p className={styles.emptyState}>Cargando...</p>
         ) : items.length === 0 ? (
-          <p className={styles.emptyState} style={{ padding: '3rem', textAlign: 'center' }}>
-            No hay solicitudes de empresas.
-          </p>
+          <p className={styles.emptyState}>No hay solicitudes de empresas.</p>
         ) : (
           <div className={styles.tableWrapper}>
             <table className={styles.historyTable}>
@@ -175,7 +154,7 @@ export default function SolicitudesEmpresasPage() {
                   const cerrada = s.estado === 'aprobada' || s.estado === 'rechazada' || s.estado === 'cerrada';
                   return (
                     <tr key={s.id}>
-                      <td style={{ fontWeight: 600 }}>{s.organizacion_nombre || '—'}</td>
+                      <td className={styles.orgName}>{s.organizacion_nombre || '—'}</td>
                       <td>
                         <div>{s.solicitante_nombre || '—'}</div>
                         {s.solicitante_email && (
@@ -201,13 +180,13 @@ export default function SolicitudesEmpresasPage() {
                           <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)' }}>—</span>
                         ) : (
                           <div className={styles.actionButtons}>
-                            <button className={styles.btnPublish} disabled={actionLoading} onClick={() => openConfirm(s, 'aprobada')}>
+                            <button className="ng-btn ng-btn-primary ng-btn-sm" disabled={actionLoading} onClick={() => openConfirm(s, 'aprobada')}>
                               Aprobar
                             </button>
-                            <button className={styles.btnChanges} disabled={actionLoading} onClick={() => openConfirm(s, 'en_revision')}>
+                            <button className="ng-btn ng-btn-secondary ng-btn-sm" disabled={actionLoading} onClick={() => openConfirm(s, 'en_revision')}>
                               En revisión
                             </button>
-                            <button className={styles.btnReject} disabled={actionLoading} onClick={() => openConfirm(s, 'rechazada')}>
+                            <button className="ng-btn ng-btn-danger-outline ng-btn-sm" disabled={actionLoading} onClick={() => openConfirm(s, 'rechazada')}>
                               Rechazar
                             </button>
                           </div>
@@ -262,15 +241,15 @@ export default function SolicitudesEmpresasPage() {
               />
             </div>
             <div className={styles.modalActions}>
-              <button className={styles.cancelBtn} onClick={() => { setConfirmModal(null); setComentario(''); setCursoId(''); }}>
+              <button className="ng-btn ng-btn-secondary" onClick={() => { setConfirmModal(null); setComentario(''); setCursoId(''); }}>
                 Cancelar
               </button>
               <button
-                className={confirmModal.action === 'rechazada' ? styles.btnReject : styles.btnPublish}
+                className={`ng-btn ${confirmModal.action === 'rechazada' ? 'ng-btn-danger' : 'ng-btn-primary'}`}
                 disabled={actionLoading}
                 onClick={handleAction}
               >
-                {actionLoading ? 'Procesando...' : 'Confirmar'}
+                {actionLoading ? 'Procesando…' : 'Confirmar'}
               </button>
             </div>
           </div>

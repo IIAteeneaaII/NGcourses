@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import CourseCover from '@/components/shared/CourseCover';
 import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
 import { certificadosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
@@ -62,7 +62,7 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
 
       <main className={styles.main}>
         <div className={styles.titleRow}>
-          <h1 className={styles.pageTitle}>Mis Cursos</h1>
+          <h1 className={styles.pageTitle}>Mis cursos</h1>
           <div className={styles.filterButtons}>
             <button
               className={`${styles.filterButton} ${activeFilter === 'all' ? styles.filterButtonActive : ''}`}
@@ -74,7 +74,7 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
               className={`${styles.filterButton} ${activeFilter === 'in_progress' ? styles.filterButtonActive : ''}`}
               onClick={() => setActiveFilter('in_progress')}
             >
-              En Progreso
+              En progreso
             </button>
             <button
               className={`${styles.filterButton} ${activeFilter === 'completed' ? styles.filterButtonActive : ''}`}
@@ -89,11 +89,11 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
           <div className={styles.statsGrid}>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.totalCourses}</span>
-              <span className={styles.statLabel}>Total de Cursos</span>
+              <span className={styles.statLabel}>Total de cursos</span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.inProgress}</span>
-              <span className={styles.statLabel}>En Progreso</span>
+              <span className={styles.statLabel}>En progreso</span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.completed}</span>
@@ -101,39 +101,38 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
             </div>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.totalHours}</span>
-              <span className={styles.statLabel}>Horas Totales</span>
+              <span className={styles.statLabel}>Horas totales</span>
             </div>
           </div>
         </div>
 
         {(activeFilter === 'all' || activeFilter === 'in_progress') && coursesInProgress.length > 0 && (
           <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>En Progreso</h2>
+            <h2 className={styles.sectionTitle}>En progreso</h2>
             <div className={styles.coursesList}>
               {coursesInProgress.map((course) => (
                 <div key={course.id} className={styles.courseCard}>
                   <div className={styles.courseImageContainer}>
-                    <Image
-                      src={course.image}
-                      alt={course.title}
-                      fill
-                      className={styles.courseImage}
-                      sizes="80px"
-                    />
+                    <CourseCover src={course.image} title={course.title} size="sm" />
                   </div>
                   <div className={styles.courseInfo}>
                     <h3 className={styles.courseTitle}>{course.title}</h3>
                     <p className={styles.courseMeta}>
-                      {course.instructor} • {course.lessonsCount} lecciones • <span className={styles.statusInProgress}>En Progreso</span>
+                      {course.instructor ? `${course.instructor} • ` : ''}{course.lessonsCount} lecciones • <span className={styles.statusInProgress}>En progreso</span>
                     </p>
-                    <p className={styles.courseProgress}>Progreso: {course.progress}%</p>
+                    <div className={styles.progressRow}>
+                      <div className={styles.progressTrack} role="progressbar" aria-valuenow={course.progress} aria-valuemin={0} aria-valuemax={100}>
+                        <div className={styles.progressFill} style={{ width: `${course.progress}%` }} />
+                      </div>
+                      <span className={styles.courseProgress}>{course.progress}%</span>
+                    </div>
                   </div>
                   <div className={styles.courseActions}>
                     <Link href={`/curso/${course.id}/videos`} className={styles.continueButton}>
                       Continuar
                     </Link>
                     <Link href={`/curso/${course.id}`} className={styles.detailsButton}>
-                      Ver Detalles
+                      Ver detalles
                     </Link>
                   </div>
                 </div>
@@ -149,18 +148,12 @@ export default function MyCoursesContent({ courses, statistics }: MyCoursesConte
               {coursesCompleted.map((course) => (
                 <div key={course.id} className={styles.courseCard}>
                   <div className={styles.courseImageContainer}>
-                    <Image
-                      src={course.image}
-                      alt={course.title}
-                      fill
-                      className={styles.courseImage}
-                      sizes="80px"
-                    />
+                    <CourseCover src={course.image} title={course.title} size="sm" />
                   </div>
                   <div className={styles.courseInfo}>
                     <h3 className={styles.courseTitle}>{course.title}</h3>
                     <p className={styles.courseMeta}>
-                      {course.instructor} • {course.lessonsCount} lecciones • <span className={styles.statusCompleted}>Completado</span>
+                      {course.instructor ? `${course.instructor} • ` : ''}{course.lessonsCount} lecciones • <span className={styles.statusCompleted}>Completado</span>
                     </p>
                     <p className={styles.courseCompletedDate}>{course.completedDate}</p>
                   </div>

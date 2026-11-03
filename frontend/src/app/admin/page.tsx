@@ -1,9 +1,11 @@
 'use client';
 
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { cursosApi } from '@/lib/api/client';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
+import PageHeader from '@/components/admin/PageHeader';
+import { courseInitials } from '@/components/shared/CourseCover';
 import styles from './page.module.css';
 
 interface ApiCurso {
@@ -22,6 +24,7 @@ export default function AdminDashboardPage() {
   const { flags } = useFeatureFlags();
   const [recentCourses, setRecentCourses] = useState<ApiCurso[]>([]);
   const [pendingCount, setPendingCount] = useState(0);
+  const [stats, setStats] = useState<{ total: number; publicados: number } | null>(null);
 
   useEffect(() => {
     async function fetchData() {
@@ -34,7 +37,8 @@ export default function AdminDashboardPage() {
           const sorted = [...(allResp.value.data ?? [])].sort((a, b) =>
             new Date(b.creado_en ?? 0).getTime() - new Date(a.creado_en ?? 0).getTime()
           );
-          setRecentCourses(sorted.slice(0, 3));
+          setRecentCourses(sorted.slice(0, 5));
+          setStats({ total: sorted.length, publicados: sorted.filter((c) => c.estado === 'publicado').length });
         }
         if (pendingResp.status === 'fulfilled') {
           setPendingCount(pendingResp.value.count ?? 0);
@@ -46,120 +50,100 @@ export default function AdminDashboardPage() {
     fetchData();
   }, []);
 
-  const getInitials = (titulo: string) =>
-    titulo.split(' ').slice(0, 2).map((w) => w[0]?.toUpperCase() ?? '').join('');
+  const ESTADO_LABEL: Record<string, string> = {
+    publicado: 'Publicado',
+    revision: 'En revisión',
+    borrador: 'Borrador',
+    rechazado: 'Rechazado',
+    archivado: 'Archivado',
+  };
+
+  const dateFormat = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'short' });
+
+  const shortcuts = [
+    {
+      href: '/admin/cursos/crear',
+      title: 'Crear curso',
+      text: 'Arma un curso nuevo: datos, portada, módulos y lecciones.',
+      icon: <path d="M12 5v14M5 12h14" />,
+    },
+    {
+      href: '/admin/solicitudes',
+      title: 'Revisión de cursos',
+      text: pendingCount > 0 ? `${pendingCount} ${pendingCount === 1 ? 'curso espera' : 'cursos esperan'} tu aprobación.` : 'No hay cursos pendientes de aprobación.',
+      icon: <><path d="M9 12h6M9 16h6" /><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.6a1 1 0 0 1 .7.3l5.4 5.4a1 1 0 0 1 .3.7V19a2 2 0 0 1-2 2Z" /></>,
+      badge: pendingCount > 0 ? pendingCount : undefined,
+    },
+    {
+      href: '/admin/usuarios',
+      title: 'Usuarios',
+      text: 'Da de alta empleados, cambia roles y estados.',
+      icon: <><circle cx="9" cy="7" r="4" /><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><path d="M16 3.13a4 4 0 0 1 0 7.75M23 21v-2a4 4 0 0 0-3-3.87" /></>,
+    },
+    {
+      href: '/admin/organizaciones',
+      title: 'Organizaciones',
+      text: 'Empresas cliente, supervisores y licencias de cursos.',
+      icon: <><path d="M3 21h18M5 21V7l7-4 7 4v14" /><path d="M9 9h1M14 9h1M9 13h1M14 13h1M10 21v-4h4v4" /></>,
+    },
+    ...(flags.instructores
+      ? [{
+          href: '/admin/instructores',
+          title: 'Instructores',
+          text: 'Instructores registrados en la plataforma.',
+          icon: <><circle cx="12" cy="7" r="4" /><path d="M5 21v-2a7 7 0 0 1 14 0v2" /></>,
+        }]
+      : []),
+  ];
 
   return (
     <div className={styles.dashboard}>
-      {/* Header */}
-      <div className={styles.header}>
-        <h1 className={styles.title}>Dashboard</h1>
-        <p className={styles.subtitle}>
-          Bienvenido al panel de administración. Gestiona usuarios, cursos y contenido educativo para tu equipo.
-        </p>
+      <PageHeader
+        title="Inicio"
+        subtitle={stats ? `${stats.total} cursos en la plataforma · ${stats.publicados} publicados` : 'Panel de administración'}
+      />
+
+      <div className={styles.shortcuts}>
+        {shortcuts.map((s) => (
+          <Link key={s.href} href={s.href} className={styles.shortcut}>
+            <span className={styles.shortcutIcon} aria-hidden="true">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">{s.icon}</svg>
+            </span>
+            <span className={styles.shortcutBody}>
+              <span className={styles.shortcutTitle}>
+                {s.title}
+                {s.badge !== undefined && <span className={styles.badge}>{s.badge}</span>}
+              </span>
+              <span className={styles.shortcutText}>{s.text}</span>
+            </span>
+            <svg className={styles.shortcutArrow} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M9 6l6 6-6 6" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          </Link>
+        ))}
       </div>
 
-      {/* Options Grid — una columna por tarjeta visible (3 sin instructor, 4 con él) */}
-      <div
-        className={styles.optionsGrid}
-        style={{ ['--card-count' as string]: flags.instructores ? 4 : 3 } as CSSProperties}
-      >
-        {/* Gestionar Usuarios */}
-        <div className={styles.optionCard}>
-          <div className={`${styles.optionIcon} ${styles.users}`}>
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 className={styles.optionTitle}>Gestionar Usuarios</h2>
-          <p className={styles.optionDescription}>
-            Administra usuarios, roles y permisos del sistema
-          </p>
-          <Link href="/admin/usuarios" className={styles.optionButton}>Empezar</Link>
+      <section className={styles.recent}>
+        <div className={styles.recentHeader}>
+          <h2 className={styles.recentTitle}>Cursos recientes</h2>
+          <Link href="/admin/cursos" className={styles.viewAllLink}>Ver todos</Link>
         </div>
 
-        {/* Crear Curso */}
-        <div className={styles.optionCard}>
-          <div className={styles.optionIcon}>
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
-          <h2 className={styles.optionTitle}>Crear Curso</h2>
-          <p className={styles.optionDescription}>
-            Crea y gestiona tus propios cursos de capacitación
-          </p>
-          <Link href="/admin/cursos/crear" className={styles.optionButton}>Empezar</Link>
-        </div>
-
-        {/* Solicitudes de revisión */}
-        <div className={styles.optionCard}>
-          <div className={`${styles.optionIcon} ${styles.light}`}>
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M9 12H15M9 16H15M17 21H7C5.89543 21 5 20.1046 5 19V5C5 3.89543 5.89543 3 7 3H12.5858C12.851 3 13.1054 3.10536 13.2929 3.29289L18.7071 8.70711C18.8946 8.89464 19 9.149 19 9.41421V19C19 20.1046 18.1046 21 17 21Z"
-                stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 className={styles.optionTitle}>Solicitudes</h2>
-          <p className={styles.optionDescription}>
-            Revisa y autoriza los cursos enviados por instructores
-            {pendingCount > 0 && <strong> ({pendingCount} pendiente{pendingCount !== 1 ? 's' : ''})</strong>}
-          </p>
-          <Link href="/admin/solicitudes" className={styles.optionButton}>Ver solicitudes</Link>
-        </div>
-
-        {/* Instructores — solo si el feature flag está habilitado */}
-        {flags.instructores && (
-        <div className={styles.optionCard}>
-          <div className={`${styles.optionIcon} ${styles.instructors}`}>
-            <svg width="60" height="60" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z"
-                stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-              />
-            </svg>
-          </div>
-          <h2 className={styles.optionTitle}>Instructores</h2>
-          <p className={styles.optionDescription}>
-            Gestiona los instructores registrados en la plataforma
-          </p>
-          <Link href="/admin/instructores" className={styles.optionButton}>Ver instructores</Link>
-        </div>
-        )}
-      </div>
-
-      {/* Cursos recientes (datos reales) */}
-      <div className={styles.historySection}>
-        <div className={styles.historyHeader}>
-          <h3 className={styles.historyTitle}>Cursos creados recientemente</h3>
-          <Link href="/admin/cursos" className={styles.viewAllLink}>Ver todo</Link>
-        </div>
-
-        <div className={styles.historyList}>
-          {recentCourses.length === 0 ? (
-            <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.9rem' }}>
-              No hay cursos creados aún.
-            </p>
-          ) : (
-            recentCourses.map((curso) => (
-              <div key={curso.id} className={styles.historyItem}>
-                <div className={styles.historyItemContent}>
-                  <div className={styles.historyIcon}>{getInitials(curso.titulo)}</div>
-                  <span className={styles.historyItemTitle}>{curso.titulo}</span>
-                </div>
-                <Link href={`/admin/cursos/${curso.id}/editar`} className={styles.viewDetailsButton}>
-                  Ver detalles
+        {recentCourses.length === 0 ? (
+          <p className={styles.empty}>Todavía no hay cursos.</p>
+        ) : (
+          <ul className={styles.recentList}>
+            {recentCourses.map((curso) => (
+              <li key={curso.id}>
+                <Link href={`/admin/cursos/${curso.id}/editar`} className={styles.recentItem}>
+                  <span className={styles.recentInitials} aria-hidden="true">{courseInitials(curso.titulo)}</span>
+                  <span className={styles.recentName}>{curso.titulo}</span>
+                  <span className={`${styles.status} ${styles[`status_${curso.estado}`] ?? ''}`}>{ESTADO_LABEL[curso.estado] ?? curso.estado}</span>
+                  <span className={styles.recentDate}>{curso.creado_en ? dateFormat.format(new Date(curso.creado_en)) : ''}</span>
                 </Link>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

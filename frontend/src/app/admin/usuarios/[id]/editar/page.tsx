@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { usersApi } from '@/lib/api/client';
 import { useFeatureFlags } from '@/lib/hooks/useFeatureFlags';
+import PageHeader from '@/components/admin/PageHeader';
 import styles from './page.module.css';
 import { EditUserSchema } from '@/schemas/user';
 
@@ -120,15 +121,7 @@ export default function EditarUsuarioPage() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <button className={styles.backButton} onClick={handleGoBack}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7" />
-          </svg>
-          Usuarios
-        </button>
-        <h1 className={styles.title}>Editar usuario</h1>
-      </div>
+      <PageHeader title="Editar usuario" back={{ href: '/admin/usuarios', label: 'Usuarios' }} />
 
       <form onSubmit={handleSubmit} className={styles.form}>
         <div className={styles.formGroup}>
