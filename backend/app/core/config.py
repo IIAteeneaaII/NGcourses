@@ -110,7 +110,7 @@ class Settings(BaseSettings):
 
     # IPs de proxies inversos confiables (ej: IP interna de Traefik).
     # Solo desde estas IPs se acepta X-Forwarded-For como fuente del IP real del cliente.
-    TRUSTED_PROXIES: Annotated[list[str], BeforeValidator(parse_cors)] = []
+    TRUSTED_PROXIES: Annotated[list[str] | str, BeforeValidator(parse_cors)] = []
 
     @computed_field  # type: ignore[prop-decorator]
     @property
