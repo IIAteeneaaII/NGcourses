@@ -215,6 +215,15 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
     return !flag || flags[flag];
   });
 
+  // Agrupa la navegación por tema; Configuración queda abajo, aparte.
+  const grupos: { titulo: string; hrefs: string[]; abajo?: boolean }[] = [
+    { titulo: 'General', hrefs: ['/admin'] },
+    { titulo: 'Personas', hrefs: ['/admin/usuarios', '/admin/alumnos', '/admin/instructores'] },
+    { titulo: 'Contenido', hrefs: ['/admin/cursos', '/admin/solicitudes'] },
+    { titulo: 'Empresas', hrefs: ['/admin/organizaciones', '/admin/solicitudes-empresas'] },
+    { titulo: 'Sistema', hrefs: ['/admin/configuracion'], abajo: true },
+  ];
+
   return (
     <>
       {/* Backdrop for mobile */}
@@ -224,44 +233,38 @@ export const AdminSidebar: React.FC<AdminSidebarProps> = ({ isOpen, onClose }) =
 
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${isOpen ? styles.open : ''}`}>
-        <nav className={styles.nav}>
-          <ul className={styles.navList}>
-            {visibleItems.map((item) => (
-              <li key={item.href}>
-                <Link
-                  href={item.href}
-                  className={`${styles.navItem} ${isActive(item.href) ? styles.active : ''}`}
-                  onClick={onClose}
-                >
-                  <span className={styles.navIcon}>{item.icon}</span>
-                  <span className={styles.navLabel}>{item.label}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
+        <nav className={styles.nav} aria-label="Panel de administración">
+          {grupos.map((g) => {
+            const items = visibleItems.filter((i) => g.hrefs.includes(i.href));
+            if (items.length === 0) return null;
+            const labelId = `nav-${g.titulo.toLowerCase()}`;
+            return (
+              <div key={g.titulo} className={`${styles.group} ${g.abajo ? styles.groupBottom : ''}`}>
+                <p id={labelId} className={styles.groupLabel}>{g.titulo}</p>
+                <ul className={styles.navList} aria-labelledby={labelId}>
+                  {items.map((item) => (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        className={`${styles.navItem} ${isActive(item.href) ? styles.active : ''}`}
+                        aria-current={isActive(item.href) ? 'page' : undefined}
+                        onClick={onClose}
+                      >
+                        <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
+                        <span className={styles.navLabel}>{item.label}</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
-        {/* Footer Info */}
         <div className={styles.footer}>
-          <div className={styles.footerInfo}>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
-              stroke="currentColor"
-              className={styles.footerIcon}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z"
-              />
-            </svg>
-            <div className={styles.footerText}>
-              <span className={styles.footerTitle}>Panel Admin</span>
-              <span className={styles.footerVersion}>v1.0.0</span>
-            </div>
+          <div className={styles.footerText}>
+            <span className={styles.footerTitle}>Panel de administración</span>
+            <span className={styles.footerVersion}>v1.0.0</span>
           </div>
         </div>
       </aside>

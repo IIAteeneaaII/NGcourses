@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarOf } from '@/lib/avatar';
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { InstructorHeader } from './InstructorHeader';
@@ -24,7 +25,7 @@ export const InstructorLayout: React.FC<InstructorLayoutProps> = ({ children }) 
         return;
       }
       const name = u.full_name || u.email;
-      const stored = localStorage.getItem(`avatar_${u.id}`);
+      const stored = avatarOf(u);
       setHeaderUser({
         name,
         initials: name.slice(0, 2).toUpperCase(),

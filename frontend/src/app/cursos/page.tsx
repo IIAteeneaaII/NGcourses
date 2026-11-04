@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarOf } from '@/lib/avatar';
 import { useEffect, useState } from 'react';
 import CoursesContent from '@/components/courses/CoursesContent';
 import type { CourseCard, User } from '@/types/course';
@@ -76,7 +77,7 @@ export default function CursosPage() {
 
         if (apiUser.status === 'fulfilled') {
           const u = apiUser.value;
-          const stored = localStorage.getItem(`avatar_${u.id}`);
+          const stored = avatarOf(u);
           setUser({
             id: u.id,
             name: u.full_name || u.email,

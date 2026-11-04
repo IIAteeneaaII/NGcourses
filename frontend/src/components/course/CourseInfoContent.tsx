@@ -6,6 +6,7 @@ import CourseCover from '@/components/shared/CourseCover';
 import StudentHeader from '@/components/shared/StudentHeader';
 import type { CourseInfo, SyllabusLesson } from '@/types/course';
 import PayPalCheckout from './PayPalCheckout';
+import CourseReviews from './CourseReviews';
 import styles from './CourseInfoContent.module.css';
 
 /** Avance del alumno inscrito (GET /progreso/curso/{id}). */
@@ -537,6 +538,8 @@ export default function CourseInfoContent({
                 </ul>
               </section>
             )}
+
+            <CourseReviews courseId={course.id} canReview={Boolean(isEnrolled) && !viewOnlyMode} />
           </div>
         </div>
       </main>

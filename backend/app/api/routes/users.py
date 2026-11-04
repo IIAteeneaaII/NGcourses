@@ -1,9 +1,10 @@
+import os
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from pydantic import EmailStr
 from sqlmodel import Field, SQLModel, col, delete, func, select
 
@@ -14,6 +15,7 @@ from app.api.deps import (
     SessionDep,
     require_admin_or_superuser,
 )
+from app.api.routes.cursos import ALLOWED_IMAGE_TYPES, _check_magic_image
 from app.core.limiter import limiter
 from app.core.config import settings
 from app.core.security import get_password_hash, hash_token, verify_password
@@ -208,6 +210,63 @@ def read_user_me(session: SessionDep, current_user: CurrentUser) -> Any:
         )
     data = current_user.model_dump()
     return UserMePublic(**data, organizacion=org_public)
+
+
+AVATARS_DIR = "/app/app/media/avatars"
+AVATAR_MAX_SIZE = 2 * 1024 * 1024  # 2 MB
+_AVATAR_EXT = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "image/gif": "gif"}
+
+
+def _remove_avatar_file(avatar_url: str | None) -> None:
+    """Borra del disco la foto anterior (solo si es nuestra y está en avatars/)."""
+    if not avatar_url or not avatar_url.startswith("/media/avatars/"):
+        return
+    name = os.path.basename(avatar_url)
+    path = os.path.join(AVATARS_DIR, name)
+    try:
+        os.remove(path)
+    except OSError:
+        pass
+
+
+@router.post("/me/avatar", response_model=UserPublic)
+async def upload_avatar_me(
+    *,
+    session: SessionDep,
+    current_user: CurrentUser,
+    file: UploadFile = File(...),
+) -> Any:
+    """Sube la foto de perfil del usuario actual al volumen de media."""
+    if file.content_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Usa JPG, PNG o WEBP.")
+    contents = await file.read()
+    if len(contents) > AVATAR_MAX_SIZE:
+        raise HTTPException(status_code=400, detail="La foto pesa más de 2 MB. Elige una más ligera.")
+    if not _check_magic_image(contents):
+        raise HTTPException(status_code=400, detail="Tipo de archivo no permitido. Usa JPG, PNG o WEBP.")
+
+    os.makedirs(AVATARS_DIR, exist_ok=True)
+    filename = f"{uuid.uuid4().hex}.{_AVATAR_EXT.get(file.content_type, 'jpg')}"
+    with open(os.path.join(AVATARS_DIR, filename), "wb") as f:
+        f.write(contents)
+
+    _remove_avatar_file(current_user.avatar_url)
+    current_user.avatar_url = f"/media/avatars/{filename}"
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me/avatar", response_model=UserPublic)
+def delete_avatar_me(session: SessionDep, current_user: CurrentUser) -> Any:
+    """Quita la foto de perfil del usuario actual."""
+    _remove_avatar_file(current_user.avatar_url)
+    current_user.avatar_url = None
+    session.add(current_user)
+    session.commit()
+    session.refresh(current_user)
+    return current_user
 
 
 @router.delete("/me", response_model=Message)

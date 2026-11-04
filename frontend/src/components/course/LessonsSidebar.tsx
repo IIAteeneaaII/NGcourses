@@ -36,7 +36,7 @@ export default function LessonsSidebar({
   };
 
   const TypeIcon = ({ tipo }: { tipo?: Lesson['tipo'] }) => (
-    <span style={{ flexShrink: 0, display: 'inline-flex', marginRight: 6, color: 'var(--color-text-faint)' }}>
+    <span className={styles.typeIcon} aria-hidden="true">
       {tipo === 'quiz' ? (
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
           <path d="M9 11l3 3L22 4" /><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" />
@@ -55,9 +55,9 @@ export default function LessonsSidebar({
 
   return (
     <div className={styles.container}>
-      <div style={{ padding: '0.9rem 1rem 0.65rem', borderBottom: '1px solid var(--color-border-default)' }}>
-        <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, color: 'var(--color-text-heading)' }}>Contenido del curso</h3>
-        <span style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+      <div className={styles.head}>
+        <h3 className={styles.headTitle}>Contenido del curso</h3>
+        <span className={styles.headMeta}>
           {done}/{total} lecciones completadas
         </span>
       </div>
@@ -71,19 +71,18 @@ export default function LessonsSidebar({
               <button
                 type="button"
                 onClick={() => toggle(module.id)}
-                style={{
-                  width: '100%', display: 'flex', alignItems: 'center', gap: '0.5rem',
-                  background: 'none', border: 'none', cursor: 'pointer', padding: '0.55rem 0.25rem', textAlign: 'left',
-                }}
+                className={styles.moduleToggle}
+                aria-expanded={!isCollapsed}
               >
                 <svg
-                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth={2}
-                  style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)', transition: 'transform .15s', flexShrink: 0 }}
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}
+                  className={`${styles.chevron} ${isCollapsed ? styles.chevronCollapsed : ''}`}
+                  aria-hidden="true"
                 >
                   <path d="M6 9l6 6 6-6" />
                 </svg>
-                <span className={styles.moduleTitle} style={{ flex: 1, margin: 0 }}>{idx + 1}. {module.name}</span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--color-text-faint)', flexShrink: 0 }}>{modDone}/{module.lessons.length}</span>
+                <span className={styles.moduleTitle}>{idx + 1}. {module.name}</span>
+                <span className={styles.moduleCount}>{modDone}/{module.lessons.length}</span>
               </button>
 
               {!isCollapsed && (

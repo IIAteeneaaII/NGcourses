@@ -1,234 +1,475 @@
+/* Dashboard del admin con el mismo lenguaje que las pantallas del alumno:
+   tarjetas blancas con borde fino y radio de 12px, barras de avance delgadas
+   en turquesa y tipografía Geist con cifras tabulares. */
+
 .dashboard {
   width: 100%;
-  max-width: 72rem;
+  max-width: 80rem;
   margin: 0 auto;
-}
-
-/* ── Accesos rápidos ──────────────────────────────────────────────────── */
-
-.shortcuts {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.5rem;
+  gap: 1.5rem;
 }
 
-.shortcut {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.875rem;
-  padding: 1rem 1.125rem;
-  border: 1px solid var(--color-border-default);
-  border-radius: 0.75rem;
-  background: var(--color-surface);
-  color: inherit;
-  text-decoration: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
+.dashboard > :first-child {
+  margin-bottom: 0;
 }
 
-.shortcut:hover {
-  border-color: var(--color-accent-10);
-  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.06));
+/* ── Tarjetas ─────────────────────────────────────────────────────────── */
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 1.5rem;
 }
 
-.shortcut:hover .shortcutArrow {
-  color: var(--color-accent-10);
-  transform: translateX(2px);
+.rowEven {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.5rem;
 }
 
-.shortcut:focus-visible {
-  outline: 2px solid var(--color-secondary-30-light);
-  outline-offset: 2px;
-}
-
-.shortcutIcon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 0.625rem;
-  background: var(--color-secondary-30-lighter);
-  color: var(--color-secondary-30);
-}
-
-[data-theme='dark'] .shortcutIcon {
-  background: rgba(61, 193, 204, 0.12);
-  color: var(--color-secondary-30-light);
-}
-
-.shortcutBody {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  flex: 1;
+.panel {
   min-width: 0;
-}
-
-.shortcutTitle {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  color: var(--color-text-heading);
-}
-
-.shortcutText {
-  font-size: 0.8125rem;
-  line-height: 1.45;
-  color: var(--color-text-muted);
-}
-
-.shortcutArrow {
-  flex-shrink: 0;
-  margin-top: 0.75rem;
-  color: var(--color-text-faint);
-  transition: transform 0.15s, color 0.15s;
-}
-
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 1.25rem;
-  height: 1.25rem;
-  padding: 0 0.375rem;
-  border-radius: 999px;
-  background: var(--color-warning);
-  color: #fff;
-  font-size: 0.6875rem;
-  font-weight: 700;
-}
-
-/* ── Cursos recientes ─────────────────────────────────────────────────── */
-
-.recent {
+  padding: 1.5rem;
   border: 1px solid var(--color-border-default);
   border-radius: 0.75rem;
-  background: var(--color-surface);
-  overflow: hidden;
+  background: var(--color-primary-60-alt);
+  display: grid;
+  gap: 1.25rem;
+  align-content: start;
 }
 
-.recentHeader {
+.panelHead {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  padding: 0.875rem 1.125rem;
-  border-bottom: 1px solid var(--color-border-default);
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
 }
 
-.recentTitle {
+.panelTitle {
   margin: 0;
-  font-size: 0.9375rem;
+  font-size: 1.0625rem;
   font-weight: 600;
   color: var(--color-text-heading);
 }
 
-.viewAllLink {
+/* Enlace igual que "Ver mi progreso" del alumno */
+.link {
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-accent-10);
-  text-decoration: none;
+  color: var(--color-text-heading);
+  text-decoration: underline;
+  text-decoration-color: var(--color-border-strong);
+  text-underline-offset: 3px;
 }
 
-.viewAllLink:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.link:hover {
+  text-decoration-color: var(--color-secondary-30);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .empty {
   margin: 0;
-  padding: 2rem 1.125rem;
-  font-size: 0.875rem;
-  color: var(--color-text-muted);
-  text-align: center;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
 }
 
-.recentList {
+.skeleton {
+  height: 12rem;
+  border-radius: 0.75rem;
+  background: var(--color-surface-subtle);
+}
+
+/* ── Avance de los alumnos ────────────────────────────────────────────── */
+
+.board {
+  --seg-idle: #dde3e8;
+  --seg-active: var(--color-secondary-30-light);
+  --seg-done: var(--color-secondary-30);
+}
+
+[data-theme='dark'] .board {
+  --seg-idle: #2c3542;
+}
+
+.boardSub {
+  margin: 0.25rem 0 0;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.stats {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.recentList li + li {
-  border-top: 1px solid var(--color-border-default);
-}
-
-.recentItem {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto 4.5rem;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.stat {
+  display: grid;
+  gap: 0.375rem;
+  padding: 0 1.5rem;
+  border-left: 1px solid var(--color-border-default);
+}
+
+.stat:first-child {
+  padding-left: 0;
+  border-left: none;
+}
+
+.stat dt {
+  display: flex;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.75rem 1.125rem;
-  color: inherit;
-  text-decoration: none;
+  gap: 0.5rem;
   font-size: 0.875rem;
+  color: var(--color-text-secondary);
 }
 
-.recentItem:hover {
-  background: var(--color-table-row-hover);
+.stat dd {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
 }
 
-.recentInitials {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.5rem;
-  background: var(--color-secondary-30-lighter);
-  color: var(--color-secondary-30);
-  font-size: 0.75rem;
+.statNum {
+  font-size: 2rem;
   font-weight: 600;
-}
-
-[data-theme='dark'] .recentInitials {
-  background: rgba(61, 193, 204, 0.12);
-  color: var(--color-secondary-30-light);
-}
-
-.recentName {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: var(--color-text-heading);
+  font-variant-numeric: tabular-nums;
 }
 
-.recentDate {
-  text-align: right;
+.statPct {
+  font-size: 0.875rem;
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
 
-.status {
+.rail {
+  display: flex;
+  gap: 3px;
+  height: 0.5rem;
+}
+
+.seg {
+  min-width: 0;
+  transition: flex-grow 0.4s ease;
+}
+
+.seg:first-child {
+  border-radius: 999px 0 0 999px;
+}
+
+.seg:last-child {
+  border-radius: 0 999px 999px 0;
+}
+
+.segIdle { background: var(--seg-idle); }
+.segActive { background: var(--seg-active); }
+.segDone { background: var(--seg-done); }
+
+.swatch {
+  display: inline-block;
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* ── Gráfica de actividad ─────────────────────────────────────────────── */
+
+.keys {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+}
+
+.keys span {
   display: inline-flex;
   align-items: center;
+  gap: 0.375rem;
+}
+
+.key {
+  display: inline-block;
+}
+
+.keyBar {
+  width: 0.625rem;
+  height: 0.625rem;
+  border-radius: 2px;
+  background: var(--color-secondary-30);
+}
+
+.keyLine {
+  width: 1rem;
+  height: 2px;
+  background: var(--color-text-heading);
+}
+
+.chartWrap {
+  overflow-x: auto;
+}
+
+.chart {
+  display: block;
+  width: 100%;
+  min-width: 30rem;
+  height: auto;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.grid {
+  stroke: var(--color-border-default);
+  stroke-width: 1;
+}
+
+.axis {
+  font-size: 11px;
+  fill: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.axisLine {
+  fill: var(--color-text-muted);
+}
+
+.bar {
+  fill: var(--color-secondary-30);
+  opacity: 0.3;
+}
+
+.barNow {
+  fill: var(--color-secondary-30);
+}
+
+[data-theme='dark'] .bar {
+  opacity: 0.4;
+}
+
+.line {
+  fill: none;
+  stroke: var(--color-text-heading);
+  stroke-width: 1.75;
+  stroke-linejoin: round;
+}
+
+.dot {
+  fill: var(--color-primary-60-alt);
+  stroke: var(--color-text-heading);
+  stroke-width: 1.75;
+}
+
+/* ── Catálogo (anillo) ────────────────────────────────────────────────── */
+
+.catalog {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.ring {
+  width: 7.5rem;
+  height: 7.5rem;
+  flex-shrink: 0;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.ringTrack {
+  fill: none;
+  stroke: var(--color-surface-subtle);
+  stroke-width: 10;
+}
+
+.ringSeg {
+  fill: none;
+  stroke-width: 10;
+}
+
+.ringNum {
+  font-size: 28px;
+  font-weight: 600;
+  fill: var(--color-text-heading);
+}
+
+.ringCap {
+  font-size: 11px;
+  fill: var(--color-text-muted);
+}
+
+.ringPub { stroke: var(--color-secondary-30); background: var(--color-secondary-30); }
+.ringRev { stroke: #d99a2b; background: #d99a2b; }
+.ringDraft { stroke: #a9b3bf; background: #a9b3bf; }
+.ringRej { stroke: #c2410c; background: #c2410c; }
+
+[data-theme='dark'] .ringDraft { stroke: #5b6675; background: #5b6675; }
+
+.catalogList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.625rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.catalogList li {
+  display: flex;
+  align-items: center;
   gap: 0.5rem;
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+}
+
+.catalogList b {
+  margin-left: auto;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-heading);
+}
+
+.callout {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  border: 1px solid rgba(217, 154, 43, 0.35);
+  border-radius: 0.625rem;
+  background: rgba(217, 154, 43, 0.08);
+  color: #7a4f0f;
+  text-decoration: none;
+  font-size: 0.9375rem;
+}
+
+.callout:hover {
+  background: rgba(217, 154, 43, 0.14);
+}
+
+.callout:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
+}
+
+.calloutGo {
+  font-weight: 600;
+}
+
+[data-theme='dark'] .callout {
+  color: #f0c477;
+  border-color: rgba(217, 154, 43, 0.35);
+  background: rgba(217, 154, 43, 0.1);
+}
+
+/* ── Rankings: mismas barras que "Mi progreso" ────────────────────────── */
+
+.rank {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+}
+
+.rankRow {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.rankRow:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.rankRow:last-child {
+  padding-bottom: 0;
+}
+
+.rankTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.rankName {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
-  color: var(--color-text-body);
 }
 
-.status::before {
-  content: '';
-  width: 0.5rem;
-  height: 0.5rem;
-  border-radius: 50%;
-  background: var(--color-text-faint);
+a.rankName:hover {
+  text-decoration: underline;
+  text-decoration-color: var(--color-secondary-30);
+  text-underline-offset: 3px;
 }
 
-.status_publicado::before { background: var(--color-success); }
-.status_revision::before { background: var(--color-warning); }
-.status_rechazado::before { background: var(--color-error); }
+.rankPct {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
 
-@media (max-width: 640px) {
-  .recentItem {
-    grid-template-columns: auto minmax(0, 1fr) auto;
+.meter {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--color-surface-subtle);
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--color-secondary-30);
+}
+
+.rankMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1024px) {
+  .row,
+  .rowEven {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    row-gap: 1.25rem;
   }
 
-  .recentDate {
-    display: none;
+  .stat:nth-child(3) {
+    padding-left: 0;
+    border-left: none;
+  }
+
+  .statNum {
+    font-size: 1.625rem;
+  }
+
+  .panel {
+    padding: 1.125rem;
   }
 }

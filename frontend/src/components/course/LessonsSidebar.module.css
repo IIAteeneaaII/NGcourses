@@ -1,141 +1,217 @@
+/* Contenido del curso en la vista de lección. Mismo lenguaje que las
+   pantallas del alumno: tarjeta blanca con borde fino, filas planas y la
+   lección actual marcada con una línea turquesa. */
+
 .container {
   background-color: var(--color-primary-60-alt);
-  border-radius: 1rem;
-  padding: 1.25rem;
-  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
   max-height: 800px;
   overflow-y: auto;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+.head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  gap: 0.125rem;
+  padding: 1.125rem 1.25rem 0.875rem;
+  background-color: var(--color-primary-60-alt);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.headTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.headMeta {
+  font-size: 0.8125rem;
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.lessonList {
+  display: flex;
+  flex-direction: column;
+  padding: 0.5rem 0 0.75rem;
+}
+
+.moduleContainer {
+  padding: 0.25rem 0;
+}
+
+.moduleContainer + .moduleContainer {
+  border-top: 1px solid var(--color-border-default);
+}
+
+.moduleToggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: var(--color-text-muted);
+}
+
+.moduleToggle:hover .moduleTitle {
+  color: var(--color-secondary-30);
+}
+
+.moduleToggle:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: -2px;
+}
+
+.chevron {
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+}
+
+.chevronCollapsed {
+  transform: rotate(-90deg);
+}
+
+.moduleTitle {
+  flex: 1;
+  margin: 0;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+  transition: color 0.15s ease;
+}
+
+.moduleCount {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.moduleLessonList {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0.25rem;
+}
+
+.lessonItem {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.5rem;
+  padding: 0.5rem 1.25rem 0.5rem 2.625rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--color-text-body);
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.lessonItem:hover {
+  background-color: var(--color-surface-muted);
+  color: var(--color-text-heading);
+}
+
+.lessonItemCompleted {
+  color: var(--color-text-secondary);
+}
+
+.lessonItemActive {
+  background-color: rgba(0, 150, 143, 0.07);
+  color: var(--color-text-heading);
+  font-weight: 600;
+}
+
+.lessonItemActive::before {
+  content: '';
+  position: absolute;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background-color: var(--color-secondary-30);
+}
+
+:global([data-theme='dark']) .lessonItemActive {
+  background-color: rgba(61, 193, 204, 0.1);
+}
+
+:global([data-theme='dark']) .lessonItemActive::before {
+  background-color: var(--color-secondary-30-light);
+}
+
+.typeIcon {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-text-faint);
+}
+
+.lessonItemActive .typeIcon {
+  color: var(--color-secondary-30);
+}
+
+.lessonName {
+  flex: 1;
+  min-width: 0;
+}
+
+.lessonIcon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.checkIcon {
+  display: inline-flex;
+  color: var(--color-secondary-30);
+}
+
+.arrowIcon {
+  display: inline-flex;
+  color: var(--color-text-faint);
+}
+
+/* Clases heredadas que aún pueden usarse en otras vistas */
 .tabs {
   display: flex;
   gap: 1.25rem;
   margin-bottom: 1.25rem;
-  border-bottom: 2px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .tab {
   padding-bottom: 0.75rem;
-  padding-left: 0;
-  padding-right: 0;
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 0.875rem;
   flex: 1;
   text-align: center;
-  transition: color 0.2s ease;
   color: var(--color-text-secondary);
 }
 
 .tabActive {
-  color: var(--color-secondary-30);
-  border-bottom: 4px solid var(--color-secondary-30);
-  font-weight: bold;
+  color: var(--color-text-heading);
+  border-bottom: 2px solid var(--color-secondary-30);
+  font-weight: 600;
 }
 
-.lessonList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.lessonItem {
-  padding: 1rem;
-  border-radius: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  background-color: var(--color-primary-60);
-}
-
-.lessonItem:hover {
-  background-color: var(--color-secondary-30-lighter);
-}
-
-.lessonItemCompleted {
-  background-color: var(--color-success-light);
-}
-
-.lessonItemActive {
-  background-color: var(--color-accent-10-light);
-  border-left: 4px solid var(--color-accent-10);
-  font-weight: bold;
-}
-
-.lessonName {
-  flex: 1;
-  color: var(--color-text-primary);
-}
-
-.lessonIcon {
-  width: 1.5rem;
-  height: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.checkIcon {
-  color: var(--color-success);
-  font-size: 1.25rem;
-}
-
-.arrowIcon {
-  color: var(--color-text-light);
-  font-size: 1rem;
-}
-
-.moduleTitle {
-  font-weight: bold;
-  color: var(--color-secondary-30);
-  margin-bottom: 0.5rem;
-}
-
-.moduleContainer {
-  margin-bottom: 1rem;
-}
-
-.moduleLessonList {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.moduleLessonItem {
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 0.875rem;
-  background-color: var(--color-primary-60);
-}
-
-.moduleLessonItem:hover {
-  background-color: var(--color-secondary-30-lighter);
-}
-
-@media (max-width: 768px) {
+@media (max-width: 1023px) {
   .container {
     max-height: none;
-    border-radius: 0.75rem;
-    padding: 1rem;
-  }
-
-  .tabs {
-    gap: 0.75rem;
-  }
-
-  .lessonItem {
-    padding: 0.75rem;
-  }
-
-  .moduleLessonItem {
-    padding: 0.625rem;
   }
 }

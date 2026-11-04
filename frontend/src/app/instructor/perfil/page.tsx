@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarOf, avatarFileError, AVATAR_ACCEPT } from '@/lib/avatar';
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authApi, cursosApi, usersApi } from '@/lib/api/client';
@@ -7,6 +8,7 @@ import styles from './page.module.css';
 
 interface ApiUser {
   id: string;
+  avatar_url?: string | null;
   full_name: string | null;
   email: string;
   telefono: string | null;
@@ -38,6 +40,7 @@ export default function PerfilInstructorPage() {
   const [pwdError, setPwdError] = useState('');
   const [pwdOk, setPwdOk] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -49,8 +52,7 @@ export default function PerfilInstructorPage() {
         ]);
         setUser(userRaw);
         setCursos(cursosResp.data);
-        const stored = localStorage.getItem(`avatar_${userRaw.id}`);
-        if (stored) setAvatarUrl(stored);
+        setAvatarUrl(avatarOf(userRaw));
       } catch {
         // fallo silencioso
       } finally {
@@ -108,16 +110,22 @@ export default function PerfilInstructorPage() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !user) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setAvatarUrl(dataUrl);
-      localStorage.setItem(`avatar_${user.id}`, dataUrl);
-    };
-    reader.readAsDataURL(file);
+    const problema = avatarFileError(file);
+    if (problema) {
+      setAvatarError(problema);
+      return;
+    }
+    setAvatarError('');
+    try {
+      const actualizado = (await usersApi.uploadAvatar(file)) as { avatar_url?: string | null };
+      setAvatarUrl(actualizado.avatar_url ?? null);
+    } catch (err) {
+      setAvatarError((err as { detail?: string })?.detail || 'No se pudo subir la foto. Inténtalo de nuevo.');
+    }
   };
 
   if (loading) {
@@ -161,7 +169,8 @@ export default function PerfilInstructorPage() {
                 <circle cx="12" cy="13" r="4" />
               </svg>
             </button>
-            <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+            <input ref={fileRef} type="file" accept={AVATAR_ACCEPT} style={{ display: 'none' }} onChange={handleAvatarChange} />
+      {avatarError && <p role="alert" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: 'var(--color-error)' }}>{avatarError}</p>}
           </div>
           <div className={styles.profileInfo}>
             <h1 className={styles.profileName}>{nombre}</h1>

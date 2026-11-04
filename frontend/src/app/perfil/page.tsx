@@ -1,5 +1,6 @@
 'use client';
 
+import { avatarOf, avatarFileError, AVATAR_ACCEPT } from '@/lib/avatar';
 import React, { useEffect, useRef, useState } from 'react';
 import ProfileContent from '@/components/profile/ProfileContent';
 import { authApi, cursosApi, inscripcionesApi, progresoApi, usersApi } from '@/lib/api/client';
@@ -9,6 +10,7 @@ import { EditProfileSchema, ChangePasswordSchema } from '@/schemas/profile';
 
 interface ApiUser {
   id: string;
+  avatar_url?: string | null;
   full_name: string | null;
   email: string;
   telefono: string | null;
@@ -67,6 +69,7 @@ export default function PerfilPage() {
   const [pwdError, setPwdError] = useState('');
   const [pwdOk, setPwdOk] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [avatarError, setAvatarError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -94,8 +97,7 @@ export default function PerfilPage() {
           organizacion: userRaw.organizacion || null,
         });
 
-        const stored = localStorage.getItem(`avatar_${userRaw.id}`);
-        if (stored) setAvatarUrl(stored);
+        setAvatarUrl(avatarOf(userRaw));
 
         const inscripciones = inscResp.data;
         const completed = inscripciones.filter((i) => i.estado === 'finalizada').length;
@@ -203,16 +205,22 @@ export default function PerfilPage() {
     }
   };
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file || !userId) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const dataUrl = ev.target?.result as string;
-      setAvatarUrl(dataUrl);
-      localStorage.setItem(`avatar_${userId}`, dataUrl);
-    };
-    reader.readAsDataURL(file);
+    const problema = avatarFileError(file);
+    if (problema) {
+      setAvatarError(problema);
+      return;
+    }
+    setAvatarError('');
+    try {
+      const actualizado = (await usersApi.uploadAvatar(file)) as { avatar_url?: string | null };
+      setAvatarUrl(actualizado.avatar_url ?? null);
+    } catch (err) {
+      setAvatarError((err as { detail?: string })?.detail || 'No se pudo subir la foto. Inténtalo de nuevo.');
+    }
   };
 
   if (loading) {
@@ -233,7 +241,8 @@ export default function PerfilPage() {
         onEditClick={handleOpenEdit}
         onAvatarClick={() => fileRef.current?.click()}
       />
-      <input ref={fileRef} type="file" accept="image/*" style={{ display: 'none' }} onChange={handleAvatarChange} />
+      <input ref={fileRef} type="file" accept={AVATAR_ACCEPT} style={{ display: 'none' }} onChange={handleAvatarChange} />
+      {avatarError && <p role="alert" style={{ margin: '0.5rem 0 0', fontSize: '0.875rem', color: 'var(--color-error)' }}>{avatarError}</p>}
 
       {editOpen && (
         <div className={styles.modalOverlay} onClick={() => setEditOpen(false)}>

@@ -111,9 +111,14 @@ export default function LoginContent() {
           </p>
 
           {carouselItems.length > 0 && (
-            <div className={styles.courseCarousel} aria-label="Cursos destacados">
-              <span className={styles.carouselLabel}>Cursos destacados</span>
-              <div className={styles.carouselViewport}>
+            <div className={styles.courseCarousel} role="region" aria-label="Cursos destacados" tabIndex={0}>
+              <span className={styles.carouselLabel} aria-hidden="true">Destacados</span>
+              <ul className={styles.srOnly}>
+                {carouselItems.map((curso, index) => (
+                  <li key={`sr-${curso}-${index}`}>{curso}</li>
+                ))}
+              </ul>
+              <div className={styles.carouselViewport} aria-hidden="true">
                 <div className={styles.carouselTrack}>
                   {[0, 1].map((group) => (
                     <div className={styles.carouselGroup} key={group}>

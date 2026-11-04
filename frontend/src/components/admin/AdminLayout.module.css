@@ -4,6 +4,7 @@
   flex-direction: column;
   min-height: 100vh;
   background-color: var(--color-primary-60);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
 /* Content Wrapper */

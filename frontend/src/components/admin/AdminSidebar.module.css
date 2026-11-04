@@ -1,70 +1,120 @@
-/* Sidebar */
+/* Barra lateral de los paneles (admin, instructor, supervisor).
+   Misma superficie que el encabezado y que la vista del alumno: blanca en
+   claro y gris pizarra en oscuro. La sección activa se marca con una línea
+   turquesa de 2px, igual que la pestaña activa del encabezado del alumno. */
+
 .sidebar {
   display: flex;
   flex-direction: column;
-  width: 16rem;
+  flex-shrink: 0;
+  width: 15rem;
   height: calc(100vh - 4rem);
-  background-color: var(--color-sidebar-bg);
-  border-right: 1px solid var(--color-sidebar-edge);
-  color: var(--color-text-white);
-  transition: transform 0.3s ease-in-out;
-  overflow-y: auto;
   position: sticky;
   top: 4rem;
+  overflow-y: auto;
+  background-color: var(--color-sidebar-bg);
+  border-right: 1px solid var(--color-sidebar-edge);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  transition: transform 0.25s ease;
 }
 
-/* Navigation */
 .nav {
   flex: 1;
-  padding: 1.5rem 0;
+  padding: 1.25rem 0 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.group {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.groupBottom {
+  margin-top: auto;
+}
+
+.groupLabel {
+  margin: 0 0 0.25rem;
+  padding: 0 1.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-faint);
 }
 
 .navList {
   list-style: none;
   margin: 0;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  display: grid;
+  gap: 0.125rem;
 }
 
 .navItem {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.875rem 1.5rem;
-  color: rgba(255, 255, 255, 0.8);
-  text-decoration: none;
+  min-height: 2.5rem;
+  padding: 0 1.5rem;
+  color: var(--color-text-secondary);
   font-size: 0.9375rem;
   font-weight: 500;
-  transition: all 0.2s ease-in-out;
-  border-left: 3px solid transparent;
+  text-decoration: none;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.navItem::before {
+  content: '';
+  position: absolute;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  left: 0;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background-color: transparent;
 }
 
 .navItem:hover {
+  color: var(--color-text-heading);
   background-color: var(--color-sidebar-item-hover);
-  color: var(--color-text-white);
-  border-left-color: var(--color-sidebar-indicator);
 }
 
 .navItem:focus-visible {
-  outline: 2px solid var(--color-sidebar-indicator);
+  outline: 2px solid var(--color-secondary-30);
   outline-offset: -2px;
 }
 
 .navItem.active {
+  color: var(--color-text-heading);
+  font-weight: 600;
   background-color: var(--color-sidebar-item-active);
-  color: var(--color-text-white);
-  border-left-color: var(--color-sidebar-indicator);
+}
+
+.navItem.active::before {
+  background-color: var(--color-sidebar-indicator);
 }
 
 .navIcon {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.125rem;
+  height: 1.125rem;
   flex-shrink: 0;
+  color: var(--color-text-faint);
+  transition: color 0.15s ease;
+}
+
+.navItem:hover .navIcon {
+  color: var(--color-text-secondary);
+}
+
+.navItem.active .navIcon {
+  color: var(--color-sidebar-indicator);
 }
 
 .navIcon svg {
@@ -74,114 +124,88 @@
 
 .navLabel {
   flex: 1;
+  min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Footer */
+/* Pie: solo texto, sin icono ni tarjeta */
 .footer {
-  padding: 1.5rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 0.875rem 1.5rem 1rem;
+  border-top: 1px solid var(--color-sidebar-edge);
 }
 
 .footerInfo {
   display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
 }
 
 .footerIcon {
-  width: 2rem;
-  height: 2rem;
-  color: rgba(255, 255, 255, 0.6);
-  flex-shrink: 0;
+  display: none;
 }
 
 .footerText {
   display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .footerTitle {
-  font-size: 0.875rem;
+  font-size: 0.8125rem;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--color-text-muted);
 }
 
 .footerVersion {
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-text-faint);
+  font-variant-numeric: tabular-nums;
 }
 
-/* Scrollbar Styling */
 .sidebar::-webkit-scrollbar {
   width: 6px;
 }
 
-.sidebar::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-}
-
 .sidebar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-border-strong);
   border-radius: 3px;
 }
 
-.sidebar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.3);
-}
-
-/* Mobile: Hidden by default */
+/* Celular y tablet: panel que entra desde la izquierda */
 @media (max-width: 1024px) {
   .sidebar {
     position: fixed;
     top: 4rem;
     left: 0;
     z-index: 1000;
+    width: 17rem;
     transform: translateX(-100%);
-    box-shadow: var(--shadow-lg);
   }
 
   .sidebar.open {
     transform: translateX(0);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .navItem {
+    min-height: 2.75rem;
   }
 
   .backdrop {
     position: fixed;
-    top: 4rem;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: rgba(0, 0, 0, 0.5);
+    inset: 4rem 0 0 0;
     z-index: 999;
-    animation: fadeIn 0.3s ease-in-out;
-  }
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
+    background-color: rgba(15, 20, 26, 0.4);
   }
 }
 
-/* Tablet: Narrower sidebar */
-@media (max-width: 1280px) and (min-width: 1025px) {
+@media (prefers-reduced-motion: reduce) {
   .sidebar {
-    width: 14rem;
-  }
-
-  .navItem {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.875rem;
-  }
-
-  .navIcon {
-    width: 1.25rem;
-    height: 1.25rem;
+    transition: none;
   }
 }
