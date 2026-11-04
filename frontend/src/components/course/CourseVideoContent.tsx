@@ -178,9 +178,9 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         </header>
         <div className={styles.main}>
           <div className={styles.backButtonContainer}>
-            <Link href={resolvedBackHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-              Volver a información del curso
+            <Link href={resolvedBackHref} className={styles.backButton}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              Información del curso
             </Link>
           </div>
           <p style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-secondary)' }}>
@@ -208,7 +208,13 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       </header>
 
       <div className={styles.main}>
-        <h1 className={styles.pageTitle}>Curso: {course.title}</h1>
+        <div className={styles.backButtonContainer}>
+          <Link href={resolvedBackHref} className={styles.backButton}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            Información del curso
+          </Link>
+        </div>
+        <h1 className={styles.pageTitle}>{course.title}</h1>
 
         {readOnlyMode && (
           <div className={styles.readOnlyBanner}>
@@ -216,12 +222,6 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
           </div>
         )}
 
-        <div className={styles.backButtonContainer}>
-          <Link href={resolvedBackHref} className={styles.backButton} style={{ display: 'inline-flex', alignItems: 'center', gap: '0.375rem' }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" /></svg>
-            Volver a información del curso
-          </Link>
-        </div>
 
         {certFolio && (
           <div className={styles.certBanner}>
@@ -303,12 +303,12 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       {completionModal && (
         <div className={styles.modalOverlay} onClick={() => setCompletionModal(null)}>
           <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <button className={styles.modalClose} onClick={() => setCompletionModal(null)}>
+            <button className={styles.modalClose} onClick={() => setCompletionModal(null)} aria-label="Cerrar">
               <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
             </button>
             <div className={styles.modalIcon}><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg></div>
             <h2 className={styles.modalTitle}>¡Felicidades!</h2>
-            <p className={styles.modalSubtitle}>Has completado el curso exitosamente.</p>
+            <p className={styles.modalSubtitle}>Completaste el curso. Cuéntale a otros qué te pareció.</p>
             <div className={styles.modalActions}>
               <button
                 className={styles.modalBtnPrimary}
@@ -320,14 +320,20 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
                   : downloading
                   ? 'Descargando...'
                   : completionModal.folio
-                  ? 'Descargar Certificado'
+                  ? 'Descargar certificado'
                   : 'Certificado no disponible'}
+              </button>
+              <button
+                className={styles.modalBtnSecondary}
+                onClick={() => router.push(`/curso/${course.id}#resenas`)}
+              >
+                Calificar el curso
               </button>
               <button
                 className={styles.modalBtnSecondary}
                 onClick={() => router.push('/mis-cursos')}
               >
-                Ir a Mis Cursos
+                Ir a Mis cursos
               </button>
             </div>
           </div>

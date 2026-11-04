@@ -2,22 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import type { Resource } from '@/types/course';
-import { calificacionesApi, cursosApi } from '@/lib/api/client';
+import { cursosApi } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import styles from './VideoControls.module.css';
-
-interface CalificacionPublic {
-  id: string;
-  comentario: string | null;
-  titulo: string | null;
-  estrellas: number;
-  creado_en: string;
-}
-
-interface CalificacionesResp {
-  data: CalificacionPublic[];
-  count: number;
-}
 
 interface VideoControlsProps {
   progress: number;
@@ -44,7 +31,7 @@ export default function VideoControls({
   downloading,
   readOnlyMode = false,
 }: VideoControlsProps) {
-  const [activeTab, setActiveTab] = useState<'resumen' | 'recursos' | 'notas' | 'comentarios'>('resumen');
+  const [activeTab, setActiveTab] = useState<'resumen' | 'recursos' | 'notas'>('resumen');
   const [isCompleted, setIsCompleted] = useState(false);
   const [descargandoRecurso, setDescargandoRecurso] = useState<string | null>(null);
 
@@ -85,50 +72,14 @@ export default function VideoControls({
     URL.revokeObjectURL(url);
   };
 
-  // Comentarios (calificaciones de curso)
-  const [comentarios, setComentarios] = useState<CalificacionPublic[]>([]);
-  const [nuevoComentario, setNuevoComentario] = useState('');
-  const [estrellas, setEstrellas] = useState(5);
-  const [loadingComentarios, setLoadingComentarios] = useState(false);
-  const [postingComentario, setPostingComentario] = useState(false);
-  const [comentarioMsg, setComentarioMsg] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
-
-  useEffect(() => {
-    if (activeTab === 'comentarios' && courseId) {
-      setLoadingComentarios(true);
-      (calificacionesApi.list(courseId) as Promise<CalificacionesResp>)
-        .then((resp) => setComentarios(resp.data ?? []))
-        .catch((e) => logError('VideoControls/calificaciones', e))
-        .finally(() => setLoadingComentarios(false));
-    }
-  }, [activeTab, courseId]);
-
-  const handlePostComentario = async () => {
-    if (!nuevoComentario.trim() || !courseId) return;
-    setPostingComentario(true);
-    setComentarioMsg(null);
-    try {
-      await calificacionesApi.create(courseId, { estrellas, comentario: nuevoComentario });
-      const resp = await calificacionesApi.list(courseId) as CalificacionesResp;
-      setComentarios(resp.data ?? []);
-      setNuevoComentario('');
-      setComentarioMsg({ tipo: 'ok', texto: '¡Publicado! Aparece abajo y suma a la reseña del curso.' });
-    } catch (e) {
-      // El backend devuelve 409 si ya reseñaste, 403 si no estás inscrito.
-      const detail = (e as { detail?: string })?.detail || 'No se pudo publicar el comentario.';
-      setComentarioMsg({ tipo: 'error', texto: detail });
-    } finally {
-      setPostingComentario(false);
-    }
-  };
-
   const handleMarkComplete = () => {
     setIsCompleted(true);
     onMarkComplete();
     setTimeout(() => setIsCompleted(false), 2000);
   };
 
-  const tabs = ['resumen', 'recursos', 'notas', 'comentarios'] as const;
+  // Las reseñas viven en la ficha del curso, no en cada lección.
+  const tabs = ['resumen', 'recursos', 'notas'] as const;
 
   const getFileIcon = (type: Resource['type']) => {
     switch (type) {
@@ -153,7 +104,7 @@ export default function VideoControls({
       <div className={styles.readOnlyPanel}>
         <h3 className={styles.readOnlyTitle}>Vista de solo lectura</h3>
         <p className={styles.readOnlyText}>
-          Puedes revisar esta lección sin marcar avance, publicar comentarios ni generar certificado.
+          Puedes revisar esta lección sin marcar avance, publicar reseñas ni generar certificado.
         </p>
         <div className={styles.readOnlyResources}>
           <h4 className={styles.readOnlySubtitle}>Recursos de la lección</h4>
@@ -267,71 +218,8 @@ export default function VideoControls({
         </div>
       )}
 
-      {activeTab === 'comentarios' && (
-        <div className={styles.tabContent}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--color-text-secondary)', marginBottom: '0.5rem' }}>
-            Tu comentario se publica como <strong>reseña pública del curso</strong>: aparece en la lista de abajo y suma a la calificación del curso. Puedes dejar una reseña por curso.
-          </p>
-          <div className={styles.comentarioForm}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem', marginBottom: '0.4rem' }}>
-              {[1, 2, 3, 4, 5].map((n) => (
-                <button
-                  key={n}
-                  type="button"
-                  onClick={() => setEstrellas(n)}
-                  aria-label={`${n} estrella${n > 1 ? 's' : ''}`}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.4rem', lineHeight: 1, padding: 0, color: n <= estrellas ? '#f59e0b' : '#cbd5e1' }}
-                >
-                  ★
-                </button>
-              ))}
-              <span style={{ fontSize: '0.8rem', color: 'var(--color-text-secondary)', marginLeft: '0.35rem' }}>{estrellas}/5</span>
-            </div>
-            <textarea
-              className={styles.notasTextarea}
-              value={nuevoComentario}
-              onChange={(e) => setNuevoComentario(e.target.value)}
-              placeholder="Escribe un comentario sobre este curso..."
-              rows={3}
-            />
-            <button
-              className={styles.saveNotaBtn}
-              onClick={handlePostComentario}
-              disabled={postingComentario}
-            >
-              {postingComentario ? 'Publicando...' : 'Publicar comentario'}
-            </button>
-            {comentarioMsg && (
-              <p style={{ fontSize: '0.8rem', marginTop: '0.4rem', color: comentarioMsg.tipo === 'ok' ? '#16a34a' : '#dc2626' }}>
-                {comentarioMsg.texto}
-              </p>
-            )}
-          </div>
-          {loadingComentarios ? (
-            <p className={styles.emptyMessage}>Cargando comentarios...</p>
-          ) : comentarios.length === 0 ? (
-            <p className={styles.emptyMessage}>No hay comentarios aún. ¡Sé el primero!</p>
-          ) : (
-            <ul className={styles.comentariosList}>
-              {comentarios.map((c) => (
-                <li key={c.id} className={styles.comentarioItem}>
-                  <div className={styles.comentarioMeta}>
-                    <span className={styles.comentarioEstrellas}>{'★'.repeat(c.estrellas)}</span>
-                    <span className={styles.comentarioFecha}>
-                      {new Date(c.creado_en).toLocaleDateString('es-MX')}
-                    </span>
-                  </div>
-                  {c.titulo && <p className={styles.comentarioTitulo}>{c.titulo}</p>}
-                  {c.comentario && <p className={styles.comentarioTexto}>{c.comentario}</p>}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-
       <div className={styles.progressSection}>
-        <p className={styles.progressLabel}>Progreso del Curso</p>
+        <p className={styles.progressLabel}>Progreso del curso</p>
         <div className={styles.progressBar}>
           <div className={styles.progressFill} style={{ width: `${progress}%` }} />
         </div>

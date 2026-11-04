@@ -785,3 +785,186 @@
 .verCursosBtn:hover:not(:disabled) {
   background: var(--color-accent-10-hover);
 }
+
+/* ── Armonía con Cursos y el dashboard ───────────────────────────────────
+   Tarjeta de borde fino sin sombra, pestañas como las del alumno, tabla con
+   encabezados discretos y acciones con borde: el verde queda solo para la
+   acción principal. */
+
+.tabs {
+  gap: 0.25rem;
+  border-bottom: 1px solid var(--color-border-default);
+  margin-bottom: 1.5rem;
+}
+
+.tab {
+  padding: 0 0.75rem;
+  height: 2.75rem;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+  font: inherit;
+  font-size: 0.9375rem;
+}
+
+.tabActive {
+  color: var(--color-text-heading);
+  border-bottom-color: var(--color-secondary-30);
+  font-weight: 600;
+}
+
+.card {
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  box-shadow: none;
+}
+
+.cardTitle {
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.countBadge {
+  padding: 0;
+  background: none;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.searchBar {
+  height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.5rem;
+  background: var(--color-surface);
+  margin-bottom: 1rem;
+}
+
+.searchInput {
+  font-size: 0.875rem;
+}
+
+.searchInput::placeholder {
+  color: var(--color-text-faint);
+}
+
+.tableWrapper {
+  border-radius: 0.75rem;
+}
+
+.table {
+  font-size: 0.875rem;
+}
+
+.table th {
+  padding: 0.625rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-faint);
+  background: var(--color-surface-muted);
+  border-bottom: 1px solid var(--color-border-default);
+}
+
+.table td {
+  padding: 0.75rem 1rem;
+  color: var(--color-text-body);
+}
+
+.alumnoName {
+  font-weight: 500;
+  color: var(--color-text-heading);
+}
+
+.alumnoEmail {
+  color: var(--color-text-muted);
+}
+
+/* Avatar en un solo tono, sin degradado */
+.avatar {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-heading);
+  font-weight: 600;
+}
+
+/* Estado como texto con punto, igual que en Cursos */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0;
+  border-radius: 0;
+  background: none;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  text-transform: capitalize;
+}
+
+.badge::before {
+  content: '';
+  width: 0.4375rem;
+  height: 0.4375rem;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.badgeActiva {
+  background: none;
+  color: var(--color-text-body);
+}
+
+.badgeActiva::before {
+  background: var(--color-success);
+}
+
+.badgeFinalizada {
+  background: none;
+  color: var(--color-text-body);
+}
+
+.badgeFinalizada::before {
+  background: var(--color-secondary-30);
+}
+
+.badgeCancelado {
+  background: none;
+  color: var(--color-tint-error-text, #b42318);
+}
+
+/* "Ver cursos": botón con borde; seleccionado, en turquesa suave */
+.verCursosBtn,
+.verCursosBtn.active {
+  height: 2rem;
+  padding: 0 0.75rem;
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.5rem;
+  font-weight: 500;
+}
+
+.verCursosBtn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-secondary-30);
+  opacity: 1;
+}
+
+.verCursosBtn.active {
+  border-color: var(--color-secondary-30);
+  background: rgba(0, 150, 143, 0.08);
+  color: var(--color-text-heading);
+}
+
+.pageBtn {
+  border: 1px solid var(--color-border-strong);
+}
+
+.pageBtn:hover:not(:disabled) {
+  background: var(--color-surface);
+  border-color: var(--color-secondary-30);
+}
+
+.table th:first-child,
+.table th:last-child {
+  border-radius: 0;
+}

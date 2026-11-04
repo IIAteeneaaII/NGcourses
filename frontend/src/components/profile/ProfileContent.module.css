@@ -1,25 +1,30 @@
+/* Perfil del alumno con el mismo lenguaje que "Mi progreso": Geist,
+   tarjetas blancas de borde fino, cifras en tinta oscura y barras de 6px. */
+
 .container {
   min-height: 100vh;
   background-color: var(--color-primary-60);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
-/* Header */
+/* Encabezado con las medidas del encabezado del alumno */
 .header {
-  background-color: var(--color-primary-60-alt);
-  box-shadow: var(--shadow-md);
-  padding: 0.75rem 0;
   position: sticky;
   top: 0;
   z-index: 100;
+  background-color: var(--color-primary-60-alt);
+  border-bottom: 1px solid var(--color-border-default);
 }
 
 .headerContent {
-  max-width: 1400px;
+  max-width: 1280px;
+  height: 64px;
   margin: 0 auto;
-  padding: 0 1.25rem;
+  padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1rem;
 }
 
 .logo {
@@ -28,14 +33,12 @@
   color: var(--color-secondary-30);
 }
 
-/* Logo NextGen como botón de regreso al dashboard */
 .logoLink {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   text-decoration: none;
   min-width: 0;
-  transition: opacity 0.15s ease;
 }
 
 .logoLink:hover {
@@ -71,47 +74,58 @@
 }
 
 .backButton {
-  padding: 0.5rem 1rem;
-  background: linear-gradient(135deg, var(--color-secondary-30), var(--color-secondary-30-light));
-  color: var(--color-text-white);
-  border: none;
-  border-radius: 0.375rem;
+  display: inline-flex;
+  align-items: center;
+  height: 2.25rem;
+  padding: 0 0.875rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.5rem;
+  background: var(--color-primary-60-alt);
+  color: var(--color-text-primary);
   font-size: 0.875rem;
-  font-weight: 700;
+  font-weight: 500;
   text-decoration: none;
-  box-shadow: 0 4px 12px rgba(0, 150, 143, 0.22);
-  transition: all 0.2s ease;
 }
 
 .backButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 16px rgba(0, 150, 143, 0.3);
-  filter: brightness(0.96);
+  border-color: var(--color-secondary-30);
 }
 
-/* Main Content */
 .main {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
-  padding: 2rem 1.25rem;
+  padding: 2.5rem 1.5rem 4rem;
+  display: grid;
+  gap: 1.5rem;
 }
 
 .pageTitle {
-  font-size: 1.5rem;
+  margin: 0;
+  font-size: 1.75rem;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+  color: var(--color-text-heading);
 }
 
-/* Profile Card */
-.profileCard {
+/* Tarjetas */
+.profileCard,
+.statsCard,
+.infoCard,
+.coursesCard {
   background-color: var(--color-primary-60-alt);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.75rem;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
 }
 
+.cardTitle {
+  margin: 0 0 1.25rem;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+/* Encabezado del perfil */
 .profileHeader {
   display: flex;
   align-items: center;
@@ -127,14 +141,13 @@
   width: 5rem;
   height: 5rem;
   border-radius: 50%;
-  background-color: var(--color-secondary-30);
-  color: var(--color-text-white);
   display: flex;
   align-items: center;
   justify-content: center;
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-heading);
   font-size: 1.5rem;
   font-weight: 600;
-  border: 3px solid var(--color-secondary-30-light);
 }
 
 .avatarImg {
@@ -142,185 +155,171 @@
   height: 5rem;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--color-secondary-30-light);
+  display: block;
+  box-shadow: 0 0 0 1px var(--color-border-default);
 }
 
 .changeAvatarBtn {
   position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 1.75rem;
-  height: 1.75rem;
-  background-color: var(--color-accent-10);
-  color: var(--color-text-white);
-  border: 2px solid var(--color-surface);
+  right: -2px;
+  bottom: -2px;
+  width: 2rem;
+  height: 2rem;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  border: 2px solid var(--color-primary-60-alt);
+  background-color: var(--color-text-heading);
+  color: var(--color-primary-60-alt);
   cursor: pointer;
-  transition: background-color 0.2s ease;
 }
 
 .changeAvatarBtn:hover {
   background-color: var(--color-secondary-30);
+  color: var(--color-text-white);
+}
+
+.changeAvatarBtn:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
 }
 
 .profileInfo {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .profileName {
+  margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0;
+  color: var(--color-text-heading);
 }
 
 .profileEmail {
-  font-size: 0.875rem;
+  margin: 0 0 0.625rem;
+  font-size: 0.9375rem;
   color: var(--color-text-secondary);
-  margin: 0;
 }
 
 .editButton {
-  margin-top: 0.5rem;
-  padding: 0.5rem 1rem;
-  background-color: var(--color-accent-10);
-  color: var(--color-text-white);
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.625rem;
+  background: var(--color-primary-60-alt);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: 0.9375rem;
   font-weight: 500;
   cursor: pointer;
-  transition: background-color 0.2s ease;
-  width: fit-content;
+  transition: border-color 0.15s ease;
 }
 
 .editButton:hover {
-  background-color: var(--color-accent-10-hover);
+  border-color: var(--color-secondary-30);
 }
 
-/* Stats Card */
-.statsCard {
-  background-color: var(--color-primary-60-alt);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
+.editButton:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
 }
 
-.cardTitle {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--color-text-primary);
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
+/* Cifras: como las del dashboard, separadas por líneas finas */
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  text-align: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .statItem {
   display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 0.375rem;
+  padding: 0 1.5rem;
+  border-left: 1px solid var(--color-border-default);
+}
+
+.statItem:first-child {
+  padding-left: 0;
+  border-left: none;
 }
 
 .statValue {
   font-size: 2rem;
-  font-weight: 700;
-  color: var(--color-secondary-30);
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-text-heading);
+  font-variant-numeric: tabular-nums;
 }
 
 .statLabel {
-  font-size: 0.75rem;
+  font-size: 0.875rem;
   color: var(--color-text-secondary);
 }
 
-/* Info Card */
-.infoCard {
-  background-color: var(--color-primary-60-alt);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
-}
-
+/* Información personal */
 .infoGrid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 1.25rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem 2rem;
 }
 
 .infoItem {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
 }
 
 .infoLabel {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
 }
 
-.infoValue {
-  font-size: 0.9375rem;
-  color: var(--color-text-primary);
-}
-
+.infoValue,
 .infoValueLink {
   font-size: 0.9375rem;
-  color: var(--color-secondary-30);
+  font-weight: 500;
+  color: var(--color-text-heading);
+  overflow-wrap: anywhere;
 }
 
-/* Courses Card */
-.coursesCard {
-  background-color: var(--color-primary-60-alt);
-  border-radius: 0.75rem;
-  padding: 1.5rem;
-  margin-bottom: 1.5rem;
-  box-shadow: var(--shadow-sm);
-}
-
+/* Cursos en progreso: filas como en "Mi progreso" */
 .coursesList {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  display: grid;
 }
 
 .courseItem {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(8rem, 14rem);
   align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  background-color: var(--color-primary-60);
-  border-radius: 0.5rem;
+  gap: 1.5rem;
+  padding: 0.875rem 0;
+  border-top: 1px solid var(--color-border-default);
+}
+
+.courseItem:first-child {
+  padding-top: 0;
+  border-top: none;
+}
+
+.courseItem:last-child {
+  padding-bottom: 0;
 }
 
 .courseNumber {
-  width: 2rem;
-  height: 2rem;
-  border-radius: 50%;
-  background-color: var(--color-secondary-30);
-  color: var(--color-text-white);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.75rem;
-  font-weight: 600;
-  flex-shrink: 0;
+  display: none;
 }
 
 .courseInfo {
-  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -329,38 +328,62 @@
 
 .courseTitle {
   font-size: 0.9375rem;
-  font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap;
+  font-weight: 600;
+  color: var(--color-text-heading);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .courseProgress {
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
   color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
 }
 
 .progressBarContainer {
-  width: 120px;
-  height: 0.5rem;
-  background-color: var(--color-border);
+  height: 6px;
   border-radius: 9999px;
+  background-color: var(--color-surface-subtle);
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .progressBar {
   height: 100%;
-  background-color: var(--color-secondary-30-light);
-  border-radius: 9999px;
+  border-radius: inherit;
+  background-color: var(--color-secondary-30);
   transition: width 0.3s ease;
 }
 
-/* Responsive */
 @media (max-width: 640px) {
+  .main {
+    padding: 1.5rem 1rem 3rem;
+    gap: 1rem;
+  }
+
+  .headerContent {
+    padding: 0 1rem;
+  }
+
+  .profileCard,
+  .statsCard,
+  .infoCard,
+  .coursesCard {
+    padding: 1.125rem;
+  }
+
   .statsGrid {
-    grid-template-columns: repeat(1, 1fr);
+    grid-template-columns: 1fr;
+    row-gap: 1rem;
+  }
+
+  .statItem {
+    padding: 0;
+    border-left: none;
+  }
+
+  .statValue {
+    font-size: 1.625rem;
   }
 
   .infoGrid {
@@ -368,20 +391,11 @@
   }
 
   .profileHeader {
-    flex-direction: column;
-    text-align: center;
-  }
-
-  .profileInfo {
-    align-items: center;
+    gap: 1rem;
   }
 
   .courseItem {
-    flex-wrap: wrap;
-  }
-
-  .progressBarContainer {
-    width: 100%;
-    order: 3;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
   }
 }

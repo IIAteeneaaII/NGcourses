@@ -15,6 +15,7 @@ export interface AuthUser {
   rol: 'estudiante' | 'instructor' | 'supervisor' | 'administrador';
   is_superuser: boolean;
   is_active: boolean;
+  avatar_url?: string | null;
   organizacion?: OrganizacionInfo | null;
 }
 

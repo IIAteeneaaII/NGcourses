@@ -33,7 +33,7 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
       </header>
 
       <main className={styles.main}>
-        <h1 className={styles.pageTitle}>Mi Perfil</h1>
+        <h1 className={styles.pageTitle}>Mi perfil</h1>
 
         <div className={styles.profileCard}>
           <div className={styles.profileHeader}>
@@ -56,7 +56,7 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
             <div className={styles.profileInfo}>
               <h2 className={styles.profileName}>{profile.name}</h2>
               <p className={styles.profileEmail}>{profile.email}</p>
-              <button className={styles.editButton} onClick={onEditClick}>Editar Perfil</button>
+              <button className={styles.editButton} onClick={onEditClick}>Editar perfil</button>
             </div>
           </div>
         </div>
@@ -66,28 +66,28 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
           <div className={styles.statsGrid}>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.coursesEnrolled}</span>
-              <span className={styles.statLabel}>Cursos Inscritos</span>
+              <span className={styles.statLabel}>Cursos inscritos</span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.coursesCompleted}</span>
-              <span className={styles.statLabel}>Cursos Completados</span>
+              <span className={styles.statLabel}>Cursos completados</span>
             </div>
             <div className={styles.statItem}>
               <span className={styles.statValue}>{statistics.totalTime}</span>
-              <span className={styles.statLabel}>Tiempo Total</span>
+              <span className={styles.statLabel}>Tiempo total</span>
             </div>
           </div>
         </div>
 
         <div className={styles.infoCard}>
-          <h3 className={styles.cardTitle}>Información Personal</h3>
+          <h3 className={styles.cardTitle}>Información personal</h3>
           <div className={styles.infoGrid}>
             <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Nombre Completo</span>
+              <span className={styles.infoLabel}>Nombre completo</span>
               <span className={styles.infoValue}>{profile.name}</span>
             </div>
             <div className={styles.infoItem}>
-              <span className={styles.infoLabel}>Correo Electrónico</span>
+              <span className={styles.infoLabel}>Correo electrónico</span>
               <span className={styles.infoValueLink}>{profile.email}</span>
             </div>
             <div className={styles.infoItem}>
@@ -102,11 +102,11 @@ export default function ProfileContent({ profile, statistics, coursesInProgress,
         </div>
 
         <div className={styles.coursesCard}>
-          <h3 className={styles.cardTitle}>Cursos en Progreso</h3>
+          <h3 className={styles.cardTitle}>Cursos en progreso</h3>
           <div className={styles.coursesList}>
             {coursesInProgress.length === 0 && (
               <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.875rem', margin: 0 }}>
-                No tienes cursos en progreso. Los cursos completados aparecen en <strong>Mis Cursos</strong>.
+                No tienes cursos en progreso. Los cursos completados aparecen en <strong>Mis cursos</strong>.
               </p>
             )}
             {coursesInProgress.map((course) => (

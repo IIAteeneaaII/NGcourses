@@ -46,13 +46,13 @@
   --color-admin-sidebar-hover: var(--color-secondary-30-light);
   --color-admin-sidebar-active: var(--color-accent-10);
 
-  /* Barra lateral (admin, instructor, supervisor). En claro es el turquesa de
-     marca; en oscuro pasa a superficie oscura con acento turquesa. */
-  --color-sidebar-bg: var(--color-secondary-30);
-  --color-sidebar-edge: transparent;
-  --color-sidebar-item-hover: var(--color-secondary-30-light);
-  --color-sidebar-item-active: var(--color-secondary-30-light);
-  --color-sidebar-indicator: var(--color-accent-10);
+  /* Barra lateral (admin, instructor, supervisor). Misma superficie que el
+     encabezado; la sección activa lleva una línea turquesa. */
+  --color-sidebar-bg: var(--color-surface);
+  --color-sidebar-edge: var(--color-border-default);
+  --color-sidebar-item-hover: var(--color-surface-muted);
+  --color-sidebar-item-active: rgba(0, 150, 143, 0.07);
+  --color-sidebar-indicator: var(--color-secondary-30);
 
   /* Tablas */
   --color-table-header: var(--color-primary-60);
@@ -116,10 +116,8 @@
 
   --color-table-row-hover: #1D242E;
 
-  --color-sidebar-bg: #121820;
-  --color-sidebar-edge: #232B36;
-  --color-sidebar-item-hover: rgba(61, 193, 204, 0.08);
-  --color-sidebar-item-active: rgba(61, 193, 204, 0.16);
+  --color-sidebar-item-hover: rgba(255, 255, 255, 0.04);
+  --color-sidebar-item-active: rgba(61, 193, 204, 0.1);
   --color-sidebar-indicator: #3DC1CC;
 
   --color-surface: #171D25;

@@ -74,6 +74,9 @@ class User(UserBase, table=True):
     password_reset_expira: datetime | None = Field(default=None)
     token_activacion: str | None = Field(default=None, max_length=255)
     token_activacion_expira: datetime | None = Field(default=None)
+    # Ruta pública de la foto de perfil (/media/avatars/<archivo>). Se guarda
+    # en el volumen de media del servidor, no en el navegador.
+    avatar_url: str | None = Field(default=None, max_length=255)
     items: list["Item"] = Relationship(back_populates="owner", cascade_delete=True)  # noqa: F821
     # Relationships
     cursos_instructor: list["Curso"] = Relationship(back_populates="instructor")  # noqa: F821
@@ -86,6 +89,7 @@ class User(UserBase, table=True):
 # Properties to return via API, id is always required
 class UserPublic(UserBase):
     id: uuid.UUID
+    avatar_url: str | None = None
 
 
 class UsersPublic(SQLModel):

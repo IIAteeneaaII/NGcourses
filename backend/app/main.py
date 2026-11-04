@@ -113,7 +113,8 @@ if settings.all_cors_origins:
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
-# Servir archivos de media. Solo `covers` (miniaturas de curso) es PÚBLICO.
+# Servir archivos de media. Solo `covers` (miniaturas de curso) y `avatars`
+# (fotos de perfil con nombre aleatorio) son PÚBLICOS.
 # Los certificados (PII) y los recursos de lección (material gateado por
 # inscripción) NO se montan como estáticos: se sirven por endpoints autenticados
 # (`/certificados/descargar/{folio}` y `/cursos/recursos/{id}/download`) para que
@@ -123,3 +124,7 @@ if os.getenv("SERVE_MEDIA", "true").lower() != "false":
     covers_dir = os.path.join(MEDIA_DIR, "covers")
     os.makedirs(covers_dir, exist_ok=True)
     app.mount("/media/covers", StaticFiles(directory=covers_dir), name="media-covers")
+    # Fotos de perfil: nombre de archivo aleatorio (no se puede adivinar por id).
+    avatars_dir = os.path.join(MEDIA_DIR, "avatars")
+    os.makedirs(avatars_dir, exist_ok=True)
+    app.mount("/media/avatars", StaticFiles(directory=avatars_dir), name="media-avatars")

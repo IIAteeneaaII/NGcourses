@@ -304,6 +304,11 @@ export const etiquetasApi = {
     apiClient.delete(`/api/v1/cursos/${curso_id}/etiquetas/${etiqueta_id}`),
 };
 
+export const adminApi = {
+  /** Cifras del panel: embudo de alumnos, actividad semanal, top cursos y empresas. */
+  stats: () => apiClient.get('/api/v1/admin/stats'),
+};
+
 export const usersApi = {
   list: (params?: { skip?: number; limit?: number; rol?: string; estado?: string; search?: string }) => {
     const qs = new URLSearchParams();
@@ -324,6 +329,9 @@ export const usersApi = {
   changePassword: (data: { current_password: string; new_password: string }) =>
     apiClient.patch('/api/v1/users/me/password', data),
   delete: (id: string) => apiClient.delete(`/api/v1/users/${id}`),
+  /** Foto de perfil: se guarda en el servidor y regresa el usuario con avatar_url. */
+  uploadAvatar: (file: File) => apiClient.uploadFile('/api/v1/users/me/avatar', file),
+  deleteAvatar: () => apiClient.delete('/api/v1/users/me/avatar'),
 };
 
 export const progresoApi = {
