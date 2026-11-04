@@ -125,6 +125,12 @@ export interface CourseCard {
   precio?: number | null;
   moneda?: string;
   destacado?: boolean;
+  /** Curso gratuito (Curso.es_gratis). */
+  esGratis?: boolean;
+  /** Número de reseñas; las estrellas solo se muestran si hay alguna. */
+  reviews?: number;
+  /** El alumno tiene una inscripción vigente (activa o finalizada). */
+  enrolled?: boolean;
 }
 
 export interface User {
@@ -159,7 +165,7 @@ export interface CourseInProgress {
   order: number;
 }
 
-export type CourseStatus = 'in_progress' | 'completed';
+export type CourseStatus = 'not_started' | 'in_progress' | 'completed';
 
 export interface UserCourse {
   id: string;
@@ -171,6 +177,13 @@ export interface UserCourse {
   progress?: number;
   completedDate?: string;
   certificadoFolio?: string;
+  marca?: 'ram' | 'nextgen';
+  /** Lecciones completadas (GET /progreso/curso/{id}). */
+  completedLessons?: number;
+  /** Título de la siguiente lección pendiente, en orden de módulo/lección. */
+  nextLessonTitle?: string;
+  /** ISO de la última actividad registrada; ordena "Mi progreso". */
+  lastActivity?: string;
 }
 
 export interface MyCoursesStatistics {

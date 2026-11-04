@@ -3,186 +3,176 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import CourseCover from '@/components/shared/CourseCover';
-import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
-import { certificadosApi } from '@/lib/api/client';
-import { logError } from '@/lib/logger';
-import StudentUserMenu from '@/components/shared/StudentUserMenu';
+import StudentHeader from '@/components/shared/StudentHeader';
+import type { CourseStatus, UserCourse } from '@/types/course';
 import styles from './MyCoursesContent.module.css';
 
-type FilterType = 'all' | 'in_progress' | 'completed';
+type FilterType = CourseStatus | 'all';
 
 interface MyCoursesContentProps {
   courses: UserCourse[];
-  statistics: MyCoursesStatistics;
-  user?: User;
 }
 
-export default function MyCoursesContent({ courses, statistics }: MyCoursesContentProps) {
-  const [activeFilter, setActiveFilter] = useState<FilterType>('all');
-  const [downloading, setDownloading] = useState<string | null>(null);
+const FILTERS: { key: FilterType; label: string }[] = [
+  { key: 'in_progress', label: 'En curso' },
+  { key: 'not_started', label: 'Sin iniciar' },
+  { key: 'completed', label: 'Completados' },
+  { key: 'all', label: 'Todos' },
+];
 
-  const handleDescargar = async (folio: string) => {
-    setDownloading(folio);
-    try {
-      await certificadosApi.descargar(folio);
-    } catch (e) {
-      logError('MyCoursesContent/descargarCertificado', e);
-      // CP20: el backend puede rechazar la descarga (409) si el curso cambió y
-      // hay contenido pendiente. Mostramos el motivo al alumno.
-      const detail = (e as { detail?: string })?.detail || 'No se pudo descargar el certificado.';
-      alert(detail);
-    } finally {
-      setDownloading(null);
-    }
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+function ArrowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
+    </svg>
+  );
+}
+
+export default function MyCoursesContent({ courses }: MyCoursesContentProps) {
+  const counts: Record<FilterType, number> = {
+    all: courses.length,
+    in_progress: courses.filter((c) => c.status === 'in_progress').length,
+    not_started: courses.filter((c) => c.status === 'not_started').length,
+    completed: courses.filter((c) => c.status === 'completed').length,
   };
 
-  const filteredCourses = courses.filter((course) => {
-    if (activeFilter === 'all') return true;
-    return course.status === activeFilter;
-  });
+  // Abre en "En curso" si hay alguno; si no, en "Todos" para no mostrar una lista vacía.
+  const [activeFilter, setActiveFilter] = useState<FilterType>(counts.in_progress > 0 ? 'in_progress' : 'all');
 
-  const coursesInProgress = filteredCourses.filter((c) => c.status === 'in_progress');
-  const coursesCompleted = filteredCourses.filter((c) => c.status === 'completed');
+  // Última actividad primero; los cursos sin actividad quedan al final.
+  const visible = courses
+    .filter((c) => activeFilter === 'all' || c.status === activeFilter)
+    .sort((a, b) => (b.lastActivity ?? '').localeCompare(a.lastActivity ?? ''));
+  // Solo el curso más reciente lleva el botón verde: una lista de botones verdes no jerarquiza nada.
+  const primaryId = visible.find((c) => c.status === 'in_progress')?.id;
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <Link href="/cursos" className={styles.logoGroup}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
-            <span className={styles.logoTitle}>
-              <span className={styles.logoBold}>NextGen</span>
-              <span className={styles.logoLight}> Course</span>
-            </span>
-          </Link>
-          <StudentUserMenu />
-        </div>
-      </header>
+      <StudentHeader />
 
       <main className={styles.main}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.pageTitle}>Mis cursos</h1>
-          <div className={styles.filterButtons}>
-            <button
-              className={`${styles.filterButton} ${activeFilter === 'all' ? styles.filterButtonActive : ''}`}
-              onClick={() => setActiveFilter('all')}
-            >
-              Todos
-            </button>
-            <button
-              className={`${styles.filterButton} ${activeFilter === 'in_progress' ? styles.filterButtonActive : ''}`}
-              onClick={() => setActiveFilter('in_progress')}
-            >
-              En progreso
-            </button>
-            <button
-              className={`${styles.filterButton} ${activeFilter === 'completed' ? styles.filterButtonActive : ''}`}
-              onClick={() => setActiveFilter('completed')}
-            >
-              Completados
-            </button>
-          </div>
-        </div>
+        <section className={styles.pageHead} aria-labelledby="progress-title">
+          <h1 id="progress-title" className={styles.pageTitle}>Mi progreso</h1>
+          <p className={styles.pageSubtitle}>
+            {courses.length > 0
+              ? `${plural(counts.all, 'curso inscrito', 'cursos inscritos')} · ${counts.in_progress} en curso · ${plural(counts.completed, 'completado', 'completados')}`
+              : 'Todavía no te has inscrito a ningún curso.'}
+          </p>
+        </section>
 
-        <div className={styles.statsCard}>
-          <div className={styles.statsGrid}>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{statistics.totalCourses}</span>
-              <span className={styles.statLabel}>Total de cursos</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{statistics.inProgress}</span>
-              <span className={styles.statLabel}>En progreso</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{statistics.completed}</span>
-              <span className={styles.statLabel}>Completados</span>
-            </div>
-            <div className={styles.statItem}>
-              <span className={styles.statValue}>{statistics.totalHours}</span>
-              <span className={styles.statLabel}>Horas totales</span>
-            </div>
+        {courses.length > 0 && (
+          <div className={styles.segmented} role="group" aria-label="Filtrar por estado">
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                aria-pressed={activeFilter === f.key}
+                onClick={() => setActiveFilter(f.key)}
+              >
+                {f.label} <span className={styles.segmentCount}>{counts[f.key]}</span>
+              </button>
+            ))}
           </div>
-        </div>
-
-        {(activeFilter === 'all' || activeFilter === 'in_progress') && coursesInProgress.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>En progreso</h2>
-            <div className={styles.coursesList}>
-              {coursesInProgress.map((course) => (
-                <div key={course.id} className={styles.courseCard}>
-                  <div className={styles.courseImageContainer}>
-                    <CourseCover src={course.image} title={course.title} size="sm" />
-                  </div>
-                  <div className={styles.courseInfo}>
-                    <h3 className={styles.courseTitle}>{course.title}</h3>
-                    <p className={styles.courseMeta}>
-                      {course.instructor ? `${course.instructor} • ` : ''}{course.lessonsCount} lecciones • <span className={styles.statusInProgress}>En progreso</span>
-                    </p>
-                    <div className={styles.progressRow}>
-                      <div className={styles.progressTrack} role="progressbar" aria-valuenow={course.progress} aria-valuemin={0} aria-valuemax={100}>
-                        <div className={styles.progressFill} style={{ width: `${course.progress}%` }} />
-                      </div>
-                      <span className={styles.courseProgress}>{course.progress}%</span>
-                    </div>
-                  </div>
-                  <div className={styles.courseActions}>
-                    <Link href={`/curso/${course.id}/videos`} className={styles.continueButton}>
-                      Continuar
-                    </Link>
-                    <Link href={`/curso/${course.id}`} className={styles.detailsButton}>
-                      Ver detalles
-                    </Link>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </section>
         )}
 
-        {(activeFilter === 'all' || activeFilter === 'completed') && coursesCompleted.length > 0 && (
-          <section className={styles.section}>
-            <h2 className={styles.sectionTitle}>Completados</h2>
-            <div className={styles.coursesList}>
-              {coursesCompleted.map((course) => (
-                <div key={course.id} className={styles.courseCard}>
-                  <div className={styles.courseImageContainer}>
-                    <CourseCover src={course.image} title={course.title} size="sm" />
-                  </div>
-                  <div className={styles.courseInfo}>
-                    <h3 className={styles.courseTitle}>{course.title}</h3>
-                    <p className={styles.courseMeta}>
-                      {course.instructor ? `${course.instructor} • ` : ''}{course.lessonsCount} lecciones • <span className={styles.statusCompleted}>Completado</span>
+        {visible.length > 0 ? (
+          <div className={styles.rows}>
+            {visible.map((course) => {
+              const title = course.title.trim().replace(/\.$/, '');
+              const progress = course.progress ?? 0;
+              return (
+                <article key={course.id} className={styles.row}>
+                  <Link href={`/curso/${course.id}`} className={styles.cover} tabIndex={-1} aria-hidden="true">
+                    <CourseCover
+                      src={course.image}
+                      title={course.title}
+                      size="sm"
+                      variant="grid"
+                      tone={course.marca === 'ram' ? 'ram' : 'nextgen'}
+                    />
+                  </Link>
+
+                  <div className={styles.info}>
+                    <h3 className={styles.rowTitle}>
+                      <Link href={`/curso/${course.id}`}>{title}</Link>
+                    </h3>
+                    <p className={styles.rowSub}>
+                      {course.status === 'completed' && `${course.lessonsCount} de ${course.lessonsCount} lecciones · completado`}
+                      {course.status === 'in_progress' && (
+                        <>
+                          Lección {Math.min((course.completedLessons ?? 0) + 1, course.lessonsCount)} de {course.lessonsCount}
+                          {course.nextLessonTitle && <> · <b>{course.nextLessonTitle}</b></>}
+                        </>
+                      )}
+                      {course.status === 'not_started' && (
+                        <>
+                          {plural(course.lessonsCount, 'lección', 'lecciones')}
+                          {course.nextLessonTitle && <> · empieza con <b>{course.nextLessonTitle}</b></>}
+                        </>
+                      )}
                     </p>
-                    <p className={styles.courseCompletedDate}>{course.completedDate}</p>
+                    <div className={styles.progress}>
+                      <div
+                        className={styles.track}
+                        role="progressbar"
+                        aria-label={`Avance en ${title}`}
+                        aria-valuenow={progress}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                      >
+                        <div className={styles.fill} style={{ width: `${progress}%` }} />
+                      </div>
+                      {course.status === 'completed' ? (
+                        <span className={styles.done}>
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden="true">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+                          </svg>
+                          Completado
+                        </span>
+                      ) : (
+                        <span className={styles.pct}>{progress} %</span>
+                      )}
+                    </div>
                   </div>
-                  <div className={styles.courseActions}>
-                    <Link href={`/curso/${course.id}/videos`} className={styles.reviewButton}>
-                      Revisar
-                    </Link>
-                    {course.certificadoFolio ? (
-                      <button
-                        className={styles.certificateButton}
-                        onClick={() => handleDescargar(course.certificadoFolio!)}
-                        disabled={downloading === course.certificadoFolio}
-                      >
-                        {downloading === course.certificadoFolio ? 'Descargando...' : 'Descargar Certificado'}
-                      </button>
+
+                  <div className={styles.action}>
+                    {course.status === 'completed' ? (
+                      course.certificadoFolio ? (
+                        <Link href="/certificados" className={`${styles.btn} ${styles.btnGhost}`}>
+                          Ver certificado
+                        </Link>
+                      ) : (
+                        <Link href={`/curso/${course.id}/videos`} className={`${styles.btn} ${styles.btnGhost}`}>
+                          Revisar
+                        </Link>
+                      )
                     ) : (
-                      <button
-                        className={styles.certificateButton}
-                        disabled
-                        title="Si ya completaste el curso, verifica que tu perfil tenga tu nombre completo (sin el correo) para generar el certificado."
+                      <Link
+                        href={`/curso/${course.id}/videos`}
+                        className={`${styles.btn} ${course.id === primaryId ? styles.btnPrimary : styles.btnGhost}`}
                       >
-                        Sin certificado
-                      </button>
+                        {course.status === 'in_progress' ? 'Continuar' : 'Empezar'}
+                        <ArrowIcon />
+                      </Link>
                     )}
                   </div>
-                </div>
-              ))}
-            </div>
-          </section>
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <div className={styles.empty}>
+            <p>
+              {courses.length > 0
+                ? 'No tienes cursos en este estado.'
+                : 'Inscríbete a un curso desde el dashboard para ver aquí tu avance.'}
+            </p>
+            <Link href="/cursos" className={`${styles.btn} ${styles.btnGhost}`}>
+              Explorar cursos
+            </Link>
+          </div>
         )}
       </main>
     </div>

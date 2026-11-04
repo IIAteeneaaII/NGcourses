@@ -60,3 +60,74 @@
   font-size: 0.875rem;
   letter-spacing: 0.04em;
 }
+
+/* ── Variante "grid": retícula técnica + monograma (vistas del alumno) ── */
+.grid {
+  --cover-line: rgba(0, 150, 143, 0.14);
+  --cover-ink: var(--color-secondary-30);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+  height: 100%;
+  padding: 0.875rem;
+  overflow: hidden;
+  background-color: var(--color-secondary-30-lighter);
+  background-image:
+    linear-gradient(var(--cover-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--cover-line) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.gridRam {
+  --cover-line: rgba(27, 141, 86, 0.13);
+  --cover-ink: var(--color-accent-10);
+  background-color: var(--color-accent-10-light);
+}
+
+:global([data-theme='dark']) .grid {
+  --cover-line: rgba(61, 193, 204, 0.12);
+}
+
+:global([data-theme='dark']) .gridRam {
+  --cover-line: rgba(134, 239, 172, 0.1);
+}
+
+.eyebrow {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.875rem;
+  right: 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.monogram {
+  font-size: 2.75rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--cover-ink);
+  transform-origin: left bottom;
+  transition: transform 0.3s ease;
+}
+
+.gridSmall {
+  padding: 0.625rem;
+}
+
+.gridSmall .monogram {
+  font-size: 2rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monogram {
+    transition: none;
+  }
+}

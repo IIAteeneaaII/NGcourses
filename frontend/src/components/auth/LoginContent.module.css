@@ -1,16 +1,13 @@
-/* Login: panel de marca (video) a la izquierda y formulario a la derecha.
-   En móvil el panel de marca se oculta y el logo pasa arriba del formulario. */
-
 /* Notice de acceso denegado */
 .notice {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 1rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   background-color: var(--color-tint-warning, #fff7ed);
   border: 1px solid #fed7aa;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   font-size: 0.875rem;
   color: var(--color-tint-warning-text, #9a3412);
   font-weight: 500;
@@ -19,17 +16,21 @@
 .container {
   min-height: 100vh;
   min-height: 100svh;
-  background: var(--color-surface);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: minmax(0, 1fr) auto;
+  background: linear-gradient(90deg, #0c8b80 0 50%, var(--color-surface-muted) 50% 100%);
+  display: grid;
 }
 
 .content {
-  min-height: 100vh;
-  min-height: 100svh;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  width: 100%;
+  min-height: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(26rem, 36rem);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
 }
-
-/* ── Panel de marca ─────────────────────────────────────────────────────── */
 
 .leftPanel {
   position: relative;
@@ -37,24 +38,22 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  padding: clamp(28px, 5vh, 52px) clamp(32px, 4.5vw, 64px);
+  justify-content: flex-start;
+  padding: clamp(24px, 6vh, 64px) clamp(32px, 4vw, 64px) 150px;
   color: #fff;
-  background: #0b5f59;
+  background: transparent;
 }
 
-/* Velo para que el texto se lea sobre el video: más oscuro arriba (logo) y
-   sobre todo abajo (titular y carrusel). */
 .leftPanel::before {
   content: "";
   position: absolute;
   z-index: 1;
   inset: 0;
-  background:
-    linear-gradient(180deg, rgba(0, 52, 49, 0.55) 0%, rgba(0, 52, 49, 0.15) 30%, rgba(0, 40, 38, 0.35) 55%, rgba(0, 36, 34, 0.92) 100%);
+  background: linear-gradient(145deg, rgba(0,73,69,.68), rgba(0,105,95,.48));
   pointer-events: none;
 }
 
-.leftPanel > :not(.brandVideo) {
+.leftPanel > :not(.brandVideo):not(.courseCarousel) {
   position: relative;
   z-index: 2;
 }
@@ -65,97 +64,106 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  max-height: none;
   object-fit: cover;
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: rgba(0,0,0,.12);
 }
 
 .brandContainer {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: flex-start;
+  gap: 8px;
+  margin-bottom: clamp(24px, 4vh, 42px);
 }
 
 .brandIcon {
-  width: 48px;
-  height: 48px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
   flex-shrink: 0;
 }
 
 .mainTitle {
   margin: 0;
-  font-size: 28px;
+  font-size: clamp(17px, 1.5vw, 20px);
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.35px;
+  display: block;
+  text-align: left;
   color: #fff;
 }
 
 .titleBold {
-  font-weight: 800;
+  font-weight: 900;
 }
 
 .titleLight {
   font-weight: 400;
 }
 
-.brandCopy {
-  margin-top: auto;
-  max-width: 34rem;
-  animation: riseIn 0.7s 0.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-
 .titleTagline {
-  max-width: 21ch;
-  margin: 0 0 14px;
+  max-width: 24ch;
+  margin: 0 0 2px;
   color: #fff;
-  font-size: clamp(30px, 3.2vw, 44px);
-  line-height: 1.08;
-  letter-spacing: -0.025em;
-  font-weight: 700;
+  font-size: clamp(22px, 2.4vw, 30px);
+  line-height: 1.12;
+  letter-spacing: -0.7px;
+  font-weight: 650;
   text-wrap: balance;
-  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.25);
 }
 
 .description {
   margin: 0;
-  max-width: 44ch;
-  line-height: 1.55;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 16px;
+  max-width: 68ch;
+  line-height: 1.5;
+  color: rgba(255,255,255,.82);
+  font-size: 12px;
 }
 
 .courseCarousel {
-  margin-top: clamp(24px, 4vh, 40px);
-  padding-top: 18px;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
+  position: absolute;
+  z-index: 2;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 12px 0 16px;
+  background: rgba(0,49,46,.52);
+  border-top: 1px solid rgba(255,255,255,.14);
 }
 
 .carouselLabel {
   display: block;
-  margin-bottom: 10px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 11px;
+  margin-bottom: 7px;
+  padding-inline: clamp(24px, 4vw, 64px);
+  color: rgba(255,255,255,.76);
+  font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.06em;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 
 .carouselViewport {
   overflow: hidden;
-  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
 }
 
 .carouselTrack {
   display: flex;
-  width: max-content;
-  animation: courseCarouselSlide 40s linear infinite;
+  width: 200%;
+  animation: courseCarouselSlide 32s linear infinite;
 }
 
 .carouselGroup {
   display: flex;
+  flex: 0 0 50%;
   align-items: center;
+  justify-content: space-evenly;
   gap: 8px;
-  padding-right: 8px;
+  padding-inline: 8px;
 }
 
 .courseCarousel:hover .carouselTrack {
@@ -164,11 +172,11 @@
 
 .carouselItem {
   padding: 7px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  border: 1px solid rgba(255,255,255,.2);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.95);
-  font-size: 13px;
+  background: rgba(0,49,46,.32);
+  color: rgba(255,255,255,.94);
+  font-size: 11px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -177,87 +185,40 @@
   to { transform: translateX(-50%); }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .carouselTrack {
-    animation: none;
-  }
-}
-
-/* ── Panel del formulario ───────────────────────────────────────────────── */
-
 .rightPanel {
-  position: relative;
   display: flex;
-  flex-direction: column;
-  padding: clamp(28px, 5vh, 56px) clamp(28px, 4vw, 64px) 20px;
-  background:
-    radial-gradient(40rem 28rem at 100% 0%, rgba(0, 150, 143, 0.08), transparent 70%),
-    radial-gradient(30rem 22rem at 0% 100%, rgba(27, 141, 86, 0.06), transparent 70%),
-    var(--color-surface);
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 5vh, 80px) clamp(28px, 5vw, 80px);
+  background: var(--color-surface-muted);
 }
 
 .loginCard {
+  max-width: 520px;
+  margin-inline: auto;
   width: 100%;
-  max-width: 380px;
-  margin: auto;
+  padding: clamp(22px, 5vh, 48px) clamp(26px, 3.6vw, 48px);
+  background: var(--color-surface);
+  border: 1px solid rgba(226,236,231,.85);
+  border-radius: 16px;
+  box-shadow: 0 12px 34px rgba(26,48,42,.08);
   display: flex;
   flex-direction: column;
-  animation: riseIn 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) both;
-}
-
-.welcome {
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--color-secondary-30);
-}
-
-@keyframes riseIn {
-  from { opacity: 0; transform: translateY(12px); }
-  to { opacity: 1; transform: none; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .loginCard,
-  .brandCopy {
-    animation: none;
-  }
-}
-
-.mobileBrand {
-  display: none;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 32px;
-}
-
-.mobileBrandIcon {
-  width: 40px;
-  height: 40px;
-  border-radius: 9px;
-}
-
-.mobileBrandName {
-  font-size: 22px;
-  letter-spacing: -0.02em;
-  color: var(--color-secondary-30);
+  justify-content: center;
 }
 
 .loginTitle {
-  margin: 0 0 8px;
-  font-size: 30px;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
+  margin: 0 0 5px;
+  font-size: clamp(20px, 1.8vw, 24px);
+  letter-spacing: -0.45px;
   font-weight: 700;
-  color: var(--color-text-heading);
+  color: #1d2b28;
 }
 
 .loginSubtitle {
-  margin: 0 0 32px;
-  color: var(--color-text-muted);
-  font-size: 15px;
+  margin: 0 0 26px;
+  color: #74817d;
+  font-size: 13px;
   line-height: 1.5;
 }
 
@@ -269,75 +230,69 @@
 .inputGroup {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-bottom: 18px;
+  gap: 7px;
+  margin-bottom: 16px;
 }
 
 .inputLabel {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-text-body);
+  font-size: 12px;
+  font-weight: 550;
+  color: #455550;
 }
 
 .inputWrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
-  height: 48px;
-  padding: 0 14px;
-  border-radius: 10px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border-strong);
-  transition: box-shadow 0.15s, border-color 0.15s;
-}
-
-.inputWrapper:hover {
-  border-color: var(--color-text-faint);
+  gap: 11px;
+  border-radius: 9px;
+  background: #fbfcfb;
+  border: 1px solid #dfe7e3;
+  padding: 12px 14px;
+  transition: box-shadow 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
 .inputWrapper:focus-within {
-  border-color: var(--color-secondary-30);
-  box-shadow: 0 0 0 4px rgba(0, 150, 143, 0.14);
-}
-
-.inputWrapper:focus-within .inputIcon {
-  color: var(--color-secondary-30);
+  background: var(--color-surface);
+  border-color: #4b9b80;
+  box-shadow: 0 0 0 3px rgba(75,155,128,.12);
 }
 
 .inputIcon {
+  opacity: 0.62;
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  color: var(--color-text-faint);
+  color: #43544e;
 }
 
 .input {
   border: 0;
   outline: 0;
   width: 100%;
-  font-size: 15px;
+  font-size: 14px;
   background: transparent;
-  color: var(--color-text-heading);
+  color: #23332d;
 }
 
 .input::placeholder {
-  color: var(--color-text-faint);
+  color: #9aa5a1;
 }
 
 .togglePassword {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity 0.2s;
   flex: 0 0 auto;
+  background: none;
+  border: none;
+  padding: 0;
   display: flex;
   align-items: center;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--color-text-faint);
-  cursor: pointer;
-  transition: color 0.15s;
+  color: #43544e;
 }
 
 .togglePassword:hover {
-  color: var(--color-text-body);
+  opacity: 1;
 }
 
 .optionsRow {
@@ -345,16 +300,16 @@
   justify-content: space-between;
   align-items: center;
   gap: 10px;
-  margin: 2px 0 24px;
+  margin: 8px 0 20px;
   flex-wrap: wrap;
 }
 
 .checkboxLabel {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   align-items: center;
-  font-size: 14px;
-  color: var(--color-text-muted);
+  font-size: 12px;
+  color: #71807a;
   user-select: none;
   cursor: pointer;
 }
@@ -362,143 +317,282 @@
 .checkbox {
   width: 16px;
   height: 16px;
-  accent-color: var(--color-accent-10);
+  accent-color: #27845f;
   cursor: pointer;
-}
-
-.forgotLink {
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--color-accent-10);
-  text-decoration: none;
-}
-
-.forgotLink:hover {
-  text-decoration: underline;
-  text-underline-offset: 2px;
 }
 
 .submitButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  width: 100%;
-  height: 48px;
   border: 0;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #fff;
-  background: linear-gradient(180deg, #22a066 0%, var(--color-accent-10) 100%);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 8px 20px -8px rgba(27, 141, 86, 0.6);
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 9px;
+  font-weight: 650;
+  letter-spacing: 0.1px;
+  color: white;
+  background-color: #21845e;
+  box-shadow: 0 6px 16px rgba(33,132,94,.16);
   cursor: pointer;
-  transition: transform 0.15s, box-shadow 0.15s, filter 0.15s;
+  transition: transform 0.12s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  font-size: 0.95rem;
 }
 
 .submitButton:hover {
-  filter: brightness(1.05);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.25) inset, 0 12px 24px -10px rgba(27, 141, 86, 0.7);
+  background-color: #196f4e;
+  box-shadow: 0 8px 20px rgba(33,132,94,.2);
 }
 
 .submitButton:active {
   transform: translateY(1px);
 }
 
-.submitArrow {
-  transition: transform 0.15s;
-}
-
-.submitButton:hover .submitArrow {
-  transform: translateX(3px);
-}
-
-.submitButton:disabled {
-  opacity: 0.7;
-  cursor: default;
-}
-
-.submitButton:focus-visible,
-.forgotLink:focus-visible {
-  outline: 2px solid var(--color-secondary-30);
-  outline-offset: 2px;
-}
-
 .footer {
-  padding-top: 24px;
-  color: var(--color-text-faint);
-  font-size: 12px;
+  grid-column: 2;
+  grid-row: 2;
+  padding-top: 20px;
+  padding-bottom: 18px;
+  color: #71817c;
+  font-size: 10px;
   text-align: center;
+  background: var(--color-surface-muted);
 }
 
-/* ── Pantallas bajas: compactar sin scroll ──────────────────────────────── */
-
-@media (min-width: 861px) and (max-height: 720px) {
-  .titleTagline {
-    font-size: clamp(26px, 2.6vw, 34px);
+/* Escritorio/tablet horizontal: el login ocupa exactamente la pantalla, sin scroll. */
+@media (min-width: 681px) {
+  .container {
+    height: 100vh;
+    height: 100svh;
+    overflow: hidden;
   }
 
-  .description {
-    font-size: 14px;
+  .content {
+    min-height: 0;
+  }
+}
+
+@media (min-width: 681px) and (max-height: 760px) {
+  .leftPanel {
+    padding-bottom: 120px;
   }
 
   .loginSubtitle {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
   }
 
   .inputGroup {
+    gap: 5px;
     margin-bottom: 12px;
   }
 
+  .inputWrapper {
+    padding: 9px 12px;
+  }
+
   .optionsRow {
-    margin-bottom: 16px;
-  }
-}
-
-/* ── Tablet: panel de marca más angosto ─────────────────────────────────── */
-
-@media (max-width: 1100px) {
-  .content {
-    grid-template-columns: minmax(0, 1fr) minmax(22rem, 1fr);
+    margin: 4px 0 14px;
   }
 
-  .description {
-    font-size: 15px;
-  }
-}
-
-/* ── Móvil: solo formulario ─────────────────────────────────────────────── */
-
-@media (max-width: 860px) {
-  .content {
-    grid-template-columns: 1fr;
-  }
-
-  .leftPanel {
-    display: none;
-  }
-
-  .rightPanel {
-    padding: 40px 24px 20px;
-  }
-
-  .loginCard {
-    margin: 0 auto;
-  }
-
-  .mobileBrand {
-    display: flex;
-  }
-
-  .loginTitle {
-    font-size: 24px;
-  }
-
-  .loginSubtitle {
-    margin-bottom: 24px;
+  .submitButton {
+    padding: 11px 14px;
   }
 
   .footer {
-    margin-top: auto;
+    padding-top: 10px;
+    padding-bottom: 10px;
+  }
+}
+
+@media (min-width: 681px) and (max-height: 600px) {
+  .brandContainer {
+    margin-bottom: 12px;
+  }
+
+  .titleTagline {
+    font-size: clamp(18px, 2vw, 24px);
+  }
+
+  .notice {
+    padding: 0.5rem 0.75rem;
+    margin-bottom: 0.6rem;
+  }
+
+  .loginTitle {
+    font-size: 18px;
+  }
+
+  .loginSubtitle {
+    margin-bottom: 10px;
+  }
+
+  .inputGroup {
+    margin-bottom: 8px;
+  }
+
+  .inputWrapper {
+    padding: 7px 11px;
+  }
+
+  .optionsRow {
+    margin: 2px 0 10px;
+  }
+
+  .submitButton {
+    padding: 9px 14px;
+  }
+
+  .courseCarousel {
+    padding: 6px 0 8px;
+  }
+}
+
+@media (max-width: 860px) {
+  .leftPanel {
+    padding: 30px 30px 132px;
+  }
+
+  .rightPanel {
+    padding: 28px;
+  }
+
+  .brandContainer {
+    margin-bottom: 20px;
+  }
+
+  .loginCard {
+    padding: 24px 26px;
+  }
+
+  .loginTitle {
+    font-size: 19px;
+  }
+
+  .loginSubtitle {
+    margin-bottom: 18px;
+    font-size: 12px;
+  }
+
+  .inputGroup {
+    gap: 5px;
+    margin-bottom: 12px;
+  }
+
+  .inputLabel {
+    font-size: 11px;
+  }
+
+  .inputWrapper {
+    padding: 9px 11px;
+  }
+
+  .input {
+    font-size: 13px;
+  }
+
+  .optionsRow {
+    margin: 6px 0 16px;
+  }
+
+  .checkboxLabel {
+    font-size: 11px;
+  }
+
+  .submitButton {
+    padding: 11px 14px;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 680px) {
+  .container {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    background: var(--color-surface-muted);
+  }
+
+  .content {
+    grid-column: 1;
+    grid-row: 1;
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .leftPanel {
+    padding: 32px 24px 116px;
+    background: linear-gradient(145deg, #087b73 0%, #0c8b80 55%, #126d68 100%);
+  }
+
+  .rightPanel {
+    padding: 32px 24px;
+  }
+
+  .titleTagline {
+    max-width: 30ch;
+    font-size: clamp(22px, 6vw, 28px);
+  }
+
+  .courseCarousel {
+    padding: 10px 0 12px;
+  }
+
+  .carouselLabel {
+    padding-inline: 16px;
+  }
+
+  .loginCard {
+    max-width: 480px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carouselTrack {
+      animation: none;
+    }
+  }
+
+  .footer {
+    grid-column: 1;
+    grid-row: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .leftPanel {
+    padding: 28px 18px 108px;
+  }
+
+  .brandIcon {
+    width: 27px;
+    height: 27px;
+  }
+
+  .mainTitle {
+    font-size: 18px;
+  }
+
+  .loginCard {
+    padding: 24px 20px;
+    border-radius: 14px;
+  }
+
+  .loginTitle {
+    font-size: 21px;
+  }
+
+  .footer {
+    padding: 12px 16px 16px;
+  }
+
+  .carouselGroup {
+    gap: 5px;
+    padding-inline: 3px;
+  }
+
+  .carouselItem {
+    padding: 6px 9px;
+    font-size: 10px;
+  }
+
+  .optionsRow {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
 }

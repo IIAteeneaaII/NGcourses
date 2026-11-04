@@ -10,18 +10,21 @@
   gap: 0.5rem;
   max-width: 16rem;
   min-width: 0;
-  padding: 0.5rem 0.875rem;
-  background: rgba(0, 150, 143, 0.06);
-  border: 1.5px solid var(--color-secondary-30);
+  padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+  background: none;
+  border: none;
   border-radius: 9999px;
   cursor: pointer;
-  transition: background-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  transition: background-color 0.15s ease;
 }
 
 .userButton:hover {
-  background-color: rgba(0, 150, 143, 0.1);
-  box-shadow: 0 6px 16px rgba(0, 150, 143, 0.14);
-  transform: translateY(-1px);
+  background-color: var(--color-surface-subtle);
+}
+
+.userButton:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
 }
 
 .userAvatar {
@@ -53,16 +56,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.9375rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.1;
   color: var(--color-text-primary);
 }
 
 .dropdownArrow {
   flex-shrink: 0;
-  font-size: 0.75rem;
-  color: var(--color-text-secondary);
-  transition: transform 0.2s ease;
+  width: 1rem;
+  height: 1rem;
+  color: var(--color-text-muted);
+  transition: transform 0.15s ease;
 }
 
 .dropdownArrowOpen {
@@ -80,9 +84,10 @@
   top: calc(100% + 0.5rem);
   right: 0;
   background-color: var(--color-primary-60-alt);
-  border-radius: 0.5rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.625rem;
   box-shadow: var(--shadow-lg);
-  min-width: 180px;
+  min-width: 200px;
   overflow: hidden;
   z-index: 101;
 }
@@ -119,15 +124,14 @@
   color: var(--color-text-secondary);
 }
 
-/* Responsivo: en pantallas chicas acorta el nombre para que no empuje el layout */
-@media (max-width: 480px) {
-  .userButton {
-    max-width: 11rem;
-    padding: 0.35rem 0.6rem;
+/* Responsivo: en pantallas chicas solo queda el avatar para no empujar la navegación */
+@media (max-width: 760px) {
+  .userName,
+  .dropdownArrow {
+    display: none;
   }
 
-  .userName {
-    max-width: 6.5rem;
-    font-size: 0.875rem;
+  .userButton {
+    padding: 0.25rem;
   }
 }

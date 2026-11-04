@@ -83,7 +83,7 @@ class ApiClient {
         const isPublic = path === '/' || publicPrefixes.some((p) => path.startsWith(p));
         // Sin sesión previa solo se redirige desde rutas privadas: así una URL
         // inexistente muestra la página 404 en vez de saltar al login.
-        const privatePrefixes = ['/admin', '/supervisor', '/instructor', '/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
+        const privatePrefixes = ['/admin', '/supervisor', '/instructor', '/cursos', '/curso', '/mis-cursos', '/certificados', '/perfil', '/pagos'];
         const isPrivate = privatePrefixes.some((p) => path.startsWith(p));
         if (!isPublic && (habiaSesion || isPrivate)) {
           window.location.href = habiaSesion ? '/?error=session_expired' : '/';

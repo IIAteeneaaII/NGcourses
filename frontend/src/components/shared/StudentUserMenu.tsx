@@ -16,7 +16,7 @@ interface MenuUser {
 }
 
 /**
- * Menú de usuario del alumno (nombre + dropdown Mi Perfil / Mis Cursos / Cerrar Sesión).
+ * Menú de usuario del alumno (nombre + dropdown Mi Perfil / Modo oscuro / Cerrar Sesión).
  * Se autoabastece con getCurrentUser(); si no hay usuario, no renderiza nada.
  * Reutilizado en la barra superior de las vistas de curso (ficha y reproductor)
  * para que sea consistente con el dashboard. NO se usa en preview de admin/supervisor.
@@ -69,7 +69,16 @@ export default function StudentUserMenu() {
           <div className={styles.userAvatar}>{user.initials}</div>
         )}
         <span className={styles.userName}>{user.name}</span>
-        <span className={`${styles.dropdownArrow} ${open ? styles.dropdownArrowOpen : ''}`}>▼</span>
+        <svg
+          className={`${styles.dropdownArrow} ${open ? styles.dropdownArrowOpen : ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={2}
+          aria-hidden="true"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+        </svg>
       </button>
 
       {open && (
@@ -81,12 +90,6 @@ export default function StudentUserMenu() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
               </svg>
               Mi Perfil
-            </Link>
-            <Link href="/mis-cursos" className={styles.dropdownItem} onClick={() => setOpen(false)}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={styles.dropdownIcon}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-              </svg>
-              Mis Cursos
             </Link>
             <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
             <button className={styles.dropdownItem} onClick={handleLogout}>

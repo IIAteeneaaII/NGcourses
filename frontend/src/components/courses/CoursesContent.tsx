@@ -1,27 +1,38 @@
 'use client';
 
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CourseCard from '@/components/course/CourseCard';
-import FilterDropdown from './FilterDropdown';
+import StudentHeader from '@/components/shared/StudentHeader';
 import type { CourseCard as CourseCardType, User } from '@/types/course';
-import { logout } from '@/lib/auth';
 import styles from './CoursesContent.module.css';
-import ThemeToggle from '@/components/shared/ThemeToggle';
 
 interface CoursesContentProps {
   courses: CourseCardType[];
   user: User;
   orgName?: string | null;
+  /** Inscripciones activas (sin finalizar) del alumno, para el saludo. */
+  activeCount?: number;
 }
 
 const LEVEL_ORDER = ['Principiante', 'Intermedio', 'Avanzado'];
 
-export default function CoursesContent({ courses, user, orgName }: CoursesContentProps) {
-  const router = useRouter();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+/**
+ * Cursos que el admin asignó al alumno: los cubiertos por una licencia activa de
+ * su organización (es_de_mi_org) y los RAM a los que llegó por invitación (ya
+ * inscrito). Tienen prioridad sobre "gratuitos" para no repetir tarjetas.
+ */
+function isAssigned(c: CourseCardType): boolean {
+  return Boolean(c.esDeMiOrg || (c.marca === 'ram' && c.enrolled));
+}
+
+function isFreeNextgen(c: CourseCardType): boolean {
+  return c.marca === 'nextgen' && Boolean(c.esGratis) && !isAssigned(c);
+}
+
+const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
+
+export default function CoursesContent({ courses, user, orgName, activeCount = 0 }: CoursesContentProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [levelFilter, setLevelFilter] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -39,173 +50,133 @@ export default function CoursesContent({ courses, user, orgName }: CoursesConten
     return matchesSearch && matchesLevel && matchesCategory;
   });
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  const clearFilters = () => {
+    setLevelFilter('');
+    setCategoryFilter('');
+    setSearchQuery('');
   };
 
-  const closeDropdown = () => {
-    setIsDropdownOpen(false);
-  };
+  const groups = [
+    {
+      key: 'free',
+      title: 'Cursos gratuitos NextGenIA',
+      note: null as string | null,
+      items: filteredCourses.filter(isFreeNextgen),
+    },
+    {
+      key: 'assigned',
+      title: 'Cursos RAM asignados',
+      note: orgName ? `Licencia de ${orgName}` : null,
+      items: filteredCourses.filter(isAssigned),
+    },
+  ].filter((g) => g.items.length > 0);
 
-  const handleLogout = async () => {
-    await logout();
-    router.replace('/');
-  };
+  const firstName = user.name.split(/\s+/)[0];
 
   return (
     <div className={styles.container}>
-      <header className={styles.header}>
-        <div className={styles.headerContent}>
-          <Link href="/cursos" className={styles.logoGroup}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/logo.png" alt="NextGen" className={styles.logoImg} />
-            <span className={styles.logoTitle}>
-              <span className={styles.logoBold}>NextGen</span>
-              <span className={styles.logoLight}> Course</span>
-            </span>
-          </Link>
-
-          <div className={styles.userDropdown}>
-            <button className={styles.userButton} onClick={toggleDropdown}>
-              {user.avatarUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={user.avatarUrl} alt={user.name} className={styles.userAvatarImg} />
-              ) : (
-                <div className={styles.userAvatar}>{user.initials}</div>
-              )}
-              <span className={styles.userName}>{user.name}</span>
-              <span
-                className={`${styles.dropdownArrow} ${isDropdownOpen ? styles.dropdownArrowOpen : ''}`}
-              >
-                ▼
-              </span>
-            </button>
-
-            {isDropdownOpen && (
-              <div className={styles.dropdownMenu}>
-                <Link
-                  href="/perfil"
-                  className={styles.dropdownItem}
-                  onClick={closeDropdown}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={styles.dropdownIcon}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                  </svg>
-                  Mi Perfil
-                </Link>
-                <Link
-                  href="/mis-cursos"
-                  className={styles.dropdownItem}
-                  onClick={closeDropdown}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={styles.dropdownIcon}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" />
-                  </svg>
-                  Mis Cursos
-                </Link>
-                <ThemeToggle itemClassName={styles.dropdownItem} iconClassName={styles.dropdownIcon} />
-                <button className={styles.dropdownItem} onClick={handleLogout}>
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={styles.dropdownIcon}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-                  </svg>
-                  Cerrar Sesión
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
+      <StudentHeader />
 
       <main className={styles.main}>
-        <section className={styles.searchSection}>
-          <h1 className={styles.searchTitle}>Buscar cursos</h1>
+        <section className={styles.pageHead} aria-labelledby="dashboard-title">
+          <h1 id="dashboard-title" className={styles.pageTitle}>Hola, {firstName}</h1>
+          <p className={styles.pageSubtitle}>
+            {activeCount > 0 ? (
+              <>
+                Tienes {plural(activeCount, 'curso', 'cursos')} en curso.{' '}
+                <Link href="/mis-cursos" className={styles.inlineLink}>Ver mi progreso</Link>
+              </>
+            ) : (
+              'Elige un curso para empezar.'
+            )}
+          </p>
+        </section>
 
-          <div className={styles.searchToolbar}>
-            <div className={styles.searchInputWrapper}>
-              <svg className={styles.searchIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+        <section className={styles.toolbar} aria-label="Buscar y filtrar cursos">
+          <div className={styles.searchRow}>
+            <label className={styles.searchInputWrapper}>
+              <svg className={styles.searchIcon} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
               </svg>
               <input
-                type="text"
+                type="search"
                 placeholder="Buscar por título"
+                aria-label="Buscar por título"
                 className={styles.searchInput}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-            </div>
+            </label>
 
-            <div className={styles.filtersContainer}>
-              <FilterDropdown
-                placeholder="Categoría"
-                allLabel="Todas las categorías"
-                options={categories.map((cat) => ({ value: cat, label: cat }))}
-                value={categoryFilter}
-                onChange={setCategoryFilter}
-                ariaLabel="Filtrar por categoría"
-              />
-              <FilterDropdown
-                placeholder="Nivel"
-                allLabel="Todos los niveles"
-                options={levels.map((lvl) => ({ value: lvl, label: lvl }))}
+            {/* Con un solo nivel en el catálogo el filtro no aporta nada: se oculta. */}
+            {levels.length > 1 && (
+              <select
+                className={styles.select}
                 value={levelFilter}
-                onChange={setLevelFilter}
-                ariaLabel="Filtrar por nivel"
-              />
-            </div>
-
-            <button
-              type="button"
-              className={styles.clearFiltersButton}
-              disabled={!hasActiveFilters}
-              onClick={() => { setLevelFilter(''); setCategoryFilter(''); setSearchQuery(''); }}
-            >
-              Limpiar
-            </button>
-
+                onChange={(e) => setLevelFilter(e.target.value)}
+                aria-label="Filtrar por nivel"
+              >
+                <option value="">Todos los niveles</option>
+                {levels.map((lvl) => (
+                  <option key={lvl} value={lvl}>{lvl}</option>
+                ))}
+              </select>
+            )}
           </div>
+
+          {categories.length > 1 && (
+            <div className={styles.chips} role="group" aria-label="Categoría">
+              {[{ value: '', label: 'Todas' }, ...categories.map((c) => ({ value: c, label: c }))].map((opt) => (
+                <button
+                  key={opt.value || 'all'}
+                  type="button"
+                  className={styles.chip}
+                  aria-pressed={categoryFilter === opt.value}
+                  onClick={() => setCategoryFilter(opt.value)}
+                >
+                  {opt.label}
+                </button>
+              ))}
+              {hasActiveFilters && (
+                <button type="button" className={styles.clearButton} onClick={clearFilters}>
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+          )}
         </section>
 
-        {(() => {
-          const orgCourses = filteredCourses.filter((c) => c.marca === 'ram');
-          const nextgenCourses = filteredCourses.filter((c) => c.marca === 'nextgen');
-          const untagged = filteredCourses.filter((c) => !c.marca);
-          const hasGroups = orgCourses.length > 0 || nextgenCourses.length > 0;
-
-          if (!hasGroups) {
-            return (
-              <div className={styles.coursesGrid}>
-                {untagged.length > 0 ? (
-                  untagged.map((course) => <CourseCard key={course.id} course={course} />)
-                ) : (
-                  <p style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--color-text-secondary)', padding: '2rem 0' }}>
-                    No se encontraron cursos con los filtros aplicados.
-                  </p>
-                )}
-              </div>
-            );
-          }
-
-          return (
-            <>
-              {orgCourses.length > 0 && (
-                <>
-                  <h2 className={styles.sectionTitle}>{orgName ? `Cursos ${orgName}` : 'Cursos RAM Electronics'}</h2>
-                  <div className={styles.coursesGrid}>
-                    {orgCourses.map((course) => <CourseCard key={course.id} course={course} />)}
-                  </div>
-                </>
-              )}
-              {nextgenCourses.length > 0 && (
-                <>
-                  <h2 className={styles.sectionTitle}>Cursos NextGen</h2>
-                  <div className={styles.coursesGrid}>
-                    {nextgenCourses.map((course) => <CourseCard key={course.id} course={course} />)}
-                  </div>
-                </>
-              )}
-            </>
-          );
-        })()}
+        {groups.length > 0 ? (
+          <div className={styles.sections}>
+            {groups.map((group) => (
+              <section key={group.key} aria-labelledby={`group-${group.key}`}>
+                <div className={styles.sectionHead}>
+                  <h2 id={`group-${group.key}`} className={styles.sectionTitle}>{group.title}</h2>
+                  <span className={styles.sectionCount}>
+                    {group.note ? `${group.note} · ` : ''}
+                    {plural(group.items.length, 'curso', 'cursos')}
+                  </span>
+                </div>
+                <div className={styles.coursesGrid}>
+                  {group.items.map((course) => <CourseCard key={course.id} course={course} />)}
+                </div>
+              </section>
+            ))}
+          </div>
+        ) : (
+          <div className={styles.empty}>
+            {hasActiveFilters ? (
+              <>
+                <p>Ningún curso coincide con tu búsqueda.</p>
+                <button type="button" className={styles.ghostButton} onClick={clearFilters}>
+                  Limpiar filtros
+                </button>
+              </>
+            ) : (
+              <p>Todavía no hay cursos disponibles para ti.</p>
+            )}
+          </div>
+        )}
       </main>
     </div>
   );

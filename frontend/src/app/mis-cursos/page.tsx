@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import MyCoursesContent from '@/components/my-courses/MyCoursesContent';
-import type { UserCourse, MyCoursesStatistics, User } from '@/types/course';
+import type { UserCourse } from '@/types/course';
 import { inscripcionesApi, cursosApi, certificadosApi, progresoApi } from '@/lib/api/client';
-import { getCurrentUser } from '@/lib/auth';
 
 interface ApiInscripcion {
   id: string;
@@ -18,15 +17,22 @@ interface ApiInscripcionesResp {
   count: number;
 }
 
+interface ApiLeccion {
+  id: string;
+  titulo: string;
+  orden: number;
+  es_visible?: boolean;
+}
+
 interface ApiModulo {
-  lecciones: unknown[];
+  orden: number;
+  lecciones: ApiLeccion[];
 }
 
 interface ApiCurso {
   id: string;
   titulo: string;
-  instructor_id: string;
-  duracion_seg: number;
+  marca?: 'ram' | 'nextgen';
   portada_url?: string | null;
   modulos?: ApiModulo[];
 }
@@ -34,7 +40,7 @@ interface ApiCurso {
 interface ApiCertificado {
   curso_id: string;
   folio: string;
-  url_pdf: string | null;
+  emitido_en: string;
 }
 
 interface ApiCertificadosResp {
@@ -42,37 +48,34 @@ interface ApiCertificadosResp {
   count: number;
 }
 
-const EMPTY_STATS: MyCoursesStatistics = {
-  totalCourses: 0,
-  inProgress: 0,
-  completed: 0,
-  totalHours: '0h',
-};
+interface ApiProgreso {
+  total_lecciones: number;
+  lecciones_completadas: number;
+  progreso_pct: number;
+  progreso_por_leccion: { leccion_id: string; completado: boolean; actualizado_en: string | null }[];
+}
 
-const FALLBACK_USER: User = { id: '', name: 'Usuario', initials: 'U' };
+/** Lecciones visibles en orden de módulo y lección (mismo orden que el reproductor). */
+function orderedLessons(curso: ApiCurso | null): ApiLeccion[] {
+  if (!curso?.modulos) return [];
+  return [...curso.modulos]
+    .sort((a, b) => a.orden - b.orden)
+    .flatMap((m) => [...m.lecciones].sort((a, b) => a.orden - b.orden))
+    .filter((l) => l.es_visible !== false);
+}
 
 export default function MisCursosPage() {
   const [courses, setCourses] = useState<UserCourse[]>([]);
-  const [statistics, setStatistics] = useState<MyCoursesStatistics>(EMPTY_STATS);
   const [loading, setLoading] = useState(true);
-  const [user, setUser] = useState<User>(FALLBACK_USER);
 
   useEffect(() => {
     async function fetchData() {
       try {
-        const [inscResp, certResp, apiUser] = await Promise.all([
+        const [inscResp, certResp] = await Promise.all([
           inscripcionesApi.mis() as Promise<ApiInscripcionesResp>,
           certificadosApi.mis() as Promise<ApiCertificadosResp>,
-          getCurrentUser(),
         ]);
-        const stored = localStorage.getItem(`avatar_${apiUser.id}`);
-        setUser({
-          id: apiUser.id,
-          name: apiUser.full_name || apiUser.email,
-          initials: (apiUser.full_name || apiUser.email).slice(0, 2).toUpperCase(),
-          avatarUrl: stored || null,
-        });
-        const inscripciones = inscResp.data;
+        const inscripciones = inscResp.data.filter((i) => i.estado !== 'cancelado');
         const certByCursoId = Object.fromEntries(
           certResp.data.map((c) => [c.curso_id, c])
         );
@@ -84,10 +87,10 @@ export default function MisCursosPage() {
         // Progreso real por curso (mismo índice que inscripciones). Aislado: si
         // el fetch de progreso falla o devuelve algo inesperado, NO debe vaciar
         // la lista — cae a 0%. (Mismo patrón que /perfil.)
-        let progresoDetails: PromiseSettledResult<{ progreso_pct: number }>[] = [];
+        let progresoDetails: PromiseSettledResult<ApiProgreso>[] = [];
         try {
           progresoDetails = await Promise.allSettled(
-            inscripciones.map((i) => progresoApi.curso(i.curso_id) as Promise<{ progreso_pct: number }>)
+            inscripciones.map((i) => progresoApi.curso(i.curso_id) as Promise<ApiProgreso>)
           );
         } catch {
           progresoDetails = [];
@@ -96,41 +99,44 @@ export default function MisCursosPage() {
         const userCourses: UserCourse[] = inscripciones.map((insc, idx) => {
           const cursoResult = cursoDetails[idx];
           const curso = cursoResult.status === 'fulfilled' ? cursoResult.value : null;
+          const pr = progresoDetails[idx];
+          const progreso = pr?.status === 'fulfilled' && pr.value ? pr.value : null;
           const isCompleted = insc.estado === 'finalizada';
           const cert = certByCursoId[insc.curso_id];
-          const pr = progresoDetails[idx];
-          const progress = isCompleted
-            ? 100
-            : (pr?.status === 'fulfilled' && pr.value ? Math.round(pr.value.progreso_pct ?? 0) : 0);
+
+          const lessons = orderedLessons(curso);
+          const done = new Set(
+            (progreso?.progreso_por_leccion ?? []).filter((p) => p.completado).map((p) => p.leccion_id)
+          );
+          const next = lessons.find((l) => !done.has(l.id));
+          const lastActivity = (progreso?.progreso_por_leccion ?? [])
+            .map((p) => p.actualizado_en)
+            .filter((d): d is string => Boolean(d))
+            .sort()
+            .pop();
+
+          const progress = isCompleted ? 100 : Math.round(progreso?.progreso_pct ?? 0);
+          const completedLessons = progreso?.lecciones_completadas ?? 0;
 
           return {
             id: insc.curso_id,
             title: curso?.titulo || 'Curso',
             instructor: '',
-            lessonsCount: curso?.modulos?.reduce((acc, m) => acc + m.lecciones.length, 0) ?? 0,
+            lessonsCount: progreso?.total_lecciones ?? lessons.length,
             image: curso?.portada_url ?? '/placeholder-course.jpg',
-            status: isCompleted ? 'completed' : 'in_progress',
+            marca: curso?.marca,
+            status: isCompleted ? 'completed' : completedLessons > 0 || progress > 0 ? 'in_progress' : 'not_started',
             progress,
-            completedDate: isCompleted ? insc.inscrito_en.slice(0, 10) : undefined,
+            completedLessons,
+            nextLessonTitle: next?.titulo,
+            lastActivity: lastActivity ?? (cert ? cert.emitido_en : undefined),
+            completedDate: cert ? cert.emitido_en.slice(0, 10) : undefined,
             // Basta el folio: la descarga regenera el PDF si hiciera falta.
             certificadoFolio: cert ? cert.folio : undefined,
           };
         });
 
-        const inProgress = userCourses.filter((c) => c.status === 'in_progress').length;
-        const completed = userCourses.filter((c) => c.status === 'completed').length;
-        const totalSeg = inscripciones.reduce((acc, _, idx) => {
-          const res = cursoDetails[idx];
-          return acc + (res.status === 'fulfilled' ? (res.value.duracion_seg || 0) : 0);
-        }, 0);
-
         setCourses(userCourses);
-        setStatistics({
-          totalCourses: userCourses.length,
-          inProgress,
-          completed,
-          totalHours: `${Math.round(totalSeg / 3600)}h`,
-        });
       } catch {
         // Si falla, mostrar vacío
       } finally {
@@ -144,10 +150,10 @@ export default function MisCursosPage() {
   if (loading) {
     return (
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <span>Cargando mis cursos...</span>
+        <span>Cargando tu progreso...</span>
       </div>
     );
   }
 
-  return <MyCoursesContent courses={courses} statistics={statistics} user={user} />;
+  return <MyCoursesContent courses={courses} />;
 }

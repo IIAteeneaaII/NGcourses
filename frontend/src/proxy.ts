@@ -12,7 +12,7 @@ const ROL_HOME: Record<string, string> = {
   'instructor':    '/instructor',
 };
 
-const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/perfil', '/pagos'];
+const AUTH_ROUTES = ['/cursos', '/curso', '/mis-cursos', '/certificados', '/perfil', '/pagos'];
 
 // Llamada server-to-server para validar el JWT HttpOnly sin confiar en cookies JS.
 // En dev: si el backend no está levantado, getSession devuelve null y el código
