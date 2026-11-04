@@ -2,14 +2,16 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import CourseInfoContent from '@/components/course/CourseInfoContent';
-import { cursosApi, inscripcionesApi, type ApiError } from '@/lib/api/client';
+import CourseInfoContent, { type CourseProgress } from '@/components/course/CourseInfoContent';
+import { categoriasApi, cursosApi, inscripcionesApi, progresoApi, type ApiError } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import type { CourseInfo } from '@/types/course';
 import { toSyllabus } from '@/lib/syllabus';
 
 interface ApiLeccion {
+  id?: string;
   titulo?: string;
+  es_visible?: boolean;
   tipo?: string;
   orden?: number;
   duracion_seg?: number;
@@ -62,14 +64,25 @@ interface ApiCurso {
   requisitos: string | null;
   instructor_nombre: string | null;
   bloqueado_por_licencia?: boolean;
+  es_de_mi_org?: boolean;
+  es_gratis?: boolean;
+  marca?: 'ram' | 'nextgen';
+  categoria_id?: string | null;
   precio?: number | string | null;
   moneda?: string;
   destacado?: boolean;
 }
 
 interface ApiInscripcionesResp {
-  data: { id: string; curso_id: string }[];
+  data: { id: string; curso_id: string; estado?: 'activa' | 'finalizada' | 'cancelado' }[];
   count: number;
+}
+
+interface ApiProgreso {
+  total_lecciones: number;
+  lecciones_completadas: number;
+  progreso_pct: number;
+  progreso_por_leccion: { leccion_id: string; completado: boolean }[];
 }
 
 export default function CursoInfoPage() {
@@ -78,6 +91,7 @@ export default function CursoInfoPage() {
 
   const [course, setCourse] = useState<CourseInfo | null>(null);
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [progress, setProgress] = useState<CourseProgress | null>(null);
   const [enrollLoading, setEnrollLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
@@ -96,9 +110,24 @@ export default function CursoInfoPage() {
 
         const cursoRaw = await cursosApi.get(id) as ApiCurso;
 
+        const esAlumno = shouldCheckEnrollment(rol);
         let inscResp: ApiInscripcionesResp = { data: [], count: 0 };
-        if (shouldCheckEnrollment(rol)) {
-          inscResp = await (inscripcionesApi.mis().catch(() => ({ data: [], count: 0 }))) as ApiInscripcionesResp;
+        let categorias: { id: string; nombre: string }[] = [];
+        if (esAlumno) {
+          [inscResp, categorias] = await Promise.all([
+            inscripcionesApi.mis().catch(() => ({ data: [], count: 0 })) as Promise<ApiInscripcionesResp>,
+            categoriasApi.list().catch(() => []) as Promise<{ id: string; nombre: string }[]>,
+          ]);
+        }
+        // Una inscripción cancelada no cuenta: el alumno vuelve a ver "Inscribirme".
+        const enrolled = inscResp.data.some((i) => i.curso_id === id && i.estado !== 'cancelado');
+
+        // El alumno no ve lecciones ocultas (el progreso del backend tampoco las cuenta).
+        if (esAlumno) {
+          cursoRaw.modulos = (cursoRaw.modulos ?? []).map((m) => ({
+            ...m,
+            lecciones: m.lecciones.filter((l) => l.es_visible !== false),
+          }));
         }
 
         const totalLecciones = cursoRaw.modulos?.reduce(
@@ -129,14 +158,35 @@ export default function CursoInfoPage() {
           syllabus: toSyllabus(cursoRaw.modulos),
           image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
           bloqueadoPorLicencia: cursoRaw.bloqueado_por_licencia ?? false,
+          esDeMiOrg: cursoRaw.es_de_mi_org ?? false,
+          esGratis: cursoRaw.es_gratis,
+          marca: cursoRaw.marca,
+          category: categorias.find((c) => c.id === cursoRaw.categoria_id)?.nombre,
           precio: cursoRaw.precio != null ? Number(cursoRaw.precio) : null,
           moneda: cursoRaw.moneda || 'MXN',
           destacado: cursoRaw.destacado ?? false,
         };
 
+        // Avance real del alumno inscrito; si falla, la ficha se muestra sin él.
+        let courseProgress: CourseProgress | null = null;
+        if (enrolled) {
+          try {
+            const pr = await progresoApi.curso(id) as ApiProgreso;
+            courseProgress = {
+              completedLessonIds: pr.progreso_por_leccion.filter((p) => p.completado).map((p) => p.leccion_id),
+              completed: pr.lecciones_completadas,
+              total: pr.total_lecciones,
+              pct: Math.round(pr.progreso_pct),
+            };
+          } catch (e) {
+            logError('CursoInfoPage/progreso', e);
+          }
+        }
+
         if (!active) return;
         setCourse(courseInfo);
-        setIsEnrolled(inscResp.data.some((i) => i.curso_id === id));
+        setIsEnrolled(enrolled);
+        setProgress(courseProgress);
       } catch (e) {
         logError('CursoInfoPage/fetchData', e);
         if (active) setHasError(true);
@@ -183,6 +233,7 @@ export default function CursoInfoPage() {
     <CourseInfoContent
       course={course}
       isEnrolled={isEnrolled}
+      progress={progress}
       onInscribirse={handleInscribirse}
       onPaymentSuccess={() => setIsEnrolled(true)}
       enrollLoading={enrollLoading}

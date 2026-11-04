@@ -1,6 +1,7 @@
 import type { SyllabusModule } from '@/types/course';
 
 interface ApiLeccionLike {
+  id?: string;
   titulo?: string;
   tipo?: string;
   orden?: number;
@@ -20,6 +21,7 @@ export function toSyllabus(modulos: ApiModuloLike[] | undefined | null): Syllabu
   return [...(modulos ?? [])].sort(byOrden).map((m) => ({
     title: m.titulo || '',
     lessons: [...(m.lecciones ?? [])].sort(byOrden).map((l) => ({
+      id: l.id,
       title: l.titulo || '',
       tipo: l.tipo,
       durationSec: l.duracion_seg,

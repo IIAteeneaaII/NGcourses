@@ -51,6 +51,7 @@ export interface BunnyVideoConfig {
 }
 
 export interface SyllabusLesson {
+  id?: string;
   title: string;
   tipo?: string;
   durationSec?: number;
@@ -78,6 +79,9 @@ export interface CourseInfo {
   bloqueadoPorLicencia?: boolean;
   esDeMiOrg?: boolean;
   puedeInscribirse?: boolean;
+  category?: string;
+  marca?: 'ram' | 'nextgen';
+  esGratis?: boolean;
   precio?: number | null;
   moneda?: string;
   destacado?: boolean;
