@@ -6,6 +6,7 @@ interface ApiLeccionLike {
   tipo?: string;
   orden?: number;
   duracion_seg?: number;
+  thumbnail_url?: string | null;
 }
 
 interface ApiModuloLike {
@@ -25,6 +26,7 @@ export function toSyllabus(modulos: ApiModuloLike[] | undefined | null): Syllabu
       title: l.titulo || '',
       tipo: l.tipo,
       durationSec: l.duracion_seg,
+      thumbnailUrl: l.thumbnail_url || undefined,
     })),
   }));
 }

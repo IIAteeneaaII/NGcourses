@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { Module, Lesson } from '@/types/course';
+import LessonThumb from './LessonThumb';
 import styles from './LessonsSidebar.module.css';
 
 interface LessonsSidebarProps {
@@ -28,6 +29,8 @@ export default function LessonsSidebar({
   const allLessons = modules.flatMap((m) => m.lessons);
   const total = allLessons.length;
   const done = allLessons.filter((l) => l.completed).length;
+  // Si algún video tiene miniatura, todas las filas usan el recuadro 16:9.
+  const hasThumbs = allLessons.some((l) => !!l.thumbnailUrl);
 
   const getLessonItemClass = (lesson: Lesson) => {
     if (lesson.id === currentLessonId) return `${styles.lessonItem} ${styles.lessonItemActive}`;
@@ -66,6 +69,7 @@ export default function LessonsSidebar({
         {modules.map((module, idx) => {
           const isCollapsed = collapsed[module.id];
           const modDone = module.lessons.filter((l) => l.completed).length;
+          const moduleComplete = module.lessons.length > 0 && modDone === module.lessons.length;
           return (
             <div key={module.id} className={styles.moduleContainer}>
               <button
@@ -82,7 +86,15 @@ export default function LessonsSidebar({
                   <path d="M6 9l6 6 6-6" />
                 </svg>
                 <span className={styles.moduleTitle}>{idx + 1}. {module.name}</span>
-                <span className={styles.moduleCount}>{modDone}/{module.lessons.length}</span>
+                <span className={`${styles.moduleCount} ${moduleComplete ? styles.moduleCountDone : ''}`}>
+                  {moduleComplete && (
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  )}
+                  {modDone}/{module.lessons.length}
+                  {moduleComplete && <span className={styles.srOnly}> · módulo completado</span>}
+                </span>
               </button>
 
               {!isCollapsed && (
@@ -91,9 +103,15 @@ export default function LessonsSidebar({
                     <div
                       key={lesson.id}
                       onClick={() => onLessonSelect(lesson)}
-                      className={getLessonItemClass(lesson)}
+                      className={`${getLessonItemClass(lesson)} ${hasThumbs ? styles.lessonItemThumb : ''}`}
                     >
-                      <TypeIcon tipo={lesson.tipo} />
+                      <LessonThumb
+                        src={lesson.tipo === 'video' || !lesson.tipo ? lesson.thumbnailUrl : undefined}
+                        icon={<TypeIcon tipo={lesson.tipo} />}
+                        framed={hasThumbs}
+                        active={lesson.id === currentLessonId}
+                        durationSec={lesson.duration}
+                      />
                       <span className={styles.lessonName}>{lesson.name}</span>
                       <span className={styles.lessonIcon}>
                         {lesson.completed ? (

@@ -247,6 +247,23 @@ def list_cursos(
     return CursosPublic(data=items, count=count)
 
 
+def _thumbnail_leccion(leccion: Any, db_curso: Any) -> str | None:
+    """Miniatura del video de la lección.
+
+    Usa la que guardó el webhook de Bunny; si no llegó (webhook sin configurar
+    o video subido antes), la arma con el video_id siempre que el curso use la
+    librería por defecto, porque el hostname del CDN es el de esa librería.
+    """
+    if leccion.thumbnail_url:
+        return leccion.thumbnail_url
+    if not leccion.bunny_video_id or not settings.BUNNY_CDN_HOSTNAME:
+        return None
+    lib = db_curso.bunny_library_id
+    if lib and settings.BUNNY_LIBRARY_ID and str(lib) != str(settings.BUNNY_LIBRARY_ID):
+        return None
+    return bunny_svc.build_thumbnail_url(leccion.bunny_video_id)
+
+
 @router.get("/{curso_id}", response_model=CursoDetalle)
 def get_curso(
     curso_id: uuid.UUID,
@@ -313,12 +330,13 @@ def get_curso(
             if not l.es_visible and not (is_admin or is_owner):
                 continue
             lp = LeccionPublic.model_validate(l, from_attributes=True)
+            lp.thumbnail_url = _thumbnail_leccion(l, db_curso)
             if not tiene_acceso_contenido:
-                # Preview: se conservan título/orden/duración/tipo, pero NO el
-                # contenido consumible (URL de video, datos de quiz, recursos).
+                # Preview: se conservan título/orden/duración/tipo y la miniatura
+                # (una imagen fija, no reproduce nada), pero NO el contenido
+                # consumible (URL de video, datos de quiz, recursos).
                 lp.hls_url = None
                 lp.bunny_video_id = None
-                lp.thumbnail_url = None
                 lp.contenido = None
                 lp.recursos = []
             elif not revelar_respuestas_quiz:

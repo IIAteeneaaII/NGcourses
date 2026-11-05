@@ -417,6 +417,11 @@
   color: var(--color-text-primary);
 }
 
+.lessonThumb {
+  grid-template-columns: 4.5rem 1fr auto;
+  gap: 0.875rem;
+}
+
 .lesson + .lesson {
   border-top: 1px dashed var(--color-border-default);
 }
