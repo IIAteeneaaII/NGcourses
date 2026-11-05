@@ -98,6 +98,27 @@
   font-variant-numeric: tabular-nums;
 }
 
+.moduleCountDone {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 600;
+  color: var(--color-secondary-30);
+}
+
+:global([data-theme='dark']) .moduleCountDone {
+  color: var(--color-secondary-30-light);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 .moduleLessonList {
   display: flex;
   flex-direction: column;
@@ -120,6 +141,11 @@
 .lessonItem:hover {
   background-color: var(--color-surface-muted);
   color: var(--color-text-heading);
+}
+
+.lessonItemThumb {
+  gap: 0.75rem;
+  padding-left: 1.25rem;
 }
 
 .lessonItemCompleted {

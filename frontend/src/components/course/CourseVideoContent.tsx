@@ -73,16 +73,23 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
   const handleLessonSelect = (lesson: Lesson) => {
     setCurrentLesson(lesson);
     lastSentTime.current = 0;
+    videoDuration.current = 0;
   };
 
-  const handleTimeUpdate = useCallback((currentTime: number) => {
+  const handleTimeUpdate = useCallback((currentTime: number, duration?: number) => {
     if (!inscripcionId || !currentLesson) return;
+    // Duración real: la que reporta el reproductor o, si no, la guardada en la lección.
+    if (duration && duration > 0) videoDuration.current = duration;
+    else if (!videoDuration.current && currentLesson.duration) videoDuration.current = currentLesson.duration;
+
     const now = Date.now();
     if (now - lastSentTime.current < 10_000) return; // throttle 10s
     lastSentTime.current = now;
 
-    const duration = videoDuration.current || 1;
-    const pct = Math.min(100, Math.round((currentTime / duration) * 100));
+    // Sin duración conocida no se puede calcular el porcentaje; antes se usaba 1 s
+    // y cualquier reproducción contaba como 100 %.
+    const total = videoDuration.current;
+    const pct = total > 0 ? Math.min(100, Math.round((currentTime / total) * 100)) : 0;
 
     progresoApi.registrar({
       inscripcion_id: inscripcionId,
@@ -90,6 +97,10 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       visto_seg: Math.round(currentTime),
       progreso_pct: pct,
     }).catch((e) => logError('CourseVideoContent/handleTimeUpdate', e));
+
+    // Al pasar el umbral el backend ya la da por completada: reflejarlo en la
+    // lista (palomita) sin esperar a que el video termine.
+    if (pct >= (currentLesson.umbralPct ?? 90) && !currentLesson.completed) markCompleteRef.current?.();
   }, [inscripcionId, currentLesson]);
 
   const handleMarkComplete = async () => {
@@ -126,7 +137,7 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
         await progresoApi.registrar({
           inscripcion_id: inscripcionId,
           leccion_id: currentLesson.id,
-          visto_seg: videoDuration.current || 0,
+          visto_seg: Math.round(videoDuration.current || 0),
           progreso_pct: 100,
         });
         const resp = await (certificadosApi.mis() as Promise<{ data: { curso_id: string; folio: string; url_pdf: string | null }[] } | undefined>);
@@ -143,11 +154,14 @@ export default function CourseVideoContent({ initialCourse, inscripcionId, bunny
       progresoApi.registrar({
         inscripcion_id: inscripcionId,
         leccion_id: currentLesson.id,
-        visto_seg: videoDuration.current || 0,
+        visto_seg: Math.round(videoDuration.current || 0),
         progreso_pct: 100,
       }).catch((e) => logError('CourseVideoContent/handleMarkComplete', e));
     }
   };
+
+  const markCompleteRef = useRef<(() => void) | null>(null);
+  markCompleteRef.current = handleMarkComplete;
 
   const handleDescargarCert = async (folio: string) => {
     setDownloading(true);

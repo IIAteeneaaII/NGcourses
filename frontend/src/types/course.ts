@@ -6,6 +6,9 @@ export interface Lesson {
   moduleId?: string;
   videoId?: string;
   videoUrl?: string;
+  thumbnailUrl?: string;
+  /** % visto a partir del cual el backend da la lección por completada. */
+  umbralPct?: number;
   duration?: number;
   completed: boolean;
   order: number;
@@ -55,6 +58,7 @@ export interface SyllabusLesson {
   title: string;
   tipo?: string;
   durationSec?: number;
+  thumbnailUrl?: string;
 }
 
 export interface SyllabusModule {

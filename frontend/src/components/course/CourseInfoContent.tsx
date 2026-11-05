@@ -7,6 +7,7 @@ import StudentHeader from '@/components/shared/StudentHeader';
 import type { CourseInfo, SyllabusLesson } from '@/types/course';
 import PayPalCheckout from './PayPalCheckout';
 import CourseReviews from './CourseReviews';
+import LessonThumb from './LessonThumb';
 import styles from './CourseInfoContent.module.css';
 
 /** Avance del alumno inscrito (GET /progreso/curso/{id}). */
@@ -140,6 +141,8 @@ export default function CourseInfoContent({
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
   const completedIds = new Set(progress?.completedLessonIds ?? []);
+  // Si algún video trae miniatura, el temario usa el recuadro 16:9 en todas las filas.
+  const hasThumbs = course.syllabus.some((m) => m.lessons.some((l) => !!l.thumbnailUrl));
 
   // Lección siguiente: la primera sin completar en orden de módulo/lección.
   let nextLessonKey: string | null = null;
@@ -507,9 +510,15 @@ export default function CourseInfoContent({
                               return (
                                 <li
                                   key={leccion.id ?? i}
-                                  className={`${styles.lesson} ${done ? styles.lessonDone : ''} ${isNext ? styles.lessonNext : ''}`}
+                                  className={`${styles.lesson} ${hasThumbs ? styles.lessonThumb : ''} ${done ? styles.lessonDone : ''} ${isNext ? styles.lessonNext : ''}`}
                                 >
-                                  {done ? <CheckCircle /> : <KindIcon kind={kind} />}
+                                  <LessonThumb
+                                    src={kind === 'video' ? leccion.thumbnailUrl : undefined}
+                                    icon={done ? <CheckCircle /> : <KindIcon kind={kind} />}
+                                    framed={hasThumbs}
+                                    done={done && kind === 'video' && !!leccion.thumbnailUrl}
+                                    active={isNext}
+                                  />
                                   <span className={styles.lessonTitle}>{cleanTitle(leccion.title)}</span>
                                   <span className={styles.lessonKind}>
                                     {isNext

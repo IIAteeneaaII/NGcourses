@@ -26,6 +26,8 @@ interface ApiLeccion {
   duracion_seg: number;
   bunny_video_id: string | null;
   hls_url: string | null;
+  thumbnail_url?: string | null;
+  umbral_completado_pct?: number;
   contenido?: unknown;
   contenido_json?: unknown;
   content?: unknown;
@@ -152,6 +154,8 @@ export default function CursoVideosPage() {
               moduleId: m.id,
               videoId: l.bunny_video_id || undefined,
               videoUrl: l.hls_url || undefined,
+              thumbnailUrl: l.thumbnail_url || undefined,
+              umbralPct: l.umbral_completado_pct,
               duration: l.duracion_seg,
               completed: completadoMap[l.id] ?? false,
               order: l.orden,
