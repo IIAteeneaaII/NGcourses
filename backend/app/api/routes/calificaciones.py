@@ -62,7 +62,7 @@ def crear_calificacion(
 ) -> Any:
     """
     Crea una reseña para un curso.
-    El usuario debe estar inscrito (inscripción activa o finalizada).
+    El usuario debe estar inscrito y haber completado todas las lecciones.
     """
     if not 1 <= cal_in.estrellas <= 5:
         raise HTTPException(status_code=422, detail="Las estrellas deben ser entre 1 y 5")
@@ -73,6 +73,13 @@ def crear_calificacion(
     )
     if not inscripcion or inscripcion.estado == EstadoInscripcion.CANCELADO:
         raise HTTPException(status_code=403, detail="Debes estar inscrito en el curso para calificarlo")
+
+    # La reseña se pide al terminar: solo con todas las lecciones visibles completadas.
+    if not crud.curso_completado(session=session, inscripcion=inscripcion):
+        raise HTTPException(
+            status_code=403,
+            detail="Podrás calificar el curso cuando completes todas sus lecciones",
+        )
 
     # Verificar si ya calificó
     existing = crud.get_calificacion_by_usuario_curso(

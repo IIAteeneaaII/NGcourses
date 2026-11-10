@@ -204,6 +204,10 @@ export default function CourseInfoContent({
     .map((r) => r.trim())
     .filter(Boolean);
   const hasReviews = !!course.reviewsCount && course.reviewsCount > 0;
+  // La reseña (estrellas y comentario) se pide solo al terminar el curso; antes
+  // el alumno ve el puntaje global y las reseñas, pero no el formulario.
+  const isStudent = Boolean(isEnrolled) && !viewOnlyMode;
+  const courseDone = !!progress && progress.total > 0 && progress.completed >= progress.total;
   const kinds = countKinds(course.syllabus.flatMap((m) => m.lessons));
   const levelSteps = LEVEL_STEPS[course.level] ?? 0;
   const descriptionIsLong = course.description.length > 280;
@@ -586,7 +590,15 @@ export default function CourseInfoContent({
               </section>
             )}
 
-            <CourseReviews courseId={course.id} canReview={Boolean(isEnrolled) && !viewOnlyMode} />
+            <CourseReviews
+              courseId={course.id}
+              canReview={isStudent && courseDone}
+              reviewLockedHint={
+                isStudent && progress && !courseDone
+                  ? 'Podrás calificar el curso y escribir tu reseña cuando completes todas las lecciones.'
+                  : null
+              }
+            />
           </div>
         </div>
       </main>

@@ -147,6 +147,8 @@
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .leadClamped {
@@ -271,6 +273,8 @@
 .sectionText {
   margin: 0.75rem 0 0;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .outcomes {
@@ -474,6 +478,8 @@
   gap: 0.75rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .requirements li::before {
@@ -661,6 +667,8 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 /* Tablet y móvil: una columna; la tarjeta de acción sube bajo el título */

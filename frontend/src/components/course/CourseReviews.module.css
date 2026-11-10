@@ -194,6 +194,8 @@
   line-height: 1.6;
   color: var(--color-text-body);
   max-width: 70ch;
+  text-align: justify;
+  hyphens: auto;
 }
 
 .srOnly {
@@ -203,4 +205,26 @@
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+/* Inscrito sin terminar: aviso discreto en lugar del formulario */
+.locked {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  margin: 0 0 1.25rem;
+  padding: 0.875rem 1rem;
+  border: 1px dashed var(--color-border-strong);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.locked svg {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  margin-top: 0.0625rem;
+  color: var(--color-text-faint);
 }
