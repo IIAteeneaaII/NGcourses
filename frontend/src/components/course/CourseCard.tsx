@@ -28,9 +28,14 @@ export default function CourseCard({ course }: CourseCardProps) {
   const priceLabel = course.esGratis ? null : formatPrice(course.precio, course.moneda);
   const steps = LEVEL_STEPS[course.level] ?? 0;
   const title = course.title.trim().replace(/\.$/, '');
+  const isGlobal = course.tipo === 'global';
+  const subTotal = course.subcursosTotal ?? 0;
+  const subDone = course.subcursosCompletados ?? 0;
+  const lecTotal = course.leccionesTotal ?? 0;
+  const pct = lecTotal > 0 ? Math.round(((course.leccionesCompletadas ?? 0) / lecTotal) * 100) : 0;
 
   return (
-    <Link href={`/curso/${course.id}`} className={styles.card}>
+    <Link href={`/curso/${course.id}`} className={`${styles.card} ${isGlobal ? styles.stack : ''}`}>
       <div className={styles.imageContainer}>
         <CourseCover
           src={course.image}
@@ -66,7 +71,29 @@ export default function CourseCard({ course }: CourseCardProps) {
 
         <h3 className={styles.title}>{title}</h3>
 
-        {course.category && <p className={styles.meta}>{course.category}</p>}
+        {isGlobal ? (
+          <p className={styles.meta}>
+            {subTotal} {subTotal === 1 ? 'curso' : 'cursos'} · {lecTotal} {lecTotal === 1 ? 'lección' : 'lecciones'}
+          </p>
+        ) : (
+          course.category && <p className={styles.meta}>{course.category}</p>
+        )}
+
+        {isGlobal && course.enrolled && (
+          <div className={styles.progressRow}>
+            <span
+              className={styles.track}
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={pct}
+              aria-label={`Avance ${pct} %`}
+            >
+              <span className={styles.fill} style={{ width: `${pct}%` }} />
+            </span>
+            <span>{subDone} de {subTotal}</span>
+          </div>
+        )}
 
         <div className={styles.footer}>
           {steps > 0 ? (

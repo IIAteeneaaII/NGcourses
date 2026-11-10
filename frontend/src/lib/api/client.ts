@@ -221,6 +221,9 @@ export const cursosApi = {
   update: (id: string, data: unknown) => apiClient.patch(`/api/v1/cursos/${id}`, data),
   delete: (id: string) => apiClient.delete(`/api/v1/cursos/${id}`),
   uploadCover: (id: string, file: File) => apiClient.uploadFile(`/api/v1/cursos/${id}/cover`, file),
+  /** Curso global: guarda qué cursos tiene dentro y en qué orden. */
+  setSubcursos: (id: string, curso_ids: string[]) =>
+    apiClient.put(`/api/v1/cursos/${id}/subcursos`, { curso_ids }),
   // Módulos
   createModulo: (curso_id: string, data: unknown) =>
     apiClient.post(`/api/v1/cursos/${curso_id}/modulos`, data),

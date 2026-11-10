@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from app import crud
 from app.api.deps import AdminOrSuperuser, CurrentUser, SessionDep, get_current_active_superuser
 from app.core.config import settings
-from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario, TipoLeccion
+from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario, TipoCurso, TipoLeccion
 from app.models.inscripcion import Inscripcion
 from app.models.user import User
 from app.models.contenido import (
@@ -23,6 +23,9 @@ from app.models.contenido import (
     BunnyVideoStatusResponse,
     CursoCreate,
     CursoDetalle,
+    CursoPadreRef,
+    SubcursoResumen,
+    SubcursosUpdate,
     CursoPublic,
     CursosPublic,
     CursoUpdate,
@@ -235,6 +238,10 @@ def list_cursos(
             # El nivel vive en metadata; el catálogo lo necesita para el filtro por nivel.
             item.nivel = (c.metadata_ or {}).get("nivel")
             items.append(item)
+        items, count = _agrupar_en_cursos_globales(
+            session=session, current_user=current_user, items=items, count=count,
+            accesibles=accesibles, comprados=comprados,
+        )
         return CursosPublic(data=items, count=count)
 
     # Admin/instructor: también se expone el nivel (vive en metadata) para el
@@ -245,6 +252,83 @@ def list_cursos(
         item.nivel = (c.metadata_ or {}).get("nivel")
         items.append(item)
     return CursosPublic(data=items, count=count)
+
+
+def _llenar_agregados_global(
+    *, session: SessionDep, usuario_id: uuid.UUID, item: Any, subcursos: list[Any]
+) -> None:
+    """Totales y avance del alumno en un curso global, sumando sus cursos."""
+    ids = [h.id for h in subcursos]
+    totales = crud.contar_lecciones_visibles(session=session, curso_ids=ids)
+    avance = crud.avance_en_cursos(session=session, usuario_id=usuario_id, curso_ids=ids)
+    item.subcursos_total = len(ids)
+    item.subcursos_titulos = [h.titulo for h in subcursos]
+    item.lecciones_total = sum(totales.values())
+    item.subcursos_inscritos = len(avance)
+    item.lecciones_completadas = sum(min(n, totales.get(cid, 0)) for cid, (_, n) in avance.items())
+    item.subcursos_completados = sum(
+        1 for cid, (_, n) in avance.items() if totales.get(cid, 0) and n >= totales[cid]
+    )
+
+
+def _agrupar_en_cursos_globales(
+    *,
+    session: SessionDep,
+    current_user: Any,
+    items: list[CursoPublic],
+    count: int,
+    accesibles: set[uuid.UUID],
+    comprados: set[uuid.UUID],
+) -> tuple[list[CursoPublic], int]:
+    """Catálogo del alumno: cada curso que está dentro de un curso global
+    PUBLICADO se muestra como su curso global (una sola vez). Si el global no
+    está publicado, el curso se queda suelto como siempre. Sin cursos globales,
+    la lista sale igual que antes."""
+    padre_ids = {i.curso_padre_id for i in items if i.curso_padre_id}
+    globales_en_lista = {i.id for i in items if i.tipo == TipoCurso.GLOBAL}
+    if not padre_ids and not globales_en_lista:
+        return items, count
+
+    padres = {}
+    for pid in padre_ids:
+        p = crud.get_curso(session=session, curso_id=pid)
+        if not (p and p.tipo == TipoCurso.GLOBAL and p.estado == EstadoCurso.PUBLICADO):
+            continue
+        # Solo se agrupa si el alumno también tiene acceso al global; si su
+        # licencia es de un curso suelto, el curso se queda como hoy.
+        es_publico = p.marca == MarcaCurso.NEXTGEN and p.es_gratis
+        if es_publico or p.id in accesibles or p.id in comprados:
+            padres[pid] = p
+
+    out: list[CursoPublic] = []
+    vistos: set[uuid.UUID] = set()
+    quitados = 0
+    for item in items:
+        destino_id = item.curso_padre_id if item.curso_padre_id in padres else item.id
+        if destino_id in vistos:
+            quitados += 1
+            continue
+        vistos.add(destino_id)
+        if destino_id == item.id:
+            out.append(item)
+            continue
+        padre = padres[destino_id]
+        g = CursoPublic.model_validate(padre, from_attributes=True)
+        g.nivel = (padre.metadata_ or {}).get("nivel")
+        g.es_de_mi_org = padre.id in accesibles or item.es_de_mi_org
+        g.bloqueado_por_licencia = (
+            padre.marca == MarcaCurso.NEXTGEN and not padre.es_gratis
+            and padre.id not in accesibles and padre.id not in comprados
+        )
+        out.append(g)
+
+    for g in out:
+        if g.tipo == TipoCurso.GLOBAL:
+            _llenar_agregados_global(
+                session=session, usuario_id=current_user.id, item=g,
+                subcursos=crud.get_subcursos(session=session, padre_id=g.id, solo_publicados=True),
+            )
+    return out, max(count - quitados, len(out))
 
 
 def _thumbnail_leccion(leccion: Any, db_curso: Any) -> str | None:
@@ -387,7 +471,73 @@ def get_curso(
             curso_data.bloqueado_por_licencia = not (
                 curso_data.es_de_mi_org or tiene_pago
             )
+    _llenar_relacion_global(
+        session=session, current_user=current_user, db_curso=db_curso,
+        curso_data=curso_data, ver_borradores=is_admin or is_owner,
+    )
     return curso_data
+
+
+def _llenar_relacion_global(
+    *,
+    session: SessionDep,
+    current_user: Any,
+    db_curso: Any,
+    curso_data: CursoDetalle,
+    ver_borradores: bool,
+) -> None:
+    """En un curso global: la lista de sus cursos con el avance del alumno.
+    En un curso dentro de un global: a cuál pertenece, su lugar, y el anterior y
+    el siguiente. El alumno solo ve cursos y globales publicados."""
+    if db_curso.tipo == TipoCurso.GLOBAL:
+        hijos = crud.get_subcursos(
+            session=session, padre_id=db_curso.id, solo_publicados=not ver_borradores
+        )
+        ids = [h.id for h in hijos]
+        totales = crud.contar_lecciones_visibles(session=session, curso_ids=ids)
+        avance = crud.avance_en_cursos(session=session, usuario_id=current_user.id, curso_ids=ids)
+        resumen = []
+        for h in hijos:
+            mods = crud.get_modulos(session=session, curso_id=h.id)
+            total = totales.get(h.id, 0)
+            inscrito, hechas = avance.get(h.id, (False, 0))
+            hechas = min(hechas, total)
+            resumen.append(SubcursoResumen(
+                id=h.id, titulo=h.titulo, estado=h.estado, orden_en_padre=h.orden_en_padre,
+                nivel=(h.metadata_ or {}).get("nivel"), portada_url=h.portada_url,
+                duracion_seg=h.duracion_seg, total_modulos=len(mods), total_lecciones=total,
+                lecciones_completadas=hechas, inscrito=inscrito,
+                completado=bool(total) and hechas >= total,
+                modulos=[m.titulo for m in mods],
+            ))
+        curso_data.subcursos = resumen
+        _llenar_agregados_global(
+            session=session, usuario_id=current_user.id, item=curso_data,
+            subcursos=[h for h in hijos if h.estado == EstadoCurso.PUBLICADO],
+        )
+        return
+
+    if not db_curso.curso_padre_id:
+        return
+    padre = crud.get_curso(session=session, curso_id=db_curso.curso_padre_id)
+    if not padre or padre.tipo != TipoCurso.GLOBAL:
+        return
+    if not ver_borradores and padre.estado != EstadoCurso.PUBLICADO:
+        return
+    hermanos = crud.get_subcursos(
+        session=session, padre_id=padre.id, solo_publicados=not ver_borradores
+    )
+    ids = [h.id for h in hermanos]
+    if db_curso.id not in ids:
+        return
+    i = ids.index(db_curso.id)
+    ant = hermanos[i - 1] if i > 0 else None
+    sig = hermanos[i + 1] if i + 1 < len(hermanos) else None
+    curso_data.padre = CursoPadreRef(
+        id=padre.id, titulo=padre.titulo, posicion=i + 1, total=len(hermanos),
+        anterior_id=ant.id if ant else None, anterior_titulo=ant.titulo if ant else None,
+        siguiente_id=sig.id if sig else None, siguiente_titulo=sig.titulo if sig else None,
+    )
 
 
 @router.post("/", response_model=CursoPublic, status_code=201)
@@ -439,6 +589,16 @@ def update_curso(
     # de video sin video. Cubre cualquier camino (admin, instructor si se reactiva
     # el flag, o llamada directa a la API); el guardado/autosave a medias sí se
     # permite. Mismo criterio que el bloqueo de quizzes incompletos (CP19).
+    if (
+        db_curso.tipo == TipoCurso.GLOBAL
+        and curso_in.estado in (EstadoCurso.PUBLICADO, EstadoCurso.REVISION)
+        and not crud.get_subcursos(session=session, padre_id=db_curso.id, solo_publicados=True)
+    ):
+        raise HTTPException(
+            status_code=409,
+            detail="No puedes publicar el curso global: agrega al menos un curso publicado.",
+        )
+
     if curso_in.estado in (EstadoCurso.PUBLICADO, EstadoCurso.REVISION):
         sin_video = [
             leccion.titulo or "sin título"
@@ -461,6 +621,34 @@ def update_curso(
 
     db_curso = crud.update_curso(session=session, db_curso=db_curso, curso_in=curso_in)
     return db_curso
+
+
+@router.put("/{curso_id}/subcursos", response_model=list[SubcursoResumen])
+def set_subcursos(
+    *,
+    curso_id: uuid.UUID,
+    session: SessionDep,
+    current_user: CurrentUser,
+    body: SubcursosUpdate,
+) -> Any:
+    """Define qué cursos forman el curso global y en qué orden.
+    Los cursos que salen de la lista quedan sueltos; nadie pierde su avance."""
+    db_curso = crud.get_curso(session=session, curso_id=curso_id)
+    if not db_curso:
+        raise HTTPException(status_code=404, detail="Curso no encontrado")
+    _require_curso_owner_or_admin(current_user, db_curso.instructor_id)
+    try:
+        hijos = crud.set_subcursos(session=session, padre=db_curso, curso_ids=body.curso_ids)
+    except ValueError as exc:
+        raise HTTPException(status_code=409, detail=str(exc))
+    return [
+        SubcursoResumen(
+            id=h.id, titulo=h.titulo, estado=h.estado, orden_en_padre=h.orden_en_padre,
+            nivel=(h.metadata_ or {}).get("nivel"), portada_url=h.portada_url,
+            duracion_seg=h.duracion_seg,
+        )
+        for h in hijos
+    ]
 
 
 @router.delete("/{curso_id}", response_model=Message)
@@ -670,6 +858,11 @@ def create_modulo(
         raise HTTPException(status_code=404, detail="Curso no encontrado")
 
     _require_curso_owner_or_admin(current_user, db_curso.instructor_id)
+    if db_curso.tipo == TipoCurso.GLOBAL:
+        raise HTTPException(
+            status_code=409,
+            detail="Un curso global no tiene módulos: agrega cursos dentro de él.",
+        )
 
     db_modulo = crud.create_modulo(session=session, modulo_in=modulo_in, curso_id=curso_id)
     modulo_data = ModuloPublic.model_validate(db_modulo, from_attributes=True)

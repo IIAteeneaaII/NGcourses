@@ -11,7 +11,13 @@ from sqlmodel import SQLModel, select
 from app import crud
 from app.api.deps import CurrentUser, SessionDep
 from app.models import User
-from app.models._enums import EstadoCurso, EstadoInscripcion, MarcaCurso, RolUsuario
+from app.models._enums import (
+    EstadoCurso,
+    EstadoInscripcion,
+    MarcaCurso,
+    RolUsuario,
+    TipoCurso,
+)
 from app.models.inscripcion import Certificado, Inscripcion
 
 router = APIRouter(prefix="/inscripciones", tags=["inscripciones"])
@@ -110,6 +116,19 @@ def inscribirse(
                     status_code=403,
                     detail="No tienes acceso a este curso. Requiere una licencia de tu organización o adquirirlo.",
                 )
+
+    # Curso global: no tiene inscripción propia. Inscribirse a él inscribe al
+    # alumno en todos sus cursos publicados (la licencia del global los cubre).
+    # Se regresa la inscripción del primer curso.
+    if db_curso.tipo == TipoCurso.GLOBAL:
+        inscs = crud.inscribir_en_curso_global(
+            session=session, usuario_id=current_user.id, padre=db_curso
+        )
+        if not inscs:
+            raise HTTPException(
+                status_code=409, detail="Este curso todavía no tiene cursos disponibles."
+            )
+        return InscripcionPublic.model_validate(inscs[0], from_attributes=True)
 
     # Si había una inscripción cancelada y el alumno está autorizado, se reactiva
     # (mismo criterio que el canje de invitación) en vez de crear una nueva, para

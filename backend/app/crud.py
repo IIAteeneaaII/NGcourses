@@ -35,6 +35,7 @@ from app.models._enums import (
     MarcaCurso,
     RolOrganizacion,
     RolUsuario,
+    TipoCurso,
 )
 from app.models.inscripcion import Certificado, Inscripcion, ProgresoLeccion
 from app.models.calificacion import Calificacion, VotoResena
@@ -1666,7 +1667,7 @@ def cursos_con_licencia_activa(
         if lic.cupos_total and lic.cupos_usados >= lic.cupos_total:
             continue
         out.add(lic.curso_id)
-    return out
+    return expandir_con_subcursos(session=session, curso_ids=out)
 
 
 def cursos_con_licencia_activa_orgs(
@@ -1695,7 +1696,7 @@ def cursos_con_licencia_activa_orgs(
         if lic.cupos_total and lic.cupos_usados >= lic.cupos_total:
             continue
         out.add(lic.curso_id)
-    return out
+    return expandir_con_subcursos(session=session, curso_ids=out)
 
 
 def list_cursos_for_student(
@@ -1733,6 +1734,8 @@ def list_cursos_for_student(
             LicenciaCurso.organizacion_id.in_(org_ids),  # type: ignore[attr-defined]
         )
         visibles.append(Curso.id.in_(lic_subq))  # type: ignore[attr-defined]
+        # Cursos dentro de un curso global licenciado a la org.
+        visibles.append(Curso.curso_padre_id.in_(lic_subq))  # type: ignore[union-attr]
     stmt = stmt.where(or_(*visibles))
 
     if categoria_id:
@@ -2006,3 +2009,150 @@ def set_feature_flag(*, session: Session, nombre: str, habilitado: bool):
     session.commit()
     session.refresh(flag)
     return flag
+
+
+# ── Cursos globales ─────────────────────────────────────────────────────────
+# Un curso global (tipo=GLOBAL) no tiene módulos: agrupa cursos individuales
+# que apuntan a él con `curso_padre_id`. Los cursos que no pertenecen a ningún
+# global se comportan exactamente igual que antes.
+
+
+def expandir_con_subcursos(
+    *, session: Session, curso_ids: set[uuid.UUID]
+) -> set[uuid.UUID]:
+    """Agrega a `curso_ids` los cursos que están dentro de algún curso global
+    del conjunto. Así una licencia del curso global cubre a todos sus cursos.
+    Si el conjunto no tiene cursos globales, regresa el mismo conjunto."""
+    if not curso_ids:
+        return curso_ids
+    hijos = session.exec(
+        select(Curso.id).where(
+            Curso.curso_padre_id.in_(list(curso_ids))  # type: ignore[union-attr]
+        )
+    ).all()
+    if not hijos:
+        return curso_ids
+    return set(curso_ids) | set(hijos)
+
+
+def get_subcursos(
+    *, session: Session, padre_id: uuid.UUID, solo_publicados: bool = False
+) -> list[Curso]:
+    stmt = select(Curso).where(Curso.curso_padre_id == padre_id)
+    if solo_publicados:
+        stmt = stmt.where(Curso.estado == EstadoCurso.PUBLICADO)
+    stmt = stmt.order_by(Curso.orden_en_padre, Curso.titulo)  # type: ignore[arg-type]
+    return list(session.exec(stmt).all())
+
+
+def contar_lecciones_visibles(
+    *, session: Session, curso_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, int]:
+    """Lecciones visibles por curso, en una sola consulta."""
+    if not curso_ids:
+        return {}
+    rows = session.exec(
+        select(Modulo.curso_id, func.count(Leccion.id))
+        .join(Leccion, Leccion.modulo_id == Modulo.id)
+        .where(
+            Modulo.curso_id.in_(curso_ids),  # type: ignore[attr-defined]
+            Leccion.es_visible == True,  # noqa: E712
+        )
+        .group_by(Modulo.curso_id)
+    ).all()
+    return dict(rows)
+
+
+def avance_en_cursos(
+    *, session: Session, usuario_id: uuid.UUID, curso_ids: list[uuid.UUID]
+) -> dict[uuid.UUID, tuple[bool, int]]:
+    """Para cada curso donde el alumno tiene inscripción vigente (no cancelada):
+    (inscrito, lecciones visibles completadas). Cursos sin inscripción no aparecen."""
+    if not curso_ids:
+        return {}
+    inscs = session.exec(
+        select(Inscripcion).where(
+            Inscripcion.usuario_id == usuario_id,
+            Inscripcion.curso_id.in_(curso_ids),  # type: ignore[attr-defined]
+            Inscripcion.estado != EstadoInscripcion.CANCELADO,
+        )
+    ).all()
+    if not inscs:
+        return {}
+    por_insc = {i.id: i.curso_id for i in inscs}
+    rows = session.exec(
+        select(ProgresoLeccion.inscripcion_id, func.count(ProgresoLeccion.id))
+        .join(Leccion, Leccion.id == ProgresoLeccion.leccion_id)
+        .where(
+            ProgresoLeccion.inscripcion_id.in_(list(por_insc)),  # type: ignore[attr-defined]
+            ProgresoLeccion.completado == True,  # noqa: E712
+            Leccion.es_visible == True,  # noqa: E712
+        )
+        .group_by(ProgresoLeccion.inscripcion_id)
+    ).all()
+    hechas = dict(rows)
+    return {cid: (True, hechas.get(iid, 0)) for iid, cid in por_insc.items()}
+
+
+def set_subcursos(
+    *, session: Session, padre: Curso, curso_ids: list[uuid.UUID]
+) -> list[Curso]:
+    """Deja exactamente `curso_ids` (en ese orden) dentro del curso global.
+    Los que salen quedan sueltos otra vez; sus inscripciones y avance no cambian.
+    Valida antes de escribir: lanza ValueError con un mensaje para el usuario."""
+    if padre.tipo != TipoCurso.GLOBAL:
+        raise ValueError("Solo un curso global puede tener cursos dentro.")
+    if len(set(curso_ids)) != len(curso_ids):
+        raise ValueError("La lista tiene cursos repetidos.")
+    nuevos: list[Curso] = []
+    for cid in curso_ids:
+        c = session.get(Curso, cid)
+        if not c:
+            raise ValueError("Uno de los cursos ya no existe.")
+        if c.id == padre.id or c.tipo == TipoCurso.GLOBAL:
+            raise ValueError(f"'{c.titulo}' es un curso global y no puede ir dentro de otro.")
+        if c.curso_padre_id and c.curso_padre_id != padre.id:
+            otro = session.get(Curso, c.curso_padre_id)
+            nombre = otro.titulo if otro else "otro curso global"
+            raise ValueError(f"'{c.titulo}' ya está en {nombre}. Quítalo de ahí primero.")
+        nuevos.append(c)
+
+    nuevos_ids = {c.id for c in nuevos}
+    for viejo in get_subcursos(session=session, padre_id=padre.id):
+        if viejo.id not in nuevos_ids:
+            viejo.curso_padre_id = None
+            viejo.orden_en_padre = 0
+            session.add(viejo)
+    for i, c in enumerate(nuevos, start=1):
+        c.curso_padre_id = padre.id
+        c.orden_en_padre = i
+        session.add(c)
+    padre.actualizado_en = datetime.utcnow()
+    session.add(padre)
+    session.commit()
+    return get_subcursos(session=session, padre_id=padre.id)
+
+
+def inscribir_en_curso_global(
+    *, session: Session, usuario_id: uuid.UUID, padre: Curso
+) -> list[Inscripcion]:
+    """Inscribe al alumno en todos los cursos publicados del curso global.
+    Reactiva inscripciones canceladas y deja intactas las que ya existen."""
+    out: list[Inscripcion] = []
+    for hijo in get_subcursos(session=session, padre_id=padre.id, solo_publicados=True):
+        insc = get_inscripcion_by_usuario_curso(
+            session=session, usuario_id=usuario_id, curso_id=hijo.id
+        )
+        if insc is None:
+            insc = Inscripcion(usuario_id=usuario_id, curso_id=hijo.id)
+        elif insc.estado == EstadoInscripcion.CANCELADO:
+            insc.estado = EstadoInscripcion.ACTIVA
+        else:
+            out.append(insc)
+            continue
+        session.add(insc)
+        out.append(insc)
+    session.commit()
+    for insc in out:
+        session.refresh(insc)
+    return out

@@ -7,7 +7,7 @@ from sqlalchemy import Column, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlmodel import Field, Relationship, SQLModel
 
-from app.models._enums import EstadoCurso, MarcaCurso, TipoLeccion, TipoRecurso
+from app.models._enums import EstadoCurso, MarcaCurso, TipoCurso, TipoLeccion, TipoRecurso
 
 def _ev(obj):
     return [e.value for e in obj]
@@ -107,6 +107,20 @@ class Curso(SQLModel, table=True):
     publicado_en: datetime | None = Field(default=None)
     creado_en: datetime = Field(default_factory=datetime.utcnow)
     actualizado_en: datetime | None = Field(default=None)
+    # Cursos globales: un curso "global" no tiene módulos; agrupa cursos
+    # "individual" que apuntan a él con `curso_padre_id`, en `orden_en_padre`.
+    # Los cursos existentes quedan como individual y sin padre.
+    tipo: TipoCurso = Field(
+        default=TipoCurso.INDIVIDUAL,
+        sa_column=Column("tipo", String(20), nullable=False, server_default="individual"),
+    )
+    curso_padre_id: uuid.UUID | None = Field(
+        default=None, foreign_key="cursos.id", nullable=True, ondelete="SET NULL", index=True
+    )
+    orden_en_padre: int = Field(
+        default=0,
+        sa_column=Column("orden_en_padre", sa.Integer(), nullable=False, server_default="0"),
+    )
 
     # Relationships
     categoria: Categoria = Relationship(back_populates="cursos")
@@ -366,11 +380,60 @@ class CursoPublic(SQLModel):
     # que el candado de POST /inscripciones/. Default True para no bloquear a
     # admin/instructor; se setea explícito para el alumno en get_curso.
     puede_inscribirse: bool = True
+    # Cursos globales
+    tipo: TipoCurso = TipoCurso.INDIVIDUAL
+    curso_padre_id: uuid.UUID | None = None
+    orden_en_padre: int = 0
+    # Solo en cursos globales (catálogo y ficha): totales y avance del alumno
+    # sumando sus cursos publicados.
+    subcursos_total: int = 0
+    subcursos_completados: int = 0
+    subcursos_inscritos: int = 0
+    lecciones_total: int = 0
+    lecciones_completadas: int = 0
+    # Títulos de sus cursos, para que la búsqueda del catálogo los encuentre.
+    subcursos_titulos: list[str] = []
+
+
+class SubcursoResumen(SQLModel):
+    """Un curso dentro de un curso global, con el avance del alumno."""
+    id: uuid.UUID
+    titulo: str
+    estado: EstadoCurso
+    orden_en_padre: int = 0
+    nivel: str | None = None
+    portada_url: str | None = None
+    duracion_seg: int = 0
+    total_modulos: int = 0
+    total_lecciones: int = 0
+    lecciones_completadas: int = 0
+    inscrito: bool = False
+    completado: bool = False
+    modulos: list[str] = []
+
+
+class CursoPadreRef(SQLModel):
+    """El curso global al que pertenece un curso, y su lugar en él."""
+    id: uuid.UUID
+    titulo: str
+    posicion: int
+    total: int
+    anterior_id: uuid.UUID | None = None
+    anterior_titulo: str | None = None
+    siguiente_id: uuid.UUID | None = None
+    siguiente_titulo: str | None = None
 
 
 class CursoDetalle(CursoPublic):
     modulos: list[ModuloPublic] = []
     instructor_nombre: str | None = None
+    subcursos: list[SubcursoResumen] = []
+    padre: CursoPadreRef | None = None
+
+
+class SubcursosUpdate(SQLModel):
+    """Lista ordenada de los cursos que forman un curso global."""
+    curso_ids: list[uuid.UUID]
 
 
 class CursosPublic(SQLModel):
@@ -381,6 +444,7 @@ class CursosPublic(SQLModel):
 class CursoCreate(SQLModel):
     titulo: str
     slug: str
+    tipo: TipoCurso = TipoCurso.INDIVIDUAL
     categoria_id: uuid.UUID | None = None
     descripcion: str | None = None
     estado: EstadoCurso = EstadoCurso.BORRADOR

@@ -119,6 +119,11 @@ class EstadoInvitacion(str, enum.Enum):
     EXPIRADA = "expirada"
 
 
+class TipoCurso(str, enum.Enum):
+    INDIVIDUAL = "individual"
+    GLOBAL = "global"
+
+
 class MarcaCurso(str, enum.Enum):
     RAM = "ram"
     NEXTGEN = "nextgen"

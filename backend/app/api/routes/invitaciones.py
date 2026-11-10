@@ -12,7 +12,7 @@ from app import crud
 from app.api.deps import AdminOrSuperuser, SessionDep
 from app.core.config import settings
 from app.core.limiter import limiter
-from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario
+from app.models._enums import EstadoCurso, EstadoInscripcion, RolUsuario, TipoCurso
 from app.utils import email_formato_valido, generate_activacion_email, send_email
 
 logger = logging.getLogger(__name__)
@@ -155,6 +155,27 @@ def canjear_invitacion(
             email_to=user.email,
             subject=email_data.subject,
             html_content=email_data.html_content,
+        )
+
+    # Invitación a un curso global: inscribe en todos sus cursos publicados.
+    if db_curso.tipo == TipoCurso.GLOBAL:
+        inscs = crud.inscribir_en_curso_global(
+            session=session, usuario_id=user.id, padre=db_curso
+        )
+        if not inscs:
+            raise HTTPException(
+                status_code=409, detail="Este curso todavía no tiene cursos disponibles."
+            )
+        inv.usado_en = datetime.utcnow()
+        session.add(inv)
+        session.commit()
+        return CanjearResponse(
+            inscripcion_id=inscs[0].id,
+            curso_id=inv.curso_id,
+            curso_titulo=curso_titulo,
+            email=inv.email,
+            usuario_creado=usuario_creado,
+            requiere_activacion=requiere_activacion,
         )
 
     # Si ya está inscrito: marcar usado y retornar

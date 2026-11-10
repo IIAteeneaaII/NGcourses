@@ -139,6 +139,14 @@ export interface CourseCard {
   reviews?: number;
   /** El alumno tiene una inscripción vigente (activa o finalizada). */
   enrolled?: boolean;
+  /** 'global' = agrupa varios cursos (subcursos). Sin valor = curso normal. */
+  tipo?: 'individual' | 'global';
+  /** Solo en cursos globales: cursos dentro y avance del alumno. */
+  subcursosTotal?: number;
+  subcursosCompletados?: number;
+  leccionesTotal?: number;
+  leccionesCompletadas?: number;
+  subcursosTitulos?: string[];
 }
 
 export interface User {

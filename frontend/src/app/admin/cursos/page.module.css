@@ -503,3 +503,64 @@
     flex-wrap: wrap;
   }
 }
+
+/* ── Cursos globales ─────────────────────────────────────────────────────── */
+.headerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.disclosure,
+.disclosureSpace {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-left: -0.375rem;
+}
+
+.disclosure {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 0.25rem;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.disclosure:hover {
+  color: var(--color-text-heading);
+}
+
+.disclosure:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 1px;
+}
+
+.disclosure svg {
+  width: 0.75rem;
+  height: 0.75rem;
+  transition: transform 0.15s ease;
+}
+
+.disclosure[aria-expanded='true'] svg {
+  transform: rotate(90deg);
+}
+
+.childRow td {
+  background-color: var(--color-surface-muted);
+}
+
+/* Sangría: los cursos de un global van debajo de él. */
+.childCell {
+  padding-left: 2.25rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure svg {
+    transition: none;
+  }
+}
