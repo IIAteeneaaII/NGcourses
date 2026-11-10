@@ -287,10 +287,12 @@ def invitar(
             detail="Solo puedes enviar invitaciones de cursos publicados.",
         )
 
+    # Un curso dentro de un curso global queda cubierto por la licencia del global.
+    cubiertos = {body.curso_id} | ({curso.curso_padre_id} if curso.curso_padre_id else set())
     licencia = session.exec(
         select(LicenciaCurso).where(
             LicenciaCurso.organizacion_id == org.id,
-            LicenciaCurso.curso_id == body.curso_id,
+            LicenciaCurso.curso_id.in_(cubiertos),  # type: ignore[attr-defined]
             LicenciaCurso.estado == EstadoLicencia.ACTIVA,
         )
     ).first()
@@ -367,9 +369,9 @@ def listar_invitaciones(
     from app.models.invitacion import InvitacionCurso
 
     licencias = crud.list_licencias_by_org(session=session, org_id=org.id)
-    curso_ids_org = {
+    curso_ids_org = crud.expandir_con_subcursos(session=session, curso_ids={
         lic.curso_id for lic in licencias if lic.estado == EstadoLicencia.ACTIVA
-    }
+    })
 
     invs = list(session.exec(
         select(InvitacionCurso).where(

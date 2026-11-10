@@ -163,6 +163,68 @@
   color: var(--color-text-muted);
 }
 
+/* Curso global: dos orillas de tarjeta detrás indican que adentro hay varios
+   cursos. El margen superior deja espacio para que no se encimen en la fila. */
+.stack {
+  position: relative;
+  margin-top: 0.625rem;
+  isolation: isolate;
+}
+
+.stack::before,
+.stack::after {
+  content: '';
+  position: absolute;
+  top: -0.375rem;
+  left: 0.875rem;
+  right: 0.875rem;
+  height: 0.75rem;
+  border: 1px solid var(--color-border-strong);
+  border-bottom: none;
+  border-radius: 0.75rem 0.75rem 0 0;
+  background-color: var(--color-primary-60-alt);
+  z-index: -1;
+  transition: border-color 0.15s ease;
+}
+
+.stack::after {
+  top: -0.6875rem;
+  left: 1.75rem;
+  right: 1.75rem;
+  opacity: 0.7;
+  z-index: -2;
+}
+
+.stack:hover::before,
+.stack:hover::after {
+  border-color: var(--color-secondary-30);
+}
+
+.progressRow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 0.625rem;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.track {
+  display: block;
+  height: 6px;
+  overflow: hidden;
+  border-radius: 9999px;
+  background-color: var(--color-surface-subtle);
+}
+
+.fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--color-secondary-30);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .card,
   .imageContainer img {

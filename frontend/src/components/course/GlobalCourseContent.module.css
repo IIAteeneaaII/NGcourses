@@ -1,0 +1,97 @@
+/* Lo propio de la ficha de un curso global. Todo lo demás reutiliza
+   CourseInfoContent.module.css para que se vea igual que la ficha normal. */
+
+.countNext {
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.openIcon {
+  display: inline-flex;
+  color: var(--color-secondary-30);
+}
+
+.openIcon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+  color: inherit;
+}
+
+.openLink {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-secondary-30);
+  text-decoration: none;
+}
+
+.openLink:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.openLink:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.error {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-tint-error-text, #b91c1c);
+}
+
+/* Al final del temario de un curso que está dentro de un global: el siguiente. */
+.sibling {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border-default);
+  border-radius: 0.75rem;
+  background-color: var(--color-primary-60-alt);
+}
+
+.siblingLabel {
+  display: block;
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+}
+
+.siblingTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text-heading);
+}
+
+.siblingButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.625rem;
+  background-color: var(--color-primary-60-alt);
+  color: var(--color-text-heading);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.siblingButton:hover {
+  border-color: var(--color-secondary-30);
+}
+
+.siblingButton:focus-visible {
+  outline: 2px solid var(--color-secondary-30);
+  outline-offset: 2px;
+}
+
+.siblingButton svg {
+  width: 1rem;
+  height: 1rem;
+}

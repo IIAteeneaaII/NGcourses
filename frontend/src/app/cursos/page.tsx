@@ -27,6 +27,13 @@ interface ApiCurso {
   moneda?: string;
   destacado?: boolean;
   estado?: string;
+  tipo?: 'individual' | 'global';
+  subcursos_total?: number;
+  subcursos_completados?: number;
+  subcursos_inscritos?: number;
+  lecciones_total?: number;
+  lecciones_completadas?: number;
+  subcursos_titulos?: string[];
 }
 
 interface ApiInscripcion {
@@ -111,7 +118,13 @@ export default function CursosPage() {
             moneda: c.moneda || 'MXN',
             destacado: c.destacado ?? false,
             esGratis: c.es_gratis ?? (c.precio == null || Number(c.precio) === 0),
-            enrolled: enrolledIds.has(c.id),
+            enrolled: c.tipo === 'global' ? (c.subcursos_inscritos ?? 0) > 0 : enrolledIds.has(c.id),
+            tipo: c.tipo,
+            subcursosTotal: c.subcursos_total,
+            subcursosCompletados: c.subcursos_completados,
+            leccionesTotal: c.lecciones_total,
+            leccionesCompletadas: c.lecciones_completadas,
+            subcursosTitulos: c.subcursos_titulos,
           }));
           setCourses(cards);
         }

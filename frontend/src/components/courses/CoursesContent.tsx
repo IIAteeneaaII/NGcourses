@@ -44,7 +44,10 @@ export default function CoursesContent({ courses, user, orgName, activeCount = 0
 
   const filteredCourses = courses.filter((course) => {
     const q = searchQuery.trim().toLowerCase();
-    const matchesSearch = !q || course.title.toLowerCase().includes(q);
+    // En un curso global también se buscan los títulos de los cursos que tiene dentro.
+    const matchesSearch = !q
+      || course.title.toLowerCase().includes(q)
+      || (course.subcursosTitulos ?? []).some((t) => t.toLowerCase().includes(q));
     const matchesLevel = !levelFilter || course.level === levelFilter;
     const matchesCategory = !categoryFilter || course.category === categoryFilter;
     return matchesSearch && matchesLevel && matchesCategory;

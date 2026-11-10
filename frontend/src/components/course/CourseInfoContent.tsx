@@ -9,6 +9,18 @@ import PayPalCheckout from './PayPalCheckout';
 import CourseReviews from './CourseReviews';
 import LessonThumb from './LessonThumb';
 import styles from './CourseInfoContent.module.css';
+import globalStyles from './GlobalCourseContent.module.css';
+import { sinPrefijo } from './GlobalCourseContent';
+
+/** Curso global al que pertenece este curso, y su lugar en él. */
+export interface CoursePadre {
+  id: string;
+  titulo: string;
+  posicion: number;
+  total: number;
+  siguiente_id?: string | null;
+  siguiente_titulo?: string | null;
+}
 
 /** Avance del alumno inscrito (GET /progreso/curso/{id}). */
 export interface CourseProgress {
@@ -32,6 +44,8 @@ interface CourseInfoContentProps {
   viewCourseLabel?: string;
   /** Vista del alumno real: barra de navegación del alumno y ruta al Dashboard. */
   showUserMenu?: boolean;
+  /** Si el curso está dentro de un curso global. Sin valor, la ficha es la de siempre. */
+  padre?: CoursePadre | null;
 }
 
 type LessonKind = 'video' | 'lectura' | 'quiz';
@@ -137,7 +151,9 @@ export default function CourseInfoContent({
   viewCourseHref,
   viewCourseLabel = 'Ver curso',
   showUserMenu,
+  padre = null,
 }: CourseInfoContentProps) {
+  const displayTitle = padre ? sinPrefijo(course.title, padre.titulo) : cleanTitle(course.title);
   const price = formatPrice(course.precio, course.moneda);
   const requierePago = !price.isFree;
   const completedIds = new Set(progress?.completedLessonIds ?? []);
@@ -197,9 +213,11 @@ export default function CourseInfoContent({
     : course.marca === 'nextgen' && (course.esGratis ?? price.isFree)
       ? 'Cursos gratuitos NextGenIA'
       : null;
-  const eyebrow = [course.category, course.marca === 'nextgen' ? 'NextGenIA' : course.marca === 'ram' ? 'RAM' : null]
-    .filter(Boolean)
-    .join(' · ');
+  const eyebrow = padre
+    ? `${cleanTitle(padre.titulo)} · Curso ${padre.posicion} de ${padre.total}`
+    : [course.category, course.marca === 'nextgen' ? 'NextGenIA' : course.marca === 'ram' ? 'RAM' : null]
+      .filter(Boolean)
+      .join(' · ');
 
   const ArrowIcon = (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -339,7 +357,12 @@ export default function CourseInfoContent({
         {showUserMenu ? (
           <nav className={styles.crumbs} aria-label="Ruta">
             <Link href={backHref}>Dashboard</Link>
-            {section && (
+            {padre ? (
+              <>
+                <span aria-hidden="true">/</span>
+                <Link href={`/curso/${padre.id}`}>{cleanTitle(padre.titulo)}</Link>
+              </>
+            ) : section && (
               <>
                 <span aria-hidden="true">/</span>
                 <span>{section}</span>
@@ -356,7 +379,7 @@ export default function CourseInfoContent({
         <div className={styles.layout}>
           <section className={styles.hero} aria-labelledby="course-title">
             {eyebrow && <p className={styles.eyebrow}>{eyebrow}</p>}
-            <h1 id="course-title" className={styles.courseTitle}>{cleanTitle(course.title)}</h1>
+            <h1 id="course-title" className={styles.courseTitle}>{displayTitle}</h1>
             {course.description && (
               <>
                 <p
@@ -535,6 +558,20 @@ export default function CourseInfoContent({
                       </div>
                     );
                   })}
+                </div>
+              )}
+              {padre?.siguiente_id && padre.siguiente_titulo && (
+                <div className={globalStyles.sibling}>
+                  <div>
+                    <span className={globalStyles.siblingLabel}>
+                      Siguiente en {cleanTitle(padre.titulo)} · Curso {padre.posicion + 1} de {padre.total}
+                    </span>
+                    <span className={globalStyles.siblingTitle}>{sinPrefijo(padre.siguiente_titulo, padre.titulo)}</span>
+                  </div>
+                  <Link href={`/curso/${padre.siguiente_id}`} className={globalStyles.siblingButton}>
+                    Ver curso
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M9 6l6 6-6 6" /></svg>
+                  </Link>
                 </div>
               )}
             </section>

@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, notFound } from 'next/navigation';
-import CourseInfoContent, { type CourseProgress } from '@/components/course/CourseInfoContent';
+import CourseInfoContent, { type CoursePadre, type CourseProgress } from '@/components/course/CourseInfoContent';
+import GlobalCourseContent, { type GlobalCourse, type Subcurso } from '@/components/course/GlobalCourseContent';
 import { categoriasApi, cursosApi, inscripcionesApi, progresoApi, type ApiError } from '@/lib/api/client';
 import { logError } from '@/lib/logger';
 import type { CourseInfo } from '@/types/course';
@@ -71,6 +72,13 @@ interface ApiCurso {
   precio?: number | string | null;
   moneda?: string;
   destacado?: boolean;
+  puede_inscribirse?: boolean;
+  tipo?: 'individual' | 'global';
+  subcursos?: Subcurso[];
+  padre?: CoursePadre | null;
+  lecciones_total?: number;
+  lecciones_completadas?: number;
+  subcursos_completados?: number;
 }
 
 interface ApiInscripcionesResp {
@@ -97,6 +105,11 @@ export default function CursoInfoPage() {
   const [hasError, setHasError] = useState(false);
   const [backHref, setBackHref] = useState('/cursos');
   const [userRole, setUserRole] = useState('');
+  // Curso global (agrupa cursos) y, en un curso normal, el global al que pertenece.
+  const [globalCourse, setGlobalCourse] = useState<GlobalCourse | null>(null);
+  const [padre, setPadre] = useState<CoursePadre | null>(null);
+  const [enrollError, setEnrollError] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -109,6 +122,34 @@ export default function CursoInfoPage() {
         setBackHref(getCourseBackHref(rol));
 
         const cursoRaw = await cursosApi.get(id) as ApiCurso;
+
+        const nivelTexto: Record<string, string> = {
+          principiante: 'Principiante',
+          intermedio: 'Intermedio',
+          avanzado: 'Avanzado',
+        };
+
+        // Curso global: su propia ficha, con la lista de cursos que agrupa.
+        if (cursoRaw.tipo === 'global') {
+          if (!active) return;
+          setGlobalCourse({
+            id: cursoRaw.id,
+            titulo: cursoRaw.titulo,
+            descripcion: cursoRaw.descripcion || '',
+            nivel: (cursoRaw.nivel && nivelTexto[cursoRaw.nivel]) || '',
+            image: cursoRaw.portada_url ? `${API_URL}${cursoRaw.portada_url}` : '/placeholder-course.jpg',
+            marca: cursoRaw.marca,
+            esDeMiOrg: cursoRaw.es_de_mi_org ?? false,
+            puedeInscribirse: cursoRaw.puede_inscribirse,
+            subcursos: cursoRaw.subcursos ?? [],
+            leccionesTotal: cursoRaw.lecciones_total ?? 0,
+            leccionesCompletadas: cursoRaw.lecciones_completadas ?? 0,
+            subcursosCompletados: cursoRaw.subcursos_completados ?? 0,
+          });
+          return;
+        }
+        setGlobalCourse(null);
+        setPadre(cursoRaw.padre ?? null);
 
         const esAlumno = shouldCheckEnrollment(rol);
         let inscResp: ApiInscripcionesResp = { data: [], count: 0 };
@@ -200,7 +241,22 @@ export default function CursoInfoPage() {
     return () => {
       active = false;
     };
-  }, [id]);
+  }, [id, reloadKey]);
+
+  const handleInscribirseGlobal = async () => {
+    setEnrollLoading(true);
+    setEnrollError(null);
+    try {
+      // Inscribirse al global inscribe al alumno en todos sus cursos.
+      await inscripcionesApi.inscribirse(id);
+      setReloadKey((k) => k + 1);
+    } catch (e) {
+      setEnrollError((e as ApiError)?.detail || 'No se pudo completar la inscripción. Intenta de nuevo.');
+      logError('CursoInfoPage/inscribirseGlobal', e);
+    } finally {
+      setEnrollLoading(false);
+    }
+  };
 
   const handleInscribirse = async () => {
     setEnrollLoading(true);
@@ -227,6 +283,20 @@ export default function CursoInfoPage() {
     );
   }
 
+  if (globalCourse && !hasError) {
+    return (
+      <GlobalCourseContent
+        course={globalCourse}
+        onInscribirse={shouldCheckEnrollment(userRole) ? handleInscribirseGlobal : undefined}
+        enrollLoading={enrollLoading}
+        enrollError={enrollError}
+        backHref={backHref}
+        showUserMenu={shouldCheckEnrollment(userRole)}
+        viewOnlyMode={!shouldCheckEnrollment(userRole)}
+      />
+    );
+  }
+
   if (hasError || !course) return notFound();
 
   return (
@@ -243,6 +313,7 @@ export default function CursoInfoPage() {
       viewCourseHref={`/curso/${course.id}/videos?from=supervisor`}
       viewCourseLabel="Ver curso"
       showUserMenu={shouldCheckEnrollment(userRole)}
+      padre={padre}
     />
   );
 }
