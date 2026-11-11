@@ -122,6 +122,16 @@ export default function CourseCard({ course }: CourseCardProps) {
           )}
         </div>
       </div>
+
+      {!course.enrolled && !course.bloqueadoPorLicencia && (
+        <span className={styles.enrollCta}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+            <circle cx="12" cy="12" r="9" />
+            <path strokeLinecap="round" d="M12 8v8M8 12h8" />
+          </svg>
+          {isGlobal ? `Inscríbete a los ${subTotal} cursos` : 'Inscríbete para empezar'}
+        </span>
+      )}
     </Link>
   );
 }

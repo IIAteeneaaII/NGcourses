@@ -236,3 +236,33 @@
     transform: none;
   }
 }
+
+/* Curso disponible al que el alumno todavía no se inscribe. */
+.enrollCta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.625rem 0.75rem;
+  border-radius: 0.5rem;
+  background-color: var(--color-secondary-30-lighter);
+  color: var(--color-text-heading);
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.enrollCta svg {
+  flex-shrink: 0;
+  width: 1.125rem;
+  height: 1.125rem;
+  color: var(--color-secondary-30);
+}
+
+.card:hover .enrollCta {
+  background-color: var(--color-secondary-30);
+  color: var(--color-text-white);
+}
+
+.card:hover .enrollCta svg {
+  color: inherit;
+}

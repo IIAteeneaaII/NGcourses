@@ -288,17 +288,6 @@ export default function CursosListPage() {
                   <tr key={course.id} className={hijo ? styles.childRow : undefined}>
                     <td>
                       <div className={`${styles.courseCell} ${hijo ? styles.childCell : ''}`}>
-                        {!hijo && (course.tipo === 'global' ? (
-                          <button
-                            type="button"
-                            className={styles.disclosure}
-                            aria-expanded={abierto}
-                            aria-label={`${abierto ? 'Ocultar' : 'Mostrar'} los cursos de ${course.titulo}`}
-                            onClick={() => toggleAbierto(course.id)}
-                          >
-                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M9 6l7 6-7 6z" /></svg>
-                          </button>
-                        ) : (Object.keys(hijosDe).length > 0 && <span className={styles.disclosureSpace} aria-hidden="true" />))}
                         {course.portada_url ? (
                           <img src={`${API_URL}${course.portada_url}`} alt="" className={styles.thumb} />
                         ) : (
@@ -309,6 +298,19 @@ export default function CursosListPage() {
                             {course.titulo}
                           </Link>
                           {metaFila && <span className={styles.courseMeta}>{metaFila}</span>}
+                          {!hijo && course.tipo === 'global' && total > 0 && (
+                            <button
+                              type="button"
+                              className={styles.verCursos}
+                              aria-expanded={abierto}
+                              onClick={() => toggleAbierto(course.id)}
+                            >
+                              {abierto ? 'Ocultar cursos' : `Ver ${total === 1 ? 'el curso' : `los ${total} cursos`}`}
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} aria-hidden="true">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+                              </svg>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </td>

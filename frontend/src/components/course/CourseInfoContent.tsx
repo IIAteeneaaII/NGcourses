@@ -109,8 +109,9 @@ function KindIcon({ kind }: { kind: LessonKind }) {
   if (kind === 'quiz') {
     return (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true">
-        <circle cx="12" cy="12" r="9" />
-        <path strokeLinecap="round" d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" />
+        <rect x="5" y="4.5" width="14" height="16.5" rx="2" />
+        <path strokeLinejoin="round" d="M9 3h6v3H9z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 11.5l1.25 1.25L12 10.5M14 12h2M8.5 16.5l1.25 1.25L12 15.5M14 17h2" />
       </svg>
     );
   }
@@ -237,7 +238,7 @@ export default function CourseInfoContent({
       </li>
       {kinds.quiz > 0 && (
         <li>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true"><circle cx="12" cy="12" r="9" /><path strokeLinecap="round" d="M9.5 9.5a2.5 2.5 0 114 2c-.9.6-1.5 1-1.5 2M12 17h.01" /></svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden="true"><rect x="5" y="4.5" width="14" height="16.5" rx="2" /><path strokeLinejoin="round" d="M9 3h6v3H9z" /><path strokeLinecap="round" strokeLinejoin="round" d="M8.5 11.5l1.25 1.25L12 10.5M14 12h2M8.5 16.5l1.25 1.25L12 15.5M14 17h2" /></svg>
           {plural(kinds.quiz, 'cuestionario', 'cuestionarios')} para evaluar tu avance
         </li>
       )}
