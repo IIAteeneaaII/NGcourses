@@ -158,6 +158,10 @@ export default function CoursesContent({ courses, user, orgName, activeCount = 0
                   <span className={styles.sectionCount}>
                     {group.note ? `${group.note} · ` : ''}
                     {plural(group.items.length, 'curso', 'cursos')}
+                    {(() => {
+                      const pendientes = group.items.filter((c) => !c.enrolled && !c.bloqueadoPorLicencia).length;
+                      return pendientes > 0 ? ` · ${pendientes} por inscribir` : '';
+                    })()}
                   </span>
                 </div>
                 <div className={styles.coursesGrid}>

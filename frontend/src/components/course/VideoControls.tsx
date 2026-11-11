@@ -155,7 +155,7 @@ export default function VideoControls({
       {activeTab === 'resumen' && (
         <div className={styles.tabContent}>
           {resumen && resumen.trim() ? (
-            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--color-text-body)', margin: 0 }}>{resumen}</p>
+            <p style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6, color: 'var(--color-text-body)', margin: 0, textAlign: 'justify', hyphens: 'auto' }}>{resumen}</p>
           ) : (
             <p className={styles.emptyMessage}>Esta lección no tiene un resumen disponible.</p>
           )}

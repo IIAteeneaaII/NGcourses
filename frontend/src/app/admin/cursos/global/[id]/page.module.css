@@ -133,14 +133,11 @@
 
 .num {
   width: 1.75rem;
-  height: 1.75rem;
   display: grid;
   place-items: center;
-  border-radius: 0.5rem;
-  background: var(--color-secondary-30-lighter);
-  color: var(--color-text-heading);
-  font-size: 0.8125rem;
-  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
 }
 

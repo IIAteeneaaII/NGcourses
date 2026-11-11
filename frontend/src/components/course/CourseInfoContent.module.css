@@ -147,6 +147,8 @@
   font-size: 1.0625rem;
   line-height: 1.6;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .leadClamped {
@@ -271,6 +273,8 @@
 .sectionText {
   margin: 0.75rem 0 0;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .outcomes {
@@ -340,26 +344,25 @@
 }
 
 .moduleNum {
+  align-self: start;
   width: 2rem;
-  height: 2rem;
+  height: 1.5rem;
   display: grid;
   place-items: center;
-  border-radius: 0.5rem;
-  background-color: var(--color-secondary-30-lighter);
-  color: var(--color-text-heading);
-  font-size: 0.875rem;
-  font-weight: 600;
+  color: var(--color-text-muted);
+  font-size: 1.0625rem;
+  font-weight: 500;
   font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .moduleNum svg {
-  width: 1rem;
-  height: 1rem;
+  width: 1.125rem;
+  height: 1.125rem;
 }
 
 .moduleDone .moduleNum {
-  background-color: var(--color-secondary-30);
-  color: var(--color-text-white);
+  color: var(--color-secondary-30);
 }
 
 .moduleText {
@@ -475,6 +478,8 @@
   gap: 0.75rem;
   font-size: 0.9375rem;
   color: var(--color-text-primary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 .requirements li::before {
@@ -662,6 +667,8 @@
   margin: 0;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
+  text-align: justify;
+  hyphens: auto;
 }
 
 /* Tablet y móvil: una columna; la tarjeta de acción sube bajo el título */

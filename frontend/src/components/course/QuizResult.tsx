@@ -2,6 +2,7 @@
 
 import React from 'react';
 import type { QuizQuestion } from '@/types/course';
+import base from './QuizPlayer.module.css';
 import styles from './QuizResult.module.css';
 
 interface RespuestaResult {
@@ -44,112 +45,128 @@ export default function QuizResult({ resultado, preguntas, seleccionesOriginales
     {}
   );
 
+  const mensaje = aprobado
+    ? 'Superaste el 60 % requerido. La lección queda marcada como completada.'
+    : sinIntentos
+    ? `Necesitabas al menos 60 %. Agotaste tus ${intentosMax} intentos; pide a un administrador que los reinicie.`
+    : 'Necesitas al menos 60 % de aciertos. Revisa tus respuestas y vuelve a intentarlo desde el inicio.';
+
   return (
-    <div className={styles.container}>
-      {/* Banner de resultado */}
-      <div className={`${styles.banner} ${aprobado ? styles.bannerAprobado : styles.bannerReprobado}`}>
-        <div className={styles.bannerIcon}>
-          {aprobado ? (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M22 11.08V12a10 10 0 11-5.93-9.14" />
-              <path d="M22 4L12 14.01l-3-3" />
-            </svg>
-          ) : (
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M15 9l-6 6M9 9l6 6" />
-            </svg>
-          )}
+    <section className={base.container} aria-labelledby="quiz-result-title">
+      <header className={base.head}>
+        <div className={styles.headTop}>
+          <span className={base.tag}>Resultado del cuestionario</span>
+          <span className={`${styles.status} ${aprobado ? styles.statusOk : styles.statusFail}`}>
+            {aprobado ? <CheckIcon /> : <CrossIcon />}
+            {aprobado ? 'Aprobado' : 'No aprobado'}
+          </span>
         </div>
-        <div className={styles.bannerText}>
-          <h2 className={styles.bannerTitle}>
-            {aprobado ? '¡Aprobado!' : 'No aprobado'}
-          </h2>
-          <p className={styles.bannerSubtitle}>
-            {aprobado
-              ? `Aprobaste con ${porcentaje}% de aciertos.`
-              : sinIntentos
-              ? `Necesitabas al menos 60%. Agotaste tus ${intentosMax} intentos; pide a un administrador que los reinicie.`
-              : 'Necesitas al menos 60% de aciertos. Revisa tus respuestas y vuelve a intentarlo desde el inicio.'}
+        <h2 id="quiz-result-title" className={base.title}>
+          {aprobado ? '¡Aprobaste el cuestionario!' : 'Aún no alcanzas el puntaje'}
+        </h2>
+        <p className={styles.message}>{mensaje}</p>
+
+        <div className={styles.scoreRow}>
+          <p className={styles.score}>
+            <b>{porcentaje} %</b>
+            <span>{correctas} de {total_preguntas} correctas</span>
           </p>
+          <div className={styles.map} aria-hidden="true">
+            {preguntas.map((p) => (
+              <i
+                key={p.id}
+                className={(correctaPorPregunta[p.id] ?? false) ? styles.mapOk : styles.mapFail}
+              />
+            ))}
+          </div>
         </div>
-        <div className={styles.score}>
-          <span className={styles.scoreNum}>{correctas}/{total_preguntas}</span>
-          <span className={styles.scorePct}>{porcentaje}%</span>
-        </div>
-      </div>
+      </header>
 
       {/* Desglose por pregunta */}
-      <div className={styles.reviewList}>
-        <h3 className={styles.reviewTitle}>Revisión de respuestas</h3>
-        <p className={styles.reviewNote}>
-          Se muestra tu respuesta. Las respuestas correctas no se revelan.
-        </p>
+      <div className={styles.review}>
+        <div className={styles.reviewHead}>
+          <h3 className={styles.reviewTitle}>Revisión de respuestas</h3>
+          <p className={styles.reviewNote}>Se muestra tu respuesta. Las respuestas correctas no se revelan.</p>
+        </div>
 
-        {preguntas.map((pregunta, idx) => {
-          const opcionElegidaId = seleccionesOriginales[pregunta.id];
-          const opcionElegida = pregunta.opciones.find((o) => o.id === opcionElegidaId);
-          const esCorrecta = correctaPorPregunta[pregunta.id] ?? false;
+        <ol className={styles.reviewList}>
+          {preguntas.map((pregunta, idx) => {
+            const opcionElegidaId = seleccionesOriginales[pregunta.id];
+            const opcionElegida = pregunta.opciones.find((o) => o.id === opcionElegidaId);
+            const esCorrecta = correctaPorPregunta[pregunta.id] ?? false;
 
-          return (
-            <div
-              key={pregunta.id}
-              className={`${styles.reviewCard} ${esCorrecta ? styles.correct : styles.incorrect}`}
-            >
-              <div className={styles.reviewHeader}>
-                <span className={styles.reviewNum}>{idx + 1}</span>
-                <p className={styles.reviewEnunciado}>{pregunta.enunciado || 'Sin enunciado'}</p>
-                <span className={`${styles.badge} ${esCorrecta ? styles.badgeOk : styles.badgeFail}`}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.25rem' }}>
-                    {esCorrecta ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>
-                    ) : (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                    )}
-                    {esCorrecta ? 'Correcta' : 'Incorrecta'}
-                  </span>
+            return (
+              <li key={pregunta.id} className={styles.reviewItem}>
+                <span className={`${styles.mark} ${esCorrecta ? styles.markOk : styles.markFail}`} aria-hidden="true">
+                  {esCorrecta ? <CheckIcon /> : <CrossIcon />}
                 </span>
-              </div>
-              <div className={styles.reviewAnswer}>
-                <span className={styles.reviewAnswerLabel}>Tu respuesta:</span>
-                <span className={styles.reviewAnswerText}>
-                  {opcionElegida ? opcionElegida.texto : <em>Sin respuesta</em>}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+                <div className={styles.reviewBody}>
+                  <p className={styles.reviewNum}>
+                    Pregunta {idx + 1}
+                    <span className={esCorrecta ? styles.labelOk : styles.labelFail}>
+                      {esCorrecta ? 'Correcta' : 'Incorrecta'}
+                    </span>
+                  </p>
+                  <p className={styles.reviewEnunciado}>{pregunta.enunciado || 'Sin enunciado'}</p>
+                  <p className={styles.reviewAnswer}>
+                    <span className={styles.reviewAnswerLabel}>Tu respuesta</span>
+                    <span className={styles.reviewAnswerText}>
+                      {opcionElegida ? opcionElegida.texto : <em>Sin respuesta</em>}
+                    </span>
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       {/* Acciones */}
-      <div className={styles.actions}>
+      <footer className={base.footer}>
         {!aprobado && onReintentar && (
-          <>
-            <button className={styles.retryBtn} onClick={onReintentar}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <div className={base.submitRow}>
+            <span className={base.pendingHint}>
+              {conLimite
+                ? `Te ${intentosRestantes === 1 ? 'queda' : 'quedan'} ${intentosRestantes} intento${intentosRestantes === 1 ? '' : 's'}.`
+                : 'El nuevo intento empieza desde cero.'}
+            </span>
+            <button type="button" className={`ng-btn ng-btn-primary ${base.submitBtn}`} onClick={onReintentar}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                 <path d="M1 4v6h6M23 20v-6h-6" />
                 <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15" />
               </svg>
-              Intentar de nuevo (desde cero)
+              Intentar de nuevo
             </button>
-            {conLimite && (
-              <span className={styles.intentosHint}>
-                Te {intentosRestantes === 1 ? 'queda' : 'quedan'} {intentosRestantes} intento{intentosRestantes === 1 ? '' : 's'}.
-              </span>
-            )}
-          </>
+          </div>
         )}
         {sinIntentos && (
-          <div className={styles.blockedMsg}>
-            Agotaste tus {intentosMax} intentos en este quiz. Pide a un administrador que los reinicie para continuar.
-          </div>
+          <p className={styles.blockedMsg}>
+            Agotaste tus {intentosMax} intentos en este cuestionario. Pide a un administrador que los reinicie para continuar.
+          </p>
         )}
         {aprobado && (
-          <div className={styles.approvedMsg}>
-            Lección completada — continúa con la siguiente lección en el panel lateral.
-          </div>
+          <p className={styles.approvedMsg}>
+            <CheckIcon />
+            Lección completada. Continúa con la siguiente lección en el panel de contenido.
+          </p>
         )}
-      </div>
-    </div>
+      </footer>
+    </section>
+  );
+}
+
+function CheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+function CrossIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.6} aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M7 7l10 10M17 7L7 17" />
+    </svg>
   );
 }

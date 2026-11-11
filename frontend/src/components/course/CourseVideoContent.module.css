@@ -285,6 +285,40 @@
   font-weight: 600;
 }
 
+.certBannerActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+/* Secundaria junto a "Descargar certificado": la reseña se pide al terminar */
+.certBannerLink {
+  display: inline-flex;
+  align-items: center;
+  height: 2.5rem;
+  padding: 0 1rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: 0.625rem;
+  background: var(--color-surface);
+  color: var(--color-text-body);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 0.15s;
+}
+
+.certBannerLink:hover {
+  background: var(--color-surface-subtle);
+  color: var(--color-text-heading);
+}
+
+.certBannerLink:focus-visible {
+  outline: 2px solid var(--color-secondary-30-light);
+  outline-offset: 2px;
+}
+
 .certBannerBtn {
   background: var(--color-accent-10);
   color: white;
@@ -358,6 +392,8 @@
   font-size: 1rem;
   color: var(--color-text-body);
   max-width: 70ch;
+  text-align: justify;
+  hyphens: auto;
 }
 .readingEmpty {
   color: var(--color-text-muted);

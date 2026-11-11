@@ -20,8 +20,10 @@ interface CalificacionesResp {
 
 interface CourseReviewsProps {
   courseId: string;
-  /** Solo los alumnos inscritos pueden dejar reseña (el backend lo valida). */
+  /** Solo quien ya terminó el curso puede dejar reseña (el backend lo valida). */
   canReview?: boolean;
+  /** Alumno inscrito que aún no termina: se le explica cuándo podrá calificar. */
+  reviewLockedHint?: string | null;
 }
 
 const dateFormat = new Intl.DateTimeFormat('es-MX', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -40,7 +42,7 @@ function Stars({ value }: { value: number }) {
  * Reseñas del curso. Viven en la ficha del curso (no en cada lección) porque
  * califican el curso completo.
  */
-export default function CourseReviews({ courseId, canReview = false }: CourseReviewsProps) {
+export default function CourseReviews({ courseId, canReview = false, reviewLockedHint = null }: CourseReviewsProps) {
   const [items, setItems] = useState<Calificacion[] | null>(null);
   const [estrellas, setEstrellas] = useState(0);
   const [texto, setTexto] = useState('');
@@ -93,6 +95,15 @@ export default function CourseReviews({ courseId, canReview = false }: CourseRev
         )}
       </div>
 
+      {!canReview && reviewLockedHint && (
+        <p className={styles.locked}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+            <path strokeLinejoin="round" d="M12 17.3l-6.2 3.7 1.7-7L2 9.2l7.2-.6L12 2l2.8 6.6 7.2.6-5.5 4.8 1.7 7z" />
+          </svg>
+          <span>{reviewLockedHint}</span>
+        </p>
+      )}
+
       {canReview && (
         <form className={styles.form} onSubmit={submit}>
           <fieldset className={styles.rating}>
@@ -123,7 +134,7 @@ export default function CourseReviews({ courseId, canReview = false }: CourseRev
             placeholder="¿Qué te pareció el curso?"
           />
           <div className={styles.formFoot}>
-            <span className={styles.hint}>Se publica en esta página. Puedes dejar una reseña por curso.</span>
+            <span className={styles.hint}>Terminaste el curso: tu opinión ayuda a otros alumnos. Puedes dejar una reseña por curso.</span>
             <button type="submit" className="ng-btn ng-btn-primary" disabled={sending}>
               {sending ? 'Publicando…' : 'Publicar reseña'}
             </button>
