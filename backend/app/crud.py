@@ -2020,19 +2020,46 @@ def set_feature_flag(*, session: Session, nombre: str, habilitado: bool):
 def expandir_con_subcursos(
     *, session: Session, curso_ids: set[uuid.UUID]
 ) -> set[uuid.UUID]:
-    """Agrega a `curso_ids` los cursos que están dentro de algún curso global
-    del conjunto. Así una licencia del curso global cubre a todos sus cursos.
-    Si el conjunto no tiene cursos globales, regresa el mismo conjunto."""
+    """Ajusta los cursos accesibles a los cursos globales, en los dos sentidos:
+
+    - Una licencia del curso global cubre a todos sus cursos.
+    - Si ya hay acceso a TODOS los cursos publicados de un global publicado
+      (p. ej. la org tiene licencia de cada curso suelto), también hay acceso al
+      global. No da acceso a nada nuevo: solo permite verlos agrupados.
+
+    Si no hay cursos globales, regresa el mismo conjunto."""
     if not curso_ids:
         return curso_ids
+    out = set(curso_ids)
     hijos = session.exec(
         select(Curso.id).where(
             Curso.curso_padre_id.in_(list(curso_ids))  # type: ignore[union-attr]
         )
     ).all()
-    if not hijos:
-        return curso_ids
-    return set(curso_ids) | set(hijos)
+    out |= set(hijos)
+
+    filas = session.exec(
+        select(Curso.curso_padre_id, Curso.id).where(
+            Curso.curso_padre_id.is_not(None),  # type: ignore[union-attr]
+            Curso.estado == EstadoCurso.PUBLICADO,
+        )
+    ).all()
+    por_padre: dict[uuid.UUID, list[uuid.UUID]] = {}
+    for padre_id, hijo_id in filas:
+        por_padre.setdefault(padre_id, []).append(hijo_id)
+    candidatos = [
+        pid for pid, ids in por_padre.items() if pid not in out and all(h in out for h in ids)
+    ]
+    if candidatos:
+        publicados = session.exec(
+            select(Curso.id).where(
+                Curso.id.in_(candidatos),  # type: ignore[attr-defined]
+                Curso.tipo == TipoCurso.GLOBAL,
+                Curso.estado == EstadoCurso.PUBLICADO,
+            )
+        ).all()
+        out |= set(publicados)
+    return out
 
 
 def get_subcursos(

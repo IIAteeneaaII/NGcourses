@@ -126,9 +126,9 @@ def _escenario(db: Session):
     testeo = _curso(db, admin_id, "Testeo", tipo=TipoCurso.GLOBAL, estado=EstadoCurso.BORRADOR)
     hijos = [_curso(db, admin_id, t, lecciones=n) for t, n in (("Desensamble", 3), ("Quitar tapa", 2), ("Escaneo", 1))]
     r = admin.put(f"{API}/cursos/{testeo.id}/subcursos", json={"curso_ids": [str(h.id) for h in hijos]})
-    assert r.status_code == 200, r.text
+    assert r.status_code == 201, r.text
     r = admin.patch(f"{API}/cursos/{testeo.id}", json={"estado": "publicado"})
-    assert r.status_code == 200, r.text
+    assert r.status_code == 201, r.text
     crud.assign_licencia(session=db, org_id=org_id, curso_id=testeo.id)
     return admin, admin_id, org_id, testeo, hijos
 
@@ -157,13 +157,14 @@ def test_curso_existente_no_cambia(db: Session) -> None:
 
 
 def test_licencia_de_curso_suelto_no_se_agrupa(db: Session) -> None:
-    """Si la org tiene licencia de un curso que está en un global, pero no del
-    global, el alumno sigue viendo ese curso suelto, como hoy."""
+    """Si la org tiene licencia de solo algunos cursos del global (y no del
+    global), el alumno sigue viendo esos cursos sueltos, como hoy."""
     admin, admin_id = _admin(db)
     org_id = _org(db)
     glob = _curso(db, admin_id, "Reparación", tipo=TipoCurso.GLOBAL, estado=EstadoCurso.BORRADOR)
     hijo = _curso(db, admin_id, "Antena y base")
-    admin.put(f"{API}/cursos/{glob.id}/subcursos", json={"curso_ids": [str(hijo.id)]})
+    otro = _curso(db, admin_id, "Pantalla")
+    admin.put(f"{API}/cursos/{glob.id}/subcursos", json={"curso_ids": [str(hijo.id), str(otro.id)]})
     admin.patch(f"{API}/cursos/{glob.id}", json={"estado": "publicado"})
     crud.assign_licencia(session=db, org_id=org_id, curso_id=hijo.id)
     alumno, _ = _alumno(db, org_id)
@@ -171,6 +172,36 @@ def test_licencia_de_curso_suelto_no_se_agrupa(db: Session) -> None:
     ids = {c["id"] for c in alumno.get(f"{API}/cursos/", params={"limit": 500}).json()["data"]}
     assert str(hijo.id) in ids
     assert str(glob.id) not in ids
+    r = alumno.post(f"{API}/inscripciones/", json={"curso_id": str(glob.id)})
+    assert r.status_code == 403
+
+
+def test_licencias_de_todos_sus_cursos_agrupan_sin_licencia_del_global(db: Session) -> None:
+    """Si la org ya tiene licencia de cada curso del global, el alumno lo ve
+    agrupado y puede inscribirse al global, sin licencia propia del global."""
+    admin, admin_id = _admin(db)
+    org_id = _org(db)
+    glob = _curso(db, admin_id, "Limpieza", tipo=TipoCurso.GLOBAL, estado=EstadoCurso.BORRADOR)
+    a = _curso(db, admin_id, "Tarjeta")
+    b = _curso(db, admin_id, "Carcasa")
+    admin.put(f"{API}/cursos/{glob.id}/subcursos", json={"curso_ids": [str(a.id), str(b.id)]})
+    admin.patch(f"{API}/cursos/{glob.id}", json={"estado": "publicado"})
+    crud.assign_licencia(session=db, org_id=org_id, curso_id=a.id)
+    crud.assign_licencia(session=db, org_id=org_id, curso_id=b.id)
+    alumno, alumno_id = _alumno(db, org_id)
+
+    lista = alumno.get(f"{API}/cursos/", params={"limit": 500}).json()["data"]
+    ids = [c["id"] for c in lista]
+    assert ids.count(str(glob.id)) == 1
+    assert str(a.id) not in ids and str(b.id) not in ids
+    assert next(c for c in lista if c["id"] == str(glob.id))["es_de_mi_org"] is True
+
+    r = alumno.post(f"{API}/inscripciones/", json={"curso_id": str(glob.id)})
+    assert r.status_code == 201, r.text
+    inscritos = {
+        i.curso_id for i in db.exec(select(Inscripcion).where(Inscripcion.usuario_id == alumno_id)).all()
+    }
+    assert inscritos == {a.id, b.id}
 
 
 # ── catálogo, ficha e inscripción ───────────────────────────────────────────
